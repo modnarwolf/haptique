@@ -47,6 +47,9 @@ dist
 .output
 
 
+# assets
+assets
+
 # temp directory
 .temp
 
