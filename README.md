@@ -1,2 +1,3 @@
 # haptique
-hap-ti-que
+
+this is hap-ti-que!
