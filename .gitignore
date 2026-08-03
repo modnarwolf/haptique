@@ -57,3 +57,8 @@ assets
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Local coding-agent instructions and workspace metadata
+.agents/
+.codex/
+AGENTS.md
