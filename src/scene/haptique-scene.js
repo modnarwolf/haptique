@@ -153,6 +153,7 @@ export class HaptiqueScene {
   wireframeMesh = null;
   environmentTexture = null;
   defaultEnvTexture = null;
+  patternCanvas = null;
 
   // Build or update the synchronized wireframe overlay mesh
   buildWireframeMesh() {
@@ -344,8 +345,14 @@ export class HaptiqueScene {
   }
 
   // Reset cloth simulation with seed value
-  resetCloth(seed = 1) {
-    (this.sim.reset(seed),
+  resetCloth(seed) {
+    (this.sim.reset(seed ?? this.params?.physics?.seed ?? 1),
+      (this.clothGeometry.attributes.position.needsUpdate = !0),
+      this.clothGeometry.computeVertexNormals());
+  }
+
+  resetFlatCloth() {
+    (this.sim.resetFlat(),
       (this.clothGeometry.attributes.position.needsUpdate = !0),
       this.clothGeometry.computeVertexNormals());
   }
@@ -386,6 +393,7 @@ export class HaptiqueScene {
     (this.onDecalSelect?.(e.scale, e.rotation), this.onImagesChanged?.());
   }
   setClothImage(t) {
+    this.patternCanvas = null;
     const e = t.naturalWidth || t.width || 1,
       s = t.naturalHeight || t.height || 1,
       r = Math.min(3, Math.max(1 / 3, e / s));
@@ -394,13 +402,22 @@ export class HaptiqueScene {
       this.buildCloth(r),
       this.onImagesChanged?.());
   }
+  setPatternCanvas(canvas, width, height) {
+    const aspect = Math.max(0.005, Math.min(200, width / Math.max(1, height)));
+    this.patternCanvas = canvas;
+    this.surface.setClothImage(canvas);
+    this.surface.setAspect(aspect) && this.rebindSurfaceTexture();
+    Math.abs(aspect - this.clothAspect) > 1e-6 && this.buildCloth(aspect);
+  }
   clearImages() {
+    this.patternCanvas = null;
     (this.surface.clear(),
       this.surface.setAspect(1) && this.rebindSurfaceTexture(),
       this.buildCloth(1),
       this.onImagesChanged?.());
   }
   removeClothImage() {
+    this.patternCanvas = null;
     (this.surface.setClothImage(null),
       this.surface.setAspect(1) && this.rebindSurfaceTexture(),
       this.buildCloth(1),
@@ -449,6 +466,7 @@ export class HaptiqueScene {
     };
   }
   restoreImages(t) {
+    this.patternCanvas = null;
     ((this.surface.clothImage = t.clothImage),
       (this.surface.decals = t.decals.map((s) => ({ ...s }))),
       (this.surface.selected = null));

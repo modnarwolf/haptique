@@ -136,8 +136,30 @@ export class ClothSim {
   reset(seed = 1) {
     this.initPositions();
     this.grab = null;
+    this.accumulator = 0;
     this.oceanWaves.reset();
     this.applySeedVariation(seed);
+  }
+
+  // Start from a motionless plane. No seeded deformation is applied, so any
+  // movement that follows comes from the active ocean-wave field or the user.
+  resetFlat() {
+    let offset = 0;
+    for (let row = 0; row < this.rows; row++) {
+      const v = row / Math.max(1, this.rows - 1);
+      for (let column = 0; column < this.cols; column++) {
+        const u = column / Math.max(1, this.cols - 1);
+        this.positions[offset] = (u - 0.5) * this.width;
+        this.positions[offset + 1] = (0.5 - v) * this.height;
+        this.positions[offset + 2] = 0;
+        offset += 3;
+      }
+    }
+    this.prev.set(this.positions);
+    this.rest.set(this.positions);
+    this.grab = null;
+    this.accumulator = 0;
+    this.oceanWaves.reset();
   }
 
   poke(t = 0.5) {

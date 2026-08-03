@@ -4,7 +4,11 @@ import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import { DialRoot, DialStore, useDialKitController } from "dialkit";
 import { FINISH_PRESETS, MATERIAL_PRESETS } from "../config.js";
 import { readEnvironmentFile } from "../haptique-features.js";
+import { P5PatternEngine } from "../pattern-studio/p5-pattern-engine.js";
+import { PatternStudioControls } from "../pattern-studio/pattern-controls.js";
+import { createDefaultPatternState } from "../pattern-studio/pattern-data.js";
 import { HaptiqueScene } from "../scene/haptique-scene.js";
+import { HAPTIQUE_DIAL_CONFIG } from "./haptique-dials.js";
 
 function useButtonPortalTarget(n) {
   const [t, e] = React.useState(null),
@@ -193,91 +197,7 @@ function HaptiqueApp() {
     rHDR = React.useRef(null),
     l = useDialKitController(
       "Haptique",
-      {
-        performance: { type: "select", options: ["High", "Medium", "Low"], default: "Medium" },
-        material: {
-          _collapsed: !0,
-          preset: { type: "select", options: ["Holo", "Chrome", "Black Cloth"], default: "Black Cloth" },
-          finish: { type: "select", options: ["Glossy", "Satin", "Matte"], default: "Matte" },
-          baseColor: "#101114",
-          holoIntensity: [0.1, 0, 4, 0.01],
-          holoScale: [8, 8, 400, 1],
-          bandFreq: [0.2, 0.2, 10, 0.05],
-          saturation: [0, 0, 1, 0.01],
-          hueShift: [0, 0, 1, 0.01],
-          sparkle: [0, 0, 2, 0.01],
-          specTint: [0.15, 0, 1, 0.01],
-          iridescence: [0, 0, 1, 0.01],
-          roughness: [0.7, 0, 1, 0.01],
-          metalness: [0, 0, 1, 0.01],
-          clearcoat: [0, 0, 1, 0.01],
-          coatRoughness: [0, 0, 1, 0.01],
-          sheen: [0, 0, 1, 0.01],
-          bump: [0.57, 0, 3, 0.01],
-          bumpTiling: [5.5, 1, 12, 0.5],
-          uploadBump: { type: "action", label: "Upload bump map" },
-        },
-        physics: {
-          _collapsed: !0,
-          subdivision: [48, 16, 96, 4],
-          seed: [1, 1, 100, 1],
-          viscosity: [0.6, 0, 0.6, 0.005],
-          stiffness: [1, 0.2, 1, 0.01],
-          iterations: [14, 1, 14, 1],
-          smoothing: [0.045, 0, 0.3, 0.005],
-          grabRadius: [0.27, 0.05, 1.2, 0.01],
-          oceanStrength: [4, 0, 20, 0.1],
-          oceanSpeed: [0.22, 0.02, 1.5, 0.01],
-          oceanScale: [1.15, 0.25, 4, 0.05],
-          oceanDirection: [25, -180, 180, 1],
-          oceanComplexity: [0.35, 0, 1, 0.01],
-          oceanMotion: !0,
-        },
-        images: {
-          _collapsed: !0,
-          useImage: !0,
-          edit: !1,
-          scale: [0.35, 0.02, 2.5, 0.01],
-          rotation: [0, -180, 180, 1],
-          opacity: [0.9, 0, 1, 0.01],
-          cornerRadius: [0, 0, 1, 0.01],
-          addImage: { type: "action", label: "Add image / SVG" },
-          makeCloth: { type: "action", label: "Image as cloth…" },
-          clearImages: { type: "action", label: "Clear images" },
-        },
-        render: {
-          _collapsed: !0,
-          background: { type: "color", default: "#CECECE" },
-          wireframe: !1,
-          wireframeColor: "#ff0000",
-          useHDR: !0,
-          uploadHDR: { type: "action", label: "Upload HDR / EXR environment" },
-          resetEnvironment: { type: "action", label: "Reset environment" },
-          exposure: [0.97, 0.2, 2.5, 0.01],
-          environment: [0.28, 0, 3, 0.01],
-          environmentRotation: [0, -180, 180, 1],
-          bloom: [0, 0, 1.2, 0.01],
-          bloomThreshold: [0, 0, 2, 0.01],
-          noise: [0, 0, 0.6, 0.005],
-          toneMapping: {
-            type: "select",
-            options: ["AgX", "ACES", "Neutral"],
-            default: "Neutral",
-          },
-          occlusion: !0,
-          occlusionStrength: [0.6, 0, 1, 0.01],
-          dof: !1,
-          dofAperture: [13, 1, 150, 1],
-          dofBlur: [0.04, 0, 0.15, 0.001],
-          dofRange: [0.3, 0, 3, 0.01],
-          pickFocus: { type: "action", label: "Pick focus point" },
-          autoFocus: { type: "action", label: "Auto focus" },
-        },
-        exportPNG: { type: "action", label: "Export PNG" },
-        exportPNGClear: { type: "action", label: "Export PNG (no background)" },
-        resetCloth: { type: "action", label: "Reset cloth" },
-        poke: { type: "action", label: "Poke" },
-      },
+      HAPTIQUE_DIAL_CONFIG,
       {
         id: "haptique",
         onAction: (L) => {
@@ -286,6 +206,8 @@ function HaptiqueApp() {
           z &&
             (N === "resetCloth"
               ? z.resetCloth(c.physics?.seed ?? 1)
+              : N === "resetFlatCloth"
+                ? z.resetFlatCloth()
               : N === "poke"
                 ? z.poke()
                 : N === "uploadHDR"
@@ -318,11 +240,21 @@ function HaptiqueApp() {
     [, f] = React.useState(0),
     [d, h] = React.useState(0),
     [m, y] = React.useState(!1),
-    [g, _] = React.useState(!1);
+    [g, _] = React.useState(!1),
+    [controlMode, setControlMode] = React.useState("studio"),
+    [patternEngine, setPatternEngine] = React.useState(null),
+    [patternState, setPatternState] = React.useState(createDefaultPatternState);
   React.useEffect(() => {
     if (!n.current) return;
     const L = new HaptiqueScene(n.current);
+    const pattern = new P5PatternEngine((canvas, width, height) => {
+      if (t.current !== L) return;
+      L.setPatternCanvas(canvas, width, height);
+      l.setValues({ images: { useImage: !0 } });
+    });
+    pattern.setState(patternState);
     ((t.current = L),
+      setPatternEngine(pattern),
       (L.onDecalSelect = (W, I) => {
         l.setValues({ images: { scale: W, rotation: I } });
       }),
@@ -367,9 +299,29 @@ function HaptiqueApp() {
       (I && L.restoreImages(I), (q = W));
     });
     return () => {
-      (K(), L.dispose(), (t.current = null));
+      (K(), pattern.dispose(), L.dispose(), (t.current = null));
     };
   }, []);
+  React.useEffect(() => {
+    const onToggleControls = (event) => {
+      if (event.key !== "~" && event.key !== "`") return;
+      if (/input|select|textarea/i.test(event.target?.tagName)) return;
+      event.preventDefault();
+      setControlMode((mode) => (mode === "studio" ? "pattern" : "studio"));
+    };
+    window.addEventListener("keydown", onToggleControls);
+    return () => window.removeEventListener("keydown", onToggleControls);
+  }, []);
+  React.useEffect(() => {
+    const registered = DialStore.getPanels().some((panel) => panel.id === "haptique");
+    if (controlMode === "pattern" && registered) {
+      DialStore.unregisterPanel("haptique");
+    } else if (controlMode === "studio" && !registered) {
+      DialStore.registerPanel("haptique", "Haptique", HAPTIQUE_DIAL_CONFIG, undefined, {
+        retainOnUnmount: true,
+      });
+    }
+  }, [controlMode]);
   const M = React.useRef(!0),
     E = c.material.preset,
     S = React.useRef(!0);
@@ -488,10 +440,26 @@ function HaptiqueApp() {
           jsx(ImageThumbnail, { thumb: P, label: "Bump map", onRemove: () => t.current?.setBumpMap(null) }),
           b,
         ),
+      controlMode === "pattern" &&
+        jsx(PatternStudioControls, {
+          engine: patternEngine,
+          scene: t.current,
+          state: patternState,
+          onStateChange: setPatternState,
+        }),
+      jsxs("button", {
+        type: "button",
+        className: "control-mode-toggle",
+        onClick: () => setControlMode((mode) => (mode === "studio" ? "pattern" : "studio")),
+        title: "Press ~ to switch control panels",
+        children: [
+          jsx("span", { children: "~" }),
+          controlMode === "pattern" ? "Pattern Studio" : "Material Studio",
+        ],
+      }),
       jsx(DialRoot, { position: "top-right", defaultOpen: !0, productionEnabled: !0 }),
       !g && jsx(LoadingOverlay, { percent: d, hiding: m }),
     ],
   });
 }
 export { HaptiqueApp };
-

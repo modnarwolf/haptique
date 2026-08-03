@@ -34,3 +34,51 @@ body {
   font: 14px/1.6 "Geist Mono", ui-monospace, monospace;
   text-align: center;
 }
+
+.pattern-texture-canvas {
+  position: fixed !important;
+  width: 1px !important;
+  height: 1px !important;
+  left: -10000px !important;
+  top: -10000px !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+.control-mode-toggle {
+  position: fixed;
+  z-index: 2147483500;
+  left: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  padding: 7px 11px 7px 8px;
+  color: #d6d3cb;
+  background: rgba(21, 23, 26, 0.86);
+  border: 1px solid rgba(214, 211, 203, 0.2);
+  border-radius: 7px;
+  backdrop-filter: blur(14px);
+  font: 10px/1 "Geist Mono", ui-monospace, monospace;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.control-mode-toggle:hover {
+  border-color: rgba(214, 211, 203, 0.55);
+  background: rgba(29, 32, 36, 0.94);
+}
+
+.control-mode-toggle span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: #15171a;
+  background: #d6d3cb;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
