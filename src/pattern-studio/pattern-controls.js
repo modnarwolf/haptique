@@ -1,33 +1,41 @@
 import * as React from "react";
 import { useDialKitController } from "dialkit";
-import { PARAMS, PRINT_PRESETS, SERIES, getPalette } from "./pattern-data.js";
+import { PRINT_PRESETS, SERIES, SERIES_BY_ID, getPalette } from "./pattern-data.js";
 
-const paletteFolderName = (series) => `Palette — ${SERIES[series].name}`;
+const paletteFolderName = (seriesId) => `Palette — ${SERIES_BY_ID[seriesId].name}`;
 const colorFolderName = (paletteName) => `Colors — ${paletteName}`;
-const compositionFolderName = (series) => `Composition — ${SERIES[series].name}`;
+const compositionFolderName = (seriesId) => `Composition — ${SERIES_BY_ID[seriesId].name}`;
 
 function createPatternConfig(state) {
-  const series = state.series;
+  const seriesId = state.seriesId;
+  const series = SERIES_BY_ID[seriesId];
   const palette = getPalette(state);
-  const selectedPalette = SERIES[series].palettes[state.palettes[series]];
-  const paletteFolder = paletteFolderName(series);
+  const selectedPalette = series.palettes[state.paletteIndexesBySeriesId[seriesId]];
+  const paletteFolder = paletteFolderName(seriesId);
   const colorFolder = colorFolderName(selectedPalette.name);
-  const compositionFolder = compositionFolderName(series);
+  const compositionFolder = compositionFolderName(seriesId);
   const colorControls = { Ground: palette.bg };
   palette.colors.forEach((color, index) => {
     colorControls[`Color ${index + 1}`] = color;
   });
+
   const compositionControls = {};
-  for (const parameter of PARAMS[series]) {
+  for (const parameter of series.parameters) {
     compositionControls[parameter.key] = parameter.options
-      ? { type: "select", label: parameter.label, options: parameter.options, default: state.params[series][parameter.key] }
-      : [state.params[series][parameter.key], parameter.min, parameter.max, parameter.step];
+      ? {
+          type: "select",
+          label: parameter.label,
+          options: parameter.options,
+          default: state.parametersBySeriesId[seriesId][parameter.key],
+        }
+      : [state.parametersBySeriesId[seriesId][parameter.key], parameter.min, parameter.max, parameter.step];
   }
+
   return {
-    series: {
+    Series: {
       type: "select",
-      options: Object.entries(SERIES).map(([value, item]) => ({ value, label: item.name })),
-      default: series,
+      options: SERIES.map((item) => ({ value: item.id, label: item.name })),
+      default: seriesId,
     },
     seed: [state.seed, 0, 999999, 1],
     printSize: {
@@ -39,7 +47,7 @@ function createPatternConfig(state) {
     [paletteFolder]: {
       preset: {
         type: "select",
-        options: SERIES[series].palettes.map((item) => item.name),
+        options: series.palettes.map((item) => item.name),
         default: selectedPalette.name,
       },
       [colorFolder]: colorControls,
@@ -58,13 +66,14 @@ function createPatternConfig(state) {
 
 function paletteControlUpdates(state) {
   const palette = getPalette(state);
-  const paletteName = SERIES[state.series].palettes[state.palettes[state.series]].name;
+  const series = SERIES_BY_ID[state.seriesId];
+  const paletteName = series.palettes[state.paletteIndexesBySeriesId[state.seriesId]].name;
   const values = { Ground: palette.bg };
   palette.colors.forEach((color, index) => {
     values[`Color ${index + 1}`] = color;
   });
   return {
-    [paletteFolderName(state.series)]: {
+    [paletteFolderName(state.seriesId)]: {
       preset: paletteName,
       [colorFolderName(paletteName)]: values,
     },
@@ -88,25 +97,38 @@ export function PatternStudioControls({ engine, scene, state, onStateChange }) {
       } else if (action === "applyPrintSize") {
         const presetName = values?.printSize?.preset ?? current.printPreset;
         const preset = PRINT_PRESETS[presetName];
-        const width = Math.max(100, Math.min(20000, Math.round(preset?.[0] ?? values?.printSize?.width ?? current.width)));
-        const height = Math.max(100, Math.min(20000, Math.round(preset?.[1] ?? values?.printSize?.height ?? current.height)));
+        const width = Math.max(
+          100,
+          Math.min(20000, Math.round(preset?.[0] ?? values?.printSize?.width ?? current.width)),
+        );
+        const height = Math.max(
+          100,
+          Math.min(20000, Math.round(preset?.[1] ?? values?.printSize?.height ?? current.height)),
+        );
         controllerRef.current?.setValues({ printSize: { width, height } });
         setState({ ...current, printPreset: presetName, width, height });
       } else if (action === "shufflePalette" || action === "revertPalette") {
-        const paletteIndex = current.palettes[current.series];
-        const preset = SERIES[current.series].palettes[paletteIndex];
+        const paletteIndex = current.paletteIndexesBySeriesId[current.seriesId];
+        const preset = SERIES_BY_ID[current.seriesId].palettes[paletteIndex];
         const colors = action === "revertPalette"
           ? [...preset.colors]
-          : [...current.paletteValues[current.series].colors].sort(() => Math.random() - 0.5);
-        const paletteValues = {
-          ...current.paletteValues,
-          [current.series]: { bg: action === "revertPalette" ? preset.bg : current.paletteValues[current.series].bg, colors },
+          : [...current.paletteValuesBySeriesId[current.seriesId].colors].sort(() => Math.random() - 0.5);
+        const paletteValuesBySeriesId = {
+          ...current.paletteValuesBySeriesId,
+          [current.seriesId]: {
+            bg: action === "revertPalette"
+              ? preset.bg
+              : current.paletteValuesBySeriesId[current.seriesId].bg,
+            colors,
+          },
         };
-        const next = { ...current, paletteValues };
-        setState(next);
-        queueMicrotask(() => controllerRef.current?.setValues(paletteControlUpdates(next)));
+        const nextState = { ...current, paletteValuesBySeriesId };
+        setState(nextState);
+        queueMicrotask(() => controllerRef.current?.setValues(paletteControlUpdates(nextState)));
       } else if (action === "exportFlatPattern") {
-        engine?.exportFlatPattern().catch((error) => console.error("[haptique] flat pattern export failed", error));
+        engine?.exportFlatPattern().catch((error) => {
+          console.error("[haptique] flat pattern export failed", error);
+        });
       } else if (action === "exportCloth") {
         scene?.exportPNG(false);
       } else if (action === "exportClothClear") {
@@ -122,48 +144,55 @@ export function PatternStudioControls({ engine, scene, state, onStateChange }) {
 
   React.useEffect(() => {
     const values = controller.values;
-    if (values.series !== state.series) {
-      setState({ ...state, series: values.series });
+    if (SERIES_BY_ID[values.Series] && values.Series !== state.seriesId) {
+      setState({ ...state, seriesId: values.Series });
       return;
     }
-    const series = state.series;
-    const paletteFolder = values[paletteFolderName(series)];
+
+    const seriesId = state.seriesId;
+    const series = SERIES_BY_ID[seriesId];
+    const paletteFolder = values[paletteFolderName(seriesId)];
     const selectedName = paletteFolder?.preset;
-    const selectedIndex = SERIES[series].palettes.findIndex((item) => item.name === selectedName);
-    if (selectedIndex >= 0 && selectedIndex !== state.palettes[series]) {
-      const selected = SERIES[series].palettes[selectedIndex];
+    const selectedIndex = series.palettes.findIndex((item) => item.name === selectedName);
+    if (selectedIndex >= 0 && selectedIndex !== state.paletteIndexesBySeriesId[seriesId]) {
+      const selectedPalette = series.palettes[selectedIndex];
       setState({
         ...state,
-        palettes: { ...state.palettes, [series]: selectedIndex },
-        paletteValues: {
-          ...state.paletteValues,
-          [series]: { bg: selected.bg, colors: [...selected.colors] },
+        paletteIndexesBySeriesId: { ...state.paletteIndexesBySeriesId, [seriesId]: selectedIndex },
+        paletteValuesBySeriesId: {
+          ...state.paletteValuesBySeriesId,
+          [seriesId]: { bg: selectedPalette.bg, colors: [...selectedPalette.colors] },
         },
       });
       return;
     }
 
-    const selectedPalette = SERIES[series].palettes[state.palettes[series]];
+    const selectedPalette = series.palettes[state.paletteIndexesBySeriesId[seriesId]];
     const colorValues = paletteFolder?.[colorFolderName(selectedPalette.name)];
     const nextPalette = colorValues
       ? {
           bg: colorValues.Ground,
-          colors: state.paletteValues[series].colors.map((color, index) => colorValues[`Color ${index + 1}`] ?? color),
+          colors: state.paletteValuesBySeriesId[seriesId].colors.map(
+            (color, index) => colorValues[`Color ${index + 1}`] ?? color,
+          ),
         }
-      : state.paletteValues[series];
-    const compositionValues = values[compositionFolderName(series)] ?? {};
-    const nextParams = { ...state.params[series] };
-    for (const parameter of PARAMS[series]) {
-      if (compositionValues[parameter.key] !== undefined) nextParams[parameter.key] = compositionValues[parameter.key];
+      : state.paletteValuesBySeriesId[seriesId];
+    const compositionValues = values[compositionFolderName(seriesId)] ?? {};
+    const nextParameters = { ...state.parametersBySeriesId[seriesId] };
+    for (const parameter of series.parameters) {
+      if (compositionValues[parameter.key] !== undefined) {
+        nextParameters[parameter.key] = compositionValues[parameter.key];
+      }
     }
-    const next = {
+
+    const nextState = {
       ...state,
       seed: Math.max(0, Math.min(999999, Math.round(values.seed ?? state.seed))),
       printPreset: values.printSize?.preset ?? state.printPreset,
-      params: { ...state.params, [series]: nextParams },
-      paletteValues: { ...state.paletteValues, [series]: nextPalette },
+      parametersBySeriesId: { ...state.parametersBySeriesId, [seriesId]: nextParameters },
+      paletteValuesBySeriesId: { ...state.paletteValuesBySeriesId, [seriesId]: nextPalette },
     };
-    if (JSON.stringify(next) !== JSON.stringify(state)) setState(next);
+    if (JSON.stringify(nextState) !== JSON.stringify(state)) setState(nextState);
   }, [controller.values, state]);
 
   React.useEffect(() => {

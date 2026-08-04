@@ -44,12 +44,31 @@ npm run preview
 npm run verify:environments
 ```
 
+### Adding a Pattern Studio series
+
+Every procedural series is a self-contained module in
+`src/pattern-studio/series/`. A module exports one series object containing its
+stable `sr####` ID, UI name, note, palettes, parameters, and `paint` function.
+Shared drawing utilities live in `series/helpers.js`.
+
+To add a series:
+
+1. Copy an existing series module and choose an unused ID such as `sr0080`.
+2. Keep all series-specific drawing functions in that module; move only truly
+   reusable utilities into `helpers.js`.
+3. Import the module and add it once to the ordered `SERIES` array in
+   `series/index.js`.
+
+IDs normally advance by 10 so a related variant can be inserted later with an
+ID such as `sr0015`. The registry validates ID formatting, duplicates, required
+metadata, parameters, palettes, and painter availability when the app loads.
+
 ## Project structure
 
 ```text
 src/
   data/             Baked starting drape
-  pattern-studio/   Pattern data, controls, and p5 renderer
+  pattern-studio/   Pattern controls, renderer, and modular series definitions
   rendering/        Materials, textures, and post-processing
   scene/            Three.js scene and interaction layer
   shaders/          Holographic, depth-of-field, and grain GLSL

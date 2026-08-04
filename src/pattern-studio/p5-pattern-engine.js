@@ -70,7 +70,7 @@ export class P5PatternEngine {
       const blob = await canvasToBlob(graphics.canvas);
       downloadBlob(
         blob,
-        `haptique-pattern-${state.series}-${String(state.seed).padStart(6, "0")}-${state.width}x${state.height}.png`,
+        `haptique-pattern-${state.seriesId}-${String(state.seed).padStart(6, "0")}-${state.width}x${state.height}.png`,
       );
     } finally {
       graphics.remove();
