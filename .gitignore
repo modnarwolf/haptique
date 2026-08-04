@@ -49,6 +49,10 @@ dist
 
 # assets
 assets
+!assets/
+assets/*
+!assets/reference-ui/
+!assets/reference-ui/*.png
 
 # temp directory
 .temp

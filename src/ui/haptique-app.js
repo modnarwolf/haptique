@@ -1,14 +1,14 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
-import { DialRoot, DialStore, useDialKitController } from "dialkit";
+import { DialStore, useDialKitController } from "dialkit";
 import { FINISH_PRESETS, MATERIAL_PRESETS } from "../config.js";
 import { readEnvironmentFile } from "../haptique-features.js";
 import { P5PatternEngine } from "../pattern-studio/p5-pattern-engine.js";
-import { PatternStudioControls } from "../pattern-studio/pattern-controls.js";
 import { createDefaultPatternState } from "../pattern-studio/pattern-data.js";
 import { HaptiqueScene } from "../scene/haptique-scene.js";
 import { HAPTIQUE_DIAL_CONFIG } from "./haptique-dials.js";
+import { OSShell } from "./os-shell.js";
 
 function useButtonPortalTarget(n) {
   const [t, e] = React.useState(null),
@@ -122,15 +122,9 @@ function loadImageWithProgress(n, t) {
 function LoadingOverlay({ percent: n, hiding: t }) {
   const s = 2 * Math.PI * 26;
   return jsx("div", {
+    className: "cloth-loading",
     style: {
-      position: "fixed",
-      inset: 0,
-      display: "grid",
-      placeItems: "center",
-      background: "#0b0c12",
-      zIndex: 2147483600,
       opacity: t ? 0 : 1,
-      transition: "opacity 0.5s ease",
       pointerEvents: t ? "none" : "auto",
     },
     children: jsxs("svg", {
@@ -188,9 +182,10 @@ function readFileAsImage(n, t) {
 // default_bump.jpg with progress reporting, then reveals the scene. Asset
 // failure is caught so the scene still appears, just without those maps.
 // --------------------------------------------------------------------------
-function HaptiqueApp() {
+function ClothExperience({ patternState, studioActionsRef }) {
   const n = React.useRef(null),
     t = React.useRef(null),
+    patternEngineRef = React.useRef(null),
     e = React.useRef(null),
     s = React.useRef(null),
     r = React.useRef(null),
@@ -240,10 +235,7 @@ function HaptiqueApp() {
     [, f] = React.useState(0),
     [d, h] = React.useState(0),
     [m, y] = React.useState(!1),
-    [g, _] = React.useState(!1),
-    [controlMode, setControlMode] = React.useState("studio"),
-    [patternEngine, setPatternEngine] = React.useState(null),
-    [patternState, setPatternState] = React.useState(createDefaultPatternState);
+    [g, _] = React.useState(!1);
   React.useEffect(() => {
     if (!n.current) return;
     const L = new HaptiqueScene(n.current);
@@ -254,7 +246,7 @@ function HaptiqueApp() {
     });
     pattern.setState(patternState);
     ((t.current = L),
-      setPatternEngine(pattern),
+      (patternEngineRef.current = pattern),
       (L.onDecalSelect = (W, I) => {
         l.setValues({ images: { scale: W, rotation: I } });
       }),
@@ -299,29 +291,12 @@ function HaptiqueApp() {
       (I && L.restoreImages(I), (q = W));
     });
     return () => {
-      (K(), pattern.dispose(), L.dispose(), (t.current = null));
+      (K(), pattern.dispose(), L.dispose(), (patternEngineRef.current = null), (t.current = null));
     };
   }, []);
   React.useEffect(() => {
-    const onToggleControls = (event) => {
-      if (event.key !== "~" && event.key !== "`") return;
-      if (/input|select|textarea/i.test(event.target?.tagName)) return;
-      event.preventDefault();
-      setControlMode((mode) => (mode === "studio" ? "pattern" : "studio"));
-    };
-    window.addEventListener("keydown", onToggleControls);
-    return () => window.removeEventListener("keydown", onToggleControls);
-  }, []);
-  React.useEffect(() => {
-    const registered = DialStore.getPanels().some((panel) => panel.id === "haptique");
-    if (controlMode === "pattern" && registered) {
-      DialStore.unregisterPanel("haptique");
-    } else if (controlMode === "studio" && !registered) {
-      DialStore.registerPanel("haptique", "Haptique", HAPTIQUE_DIAL_CONFIG, undefined, {
-        retainOnUnmount: true,
-      });
-    }
-  }, [controlMode]);
+    patternEngineRef.current?.setState(patternState);
+  }, [patternState]);
   const M = React.useRef(!0),
     E = c.material.preset,
     S = React.useRef(!0);
@@ -354,6 +329,13 @@ function HaptiqueApp() {
     R = useButtonPortalTarget("Image as cloth…"),
     U = useButtonPortalTarget("Add image / SVG"),
     b = useButtonPortalTarget("Upload bump map");
+  studioActionsRef.current = {
+    exportFlatPattern: () => patternEngineRef.current?.exportFlatPattern(),
+    exportCloth: () => t.current?.exportPNG(!1),
+    exportClothClear: () => t.current?.exportPNG(!0),
+    resetCloth: () => t.current?.resetCloth(patternState.seed),
+    resetFlatCloth: () => t.current?.resetFlatCloth(),
+  };
   return jsxs(Fragment, {
     children: [
       jsx("div", {
@@ -440,26 +422,20 @@ function HaptiqueApp() {
           jsx(ImageThumbnail, { thumb: P, label: "Bump map", onRemove: () => t.current?.setBumpMap(null) }),
           b,
         ),
-      controlMode === "pattern" &&
-        jsx(PatternStudioControls, {
-          engine: patternEngine,
-          scene: t.current,
-          state: patternState,
-          onStateChange: setPatternState,
-        }),
-      jsxs("button", {
-        type: "button",
-        className: "control-mode-toggle",
-        onClick: () => setControlMode((mode) => (mode === "studio" ? "pattern" : "studio")),
-        title: "Press ~ to switch control panels",
-        children: [
-          jsx("span", { children: "~" }),
-          controlMode === "pattern" ? "Pattern Studio" : "Material Studio",
-        ],
-      }),
-      jsx(DialRoot, { position: "top-right", defaultOpen: !0, productionEnabled: !0 }),
       !g && jsx(LoadingOverlay, { percent: d, hiding: m }),
     ],
   });
 }
+
+function HaptiqueApp() {
+  const [patternState, setPatternState] = React.useState(createDefaultPatternState);
+  const studioActionsRef = React.useRef(null);
+  return jsx(OSShell, {
+    preview: jsx(ClothExperience, { patternState, studioActionsRef }),
+    studioState: patternState,
+    onStudioStateChange: setPatternState,
+    studioActionsRef,
+  });
+}
+
 export { HaptiqueApp };
