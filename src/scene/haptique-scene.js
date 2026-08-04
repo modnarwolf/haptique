@@ -83,7 +83,9 @@ export class HaptiqueScene {
       (this.controls.minDistance = 1.6),
       (this.controls.maxDistance = 30),
       this.controls.target.set(...INITIAL_DRAPE.target),
-      this.controls.update());
+      this.controls.update(),
+      (this.initialCameraDistance = this.camera.position.distanceTo(this.controls.target)),
+      this.controls.addEventListener("change", this.emitZoomChange));
     const g = new WebGLRenderTarget(e, s, { samples: 8, type: HalfFloatType });
     ((this.composer = new EffectComposer(this.renderer, g)),
       this.composer.setPixelRatio(Math.min(window.devicePixelRatio, 2)),
@@ -149,6 +151,9 @@ export class HaptiqueScene {
   disposed = !1;
   onDecalSelect = null;
   onImagesChanged = null;
+  onZoomChange = null;
+  initialCameraDistance = 1;
+  lastZoomPercent = -1;
   clothAspect = 1;
   wireframeMesh = null;
   environmentTexture = null;
@@ -672,6 +677,20 @@ export class HaptiqueScene {
       this.surface.redraw(),
       this.onDecalSelect?.(e.scale, e.rotation));
   };
+  getZoomPercent() {
+    const distance = this.camera.position.distanceTo(this.controls.target);
+    const start = this.initialCameraDistance;
+    const percent = distance <= start
+      ? 50 + ((start - distance) / Math.max(0.001, start - this.controls.minDistance)) * 50
+      : 50 - ((distance - start) / Math.max(0.001, this.controls.maxDistance - start)) * 50;
+    return Math.round(MathUtils.clamp(percent, 0, 100));
+  }
+  emitZoomChange = () => {
+    const percent = this.getZoomPercent();
+    if (percent === this.lastZoomPercent) return;
+    this.lastZoomPercent = percent;
+    this.onZoomChange?.(percent);
+  };
   onResize() {
     const t = this.host.clientWidth || window.innerWidth,
       e = this.host.clientHeight || window.innerHeight;
@@ -746,6 +765,7 @@ export class HaptiqueScene {
       window.removeEventListener("keydown", this.onKeyDown),
       window.removeEventListener("keyup", this.onKeyUp),
       window.removeEventListener("blur", this.onWindowBlur),
+      this.controls.removeEventListener("change", this.emitZoomChange),
       this.controls.dispose(),
       this.dofPass.dispose(),
       this.composer.dispose(),

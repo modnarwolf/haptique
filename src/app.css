@@ -555,10 +555,27 @@ a:focus-visible {
 }
 
 .preview-zoom i {
+  position: relative;
   width: 35px;
   height: 5px;
+  overflow: hidden;
   border: 1px solid var(--ink);
-  background: linear-gradient(90deg, var(--blue) 62%, transparent 62%);
+  background: transparent;
+}
+
+.preview-zoom i b {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  padding: 0;
+  background: var(--blue);
+  transition: width 120ms ease-out;
+}
+
+.preview-zoom output {
+  min-width: 28px;
+  font: inherit;
+  text-align: right;
 }
 
 .studio-preview-badge {
@@ -601,6 +618,36 @@ a:focus-visible {
   font-size: 8px;
 }
 
+.preview-cloth-actions {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr 1fr;
+  border-top: var(--border);
+  pointer-events: auto;
+}
+
+.preview-cloth-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 25px;
+  padding: 0 7px;
+  color: var(--ink);
+  background: var(--paper);
+  border-right: var(--border);
+  font-size: 7px;
+  cursor: pointer;
+}
+
+.preview-cloth-actions button:last-child {
+  border-right: 0;
+}
+
+.preview-cloth-actions button:hover {
+  background: var(--green);
+}
+
 .desktop.is-studio {
   background:
     linear-gradient(rgba(14, 14, 14, 0.05) 1px, transparent 1px),
@@ -637,10 +684,10 @@ a:focus-visible {
 }
 
 .seed-window {
-  bottom: 4%;
+  bottom: 3%;
   left: 2.5%;
-  width: clamp(215px, 19vw, 280px);
-  height: 31%;
+  width: clamp(245px, 21vw, 310px);
+  height: 48%;
 }
 
 .palette-window {
@@ -692,7 +739,8 @@ a:focus-visible {
 
 .studio-field > span,
 .range-field > span:first-child,
-.saved-seeds > span {
+.saved-seeds > span,
+.share-design > span {
   color: var(--muted);
   font-size: 9px;
   letter-spacing: 0.08em;
@@ -818,8 +866,8 @@ a:focus-visible {
 }
 
 .saved-seeds > div {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
 }
 
@@ -835,6 +883,128 @@ a:focus-visible {
 .saved-seeds button:hover {
   background: var(--green);
   border-color: var(--ink);
+}
+
+.saved-seeds .saved-design {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 5px;
+  min-width: 0;
+  text-align: left;
+}
+
+.saved-design b,
+.saved-design > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-design b {
+  font-size: 8px;
+}
+
+.saved-design > span {
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.saved-design-colors {
+  display: flex;
+  grid-column: 1 / -1;
+  height: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(14, 14, 14, 0.2);
+}
+
+.saved-design-colors em {
+  flex: 1;
+  min-width: 3px;
+}
+
+.share-design {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(14, 14, 14, 0.35);
+}
+
+.share-actions,
+.share-import {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: var(--border);
+}
+
+.share-actions button,
+.share-import button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 29px;
+  padding: 0 7px;
+  color: var(--ink);
+  background: var(--paper);
+  border-right: var(--border);
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.share-actions button:last-child,
+.share-import button:last-child {
+  border-right: 0;
+}
+
+.share-actions button:hover,
+.share-actions button.is-active,
+.share-import button:hover {
+  background: var(--green);
+}
+
+.share-import {
+  grid-template-columns: 1fr auto;
+}
+
+.share-import input {
+  min-width: 0;
+  height: 29px;
+  padding: 0 7px;
+  color: var(--ink);
+  background: var(--paper-bright);
+  border: 0;
+  border-right: var(--border);
+  border-radius: 0;
+  font: 8px/1 var(--font-mono);
+}
+
+.share-qr {
+  display: grid;
+  min-height: 152px;
+  place-items: center;
+  padding: 8px;
+  background: var(--paper);
+  border: var(--border);
+}
+
+.share-qr img {
+  display: block;
+  width: min(100%, 220px);
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.share-qr span,
+.share-status {
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+}
+
+.share-status {
+  min-height: 10px;
 }
 
 .color-grid {

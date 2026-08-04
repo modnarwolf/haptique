@@ -6,6 +6,7 @@ import { FINISH_PRESETS, MATERIAL_PRESETS } from "../config.js";
 import { readEnvironmentFile } from "../haptique-features.js";
 import { P5PatternEngine } from "../pattern-studio/p5-pattern-engine.js";
 import { createDefaultPatternState } from "../pattern-studio/pattern-data.js";
+import { applyPatternSnapshot, decodePatternShare } from "../pattern-studio/pattern-share.js";
 import { HaptiqueScene } from "../scene/haptique-scene.js";
 import { HAPTIQUE_DIAL_CONFIG } from "./haptique-dials.js";
 import { OSShell } from "./os-shell.js";
@@ -182,7 +183,7 @@ function readFileAsImage(n, t) {
 // default_bump.jpg with progress reporting, then reveals the scene. Asset
 // failure is caught so the scene still appears, just without those maps.
 // --------------------------------------------------------------------------
-function ClothExperience({ patternState, studioActionsRef }) {
+function ClothExperience({ patternState, studioActionsRef, onZoomChange }) {
   const n = React.useRef(null),
     t = React.useRef(null),
     patternEngineRef = React.useRef(null),
@@ -247,6 +248,8 @@ function ClothExperience({ patternState, studioActionsRef }) {
     pattern.setState(patternState);
     ((t.current = L),
       (patternEngineRef.current = pattern),
+      (L.onZoomChange = onZoomChange),
+      L.emitZoomChange(),
       (L.onDecalSelect = (W, I) => {
         l.setValues({ images: { scale: W, rotation: I } });
       }),
@@ -428,10 +431,20 @@ function ClothExperience({ patternState, studioActionsRef }) {
 }
 
 function HaptiqueApp() {
-  const [patternState, setPatternState] = React.useState(createDefaultPatternState);
+  const [patternState, setPatternState] = React.useState(() => {
+    const defaultState = createDefaultPatternState();
+    if (typeof window === "undefined" || !window.location.hash.startsWith("#design=")) return defaultState;
+    try {
+      return applyPatternSnapshot(defaultState, decodePatternShare(window.location.href));
+    } catch {
+      return defaultState;
+    }
+  });
+  const [previewZoom, setPreviewZoom] = React.useState(50);
   const studioActionsRef = React.useRef(null);
   return jsx(OSShell, {
-    preview: jsx(ClothExperience, { patternState, studioActionsRef }),
+    preview: jsx(ClothExperience, { patternState, studioActionsRef, onZoomChange: setPreviewZoom }),
+    previewZoom,
     studioState: patternState,
     onStudioStateChange: setPatternState,
     studioActionsRef,

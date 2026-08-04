@@ -1,9 +1,11 @@
 import * as React from "react";
 import { jsx, jsxs } from "react/jsx-runtime";
+import QRCode from "qrcode";
 import {
   Archive,
   ArrowRight,
   BookmarkPlus,
+  Copy,
   Dices,
   Download,
   FileImage,
@@ -18,6 +20,7 @@ import {
   Minus,
   MonitorPlay,
   Palette,
+  QrCode,
   RotateCcw,
   Settings2,
   ShoppingBag,
@@ -29,6 +32,13 @@ import {
   X,
 } from "lucide-react";
 import { SERIES, SERIES_BY_ID, getPalette } from "../pattern-studio/pattern-data.js";
+import {
+  applyPatternSnapshot,
+  createPatternShareUrl,
+  createPatternSnapshot,
+  decodePatternShare,
+  encodePatternShare,
+} from "../pattern-studio/pattern-share.js";
 
 const COPY = {
   en: {
@@ -347,7 +357,7 @@ function WelcomeWindow({ copy, onOpenStudio, ...windowProps }) {
   });
 }
 
-function PreviewWindow({ preview, studioMode, studioState, ...windowProps }) {
+function PreviewWindow({ preview, previewZoom, studioMode, studioState, actionsRef, ...windowProps }) {
   return jsx(OSWindow, {
     ...windowProps,
     id: "preview",
@@ -367,6 +377,21 @@ function PreviewWindow({ preview, studioMode, studioState, ...windowProps }) {
                   jsx("span", { children: studioState.seriesId.toUpperCase() }),
                   jsx("b", { children: SERIES_BY_ID[studioState.seriesId].name }),
                   jsx("i", { children: `SEED ${String(studioState.seed).padStart(6, "0")}` }),
+                  jsxs("div", {
+                    className: "preview-cloth-actions",
+                    children: [
+                      jsxs("button", {
+                        type: "button",
+                        onClick: () => actionsRef.current?.resetCloth(),
+                        children: [jsx(RotateCcw, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "RESET CLOTH"],
+                      }),
+                      jsxs("button", {
+                        type: "button",
+                        onClick: () => actionsRef.current?.resetFlatCloth(),
+                        children: [jsx(Minimize2, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "FLAT CLOTH"],
+                      }),
+                    ],
+                  }),
                 ],
               }),
           ],
@@ -376,7 +401,14 @@ function PreviewWindow({ preview, studioMode, studioState, ...windowProps }) {
           children: [
             jsx("span", { children: "LIVE CLOTH / WEBGL" }),
             jsx("span", { children: "DRAG TO MOVE · SCROLL TO ZOOM" }),
-            jsxs("span", { className: "preview-zoom", children: [jsx("i", {}), "100%"] }),
+            jsxs("span", {
+              className: "preview-zoom",
+              "aria-label": `Zoom ${previewZoom}%`,
+              children: [
+                jsx("i", { "aria-hidden": "true", children: jsx("b", { style: { width: `${previewZoom}%` } }) }),
+                jsx("output", { children: `${previewZoom}%` }),
+              ],
+            }),
           ],
         }),
       ],
@@ -389,6 +421,22 @@ function StudioField({ label, children, className = "" }) {
     className: `studio-field ${className}`,
     children: [jsx("span", { children: label }), children],
   });
+}
+
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  const field = document.createElement("textarea");
+  field.value = value;
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.opacity = "0";
+  document.body.appendChild(field);
+  field.select();
+  document.execCommand("copy");
+  field.remove();
 }
 
 function StudioWorkspace({
@@ -405,13 +453,62 @@ function StudioWorkspace({
   const palette = getPalette(state);
   const paletteIndex = state.paletteIndexesBySeriesId[state.seriesId];
   const parameters = state.parametersBySeriesId[state.seriesId];
-  const [savedSeeds, setSavedSeeds] = React.useState(() => {
+  const shareCode = React.useMemo(
+    () => encodePatternShare(createPatternSnapshot(state)),
+    [state],
+  );
+  const shareUrl = React.useMemo(() => createPatternShareUrl(shareCode), [shareCode]);
+  const [savedDesigns, setSavedDesigns] = React.useState(() => {
     try {
-      return JSON.parse(window.localStorage.getItem("haptique.savedSeeds") || "[]");
+      const saved = JSON.parse(window.localStorage.getItem("haptique.savedDesigns") || "[]");
+      if (Array.isArray(saved) && saved.length) return saved.filter((item) => typeof item === "string");
+      const legacySeeds = JSON.parse(window.localStorage.getItem("haptique.savedSeeds") || "[]");
+      return Array.isArray(legacySeeds)
+        ? legacySeeds.slice(0, 5).map((seed) =>
+            encodePatternShare(createPatternSnapshot({ ...state, seed: Number(seed) || 0 })),
+          )
+        : [];
     } catch {
       return [];
     }
   });
+  const [shareInput, setShareInput] = React.useState("");
+  const [shareStatus, setShareStatus] = React.useState("");
+  const [showQr, setShowQr] = React.useState(false);
+  const [qrDataUrl, setQrDataUrl] = React.useState("");
+
+  React.useEffect(() => {
+    if (!showQr) return undefined;
+    let cancelled = false;
+    setQrDataUrl("");
+    QRCode.toDataURL(shareUrl, {
+      width: 220,
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: "#0e0e0e", light: "#f8f5ef" },
+    })
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setShareStatus("QR generation failed");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showQr, shareUrl]);
+
+  const savedDesignDetails = React.useMemo(
+    () => savedDesigns.flatMap((code) => {
+      try {
+        const snapshot = decodePatternShare(code);
+        return snapshot.version === 1 ? [{ code, snapshot }] : [];
+      } catch {
+        return [];
+      }
+    }),
+    [savedDesigns],
+  );
 
   const update = (patch) => onStateChange({ ...state, ...patch });
   const updateSeed = (value) => update({ seed: Math.max(0, Math.min(999999, Math.round(Number(value) || 0))) });
@@ -447,10 +544,31 @@ function StudioWorkspace({
       },
     });
   };
-  const saveSeed = () => {
-    const next = [state.seed, ...savedSeeds.filter((seed) => seed !== state.seed)].slice(0, 5);
-    setSavedSeeds(next);
-    window.localStorage.setItem("haptique.savedSeeds", JSON.stringify(next));
+  const applySharedDesign = (snapshot, message = "DESIGN LOADED") => {
+    onStateChange(applyPatternSnapshot(state, snapshot));
+    setShareStatus(message);
+  };
+  const saveDesign = () => {
+    const next = [shareCode, ...savedDesigns.filter((code) => code !== shareCode)].slice(0, 5);
+    setSavedDesigns(next);
+    window.localStorage.setItem("haptique.savedDesigns", JSON.stringify(next));
+    setShareStatus("DESIGN SAVED");
+  };
+  const copyShareHash = async () => {
+    try {
+      await copyText(shareCode);
+      setShareStatus("HASH COPIED");
+    } catch {
+      setShareStatus("COPY FAILED");
+    }
+  };
+  const importSharedDesign = () => {
+    try {
+      applySharedDesign(decodePatternShare(shareInput));
+      setShareInput("");
+    } catch (error) {
+      setShareStatus(error.message);
+    }
   };
   const windowProps = (id, title, className) => ({
     id,
@@ -531,23 +649,85 @@ function StudioWorkspace({
                 jsxs("button", {
                   type: "button",
                   className: "panel-button",
-                  onClick: saveSeed,
+                  onClick: saveDesign,
                   children: [jsx(BookmarkPlus, { size: 12, strokeWidth: 1.8, "aria-hidden": "true" }), "SAVE"],
                 }),
               ],
             }),
-            savedSeeds.length > 0 &&
+            savedDesignDetails.length > 0 &&
               jsxs("div", {
                 className: "saved-seeds",
                 children: [
-                  jsx("span", { children: "SAVED" }),
+                  jsx("span", { children: "SAVED DESIGNS" }),
                   jsx("div", {
-                    children: savedSeeds.map((seed) =>
-                      jsx("button", { type: "button", onClick: () => updateSeed(seed), children: `#${String(seed).padStart(6, "0")}` }, seed),
+                    children: savedDesignDetails.map(({ code, snapshot }) =>
+                      jsxs("button", {
+                        type: "button",
+                        className: "saved-design",
+                        onClick: () => applySharedDesign(snapshot),
+                        title: `Load ${snapshot.seriesId.toUpperCase()} seed ${snapshot.seed}`,
+                        children: [
+                          jsx("b", { children: snapshot.seriesId.toUpperCase() }),
+                          jsx("span", { children: `#${String(snapshot.seed).padStart(6, "0")}` }),
+                          jsx("i", {
+                            className: "saved-design-colors",
+                            "aria-label": "Saved colors",
+                            children: [snapshot.palette.bg, ...snapshot.palette.colors].map((color, index) =>
+                              jsx("em", { style: { backgroundColor: color } }, `${color}-${index}`),
+                            ),
+                          }),
+                        ],
+                      }, code),
                     ),
                   }),
                 ],
               }),
+            jsxs("div", {
+              className: "share-design",
+              children: [
+                jsx("span", { children: "SHARE / RESTORE" }),
+                jsxs("div", {
+                  className: "share-actions",
+                  children: [
+                    jsxs("button", {
+                      type: "button",
+                      onClick: copyShareHash,
+                      children: [jsx(Copy, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "COPY HASH"],
+                    }),
+                    jsxs("button", {
+                      type: "button",
+                      className: showQr ? "is-active" : "",
+                      onClick: () => setShowQr((value) => !value),
+                      children: [jsx(QrCode, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "QR CODE"],
+                    }),
+                  ],
+                }),
+                showQr &&
+                  jsx("div", {
+                    className: "share-qr",
+                    children: qrDataUrl
+                      ? jsx("img", { src: qrDataUrl, alt: `QR code for ${series.name} seed ${state.seed}` })
+                      : jsx("span", { children: "GENERATING QR..." }),
+                  }),
+                jsxs("div", {
+                  className: "share-import",
+                  children: [
+                    jsx("input", {
+                      type: "text",
+                      value: shareInput,
+                      onChange: (event) => setShareInput(event.target.value),
+                      onKeyDown: (event) => {
+                        if (event.key === "Enter") importSharedDesign();
+                      },
+                      placeholder: "PASTE HASH OR LINK",
+                      "aria-label": "Paste a design hash or share link",
+                    }),
+                    jsx("button", { type: "button", onClick: importSharedDesign, children: "LOAD" }),
+                  ],
+                }),
+                shareStatus && jsx("output", { className: "share-status", children: shareStatus }),
+              ],
+            }),
           ],
         }),
       }),
@@ -639,16 +819,6 @@ function StudioWorkspace({
                   type: "button",
                   onClick: () => actionsRef.current?.exportCloth(),
                   children: [jsx(FileImage, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "3D PNG"],
-                }),
-                jsxs("button", {
-                  type: "button",
-                  onClick: () => actionsRef.current?.resetCloth(),
-                  children: [jsx(RotateCcw, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "RESET CLOTH"],
-                }),
-                jsxs("button", {
-                  type: "button",
-                  onClick: () => actionsRef.current?.resetFlatCloth(),
-                  children: [jsx(Minimize2, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "LAY FLAT"],
                 }),
               ],
             }),
@@ -785,7 +955,7 @@ function MobileDock({ onOpenStudio }) {
   });
 }
 
-export function OSShell({ preview, studioState, onStudioStateChange, studioActionsRef }) {
+export function OSShell({ preview, previewZoom, studioState, onStudioStateChange, studioActionsRef }) {
   const [windows, setWindows] = React.useState({
     welcome: "open",
     preview: "open",
@@ -895,8 +1065,10 @@ export function OSShell({ preview, studioState, onStudioStateChange, studioActio
           }),
           jsx(PreviewWindow, {
             preview,
+            previewZoom,
             studioMode,
             studioState,
+            actionsRef: studioActionsRef,
             resetPositionKey: previewResetKey,
             status: windows.preview,
             active: active === "preview",
