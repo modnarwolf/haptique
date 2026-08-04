@@ -138,7 +138,8 @@ a:focus-visible {
 }
 
 .primary-nav a:hover,
-.primary-nav a:focus-visible {
+.primary-nav a:focus-visible,
+.primary-nav a.is-active {
   color: var(--ink);
   background: var(--green);
 }
@@ -2113,7 +2114,8 @@ a:focus-visible {
     border-right: 0;
   }
 
-  .mobile-dock a:first-child {
+  .mobile-dock a.is-active,
+  .mobile-dock button.is-active {
     color: var(--ink);
     background: var(--green);
   }
@@ -2135,6 +2137,181 @@ a:focus-visible {
 }
 
 /* Personalization */
+.archive-window {
+  top: 8%;
+  left: calc(50% - 310px);
+  width: 620px;
+  height: min(82%, 650px);
+}
+
+.archive-content {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 0.8fr 1.2fr;
+  min-height: 0;
+  background: var(--paper-bright);
+}
+
+.archive-heading {
+  padding: 30px;
+  background: var(--yellow);
+  border-right: var(--border);
+}
+
+.archive-heading p {
+  margin: 0 0 25px;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.archive-heading h2 {
+  margin: 0 0 22px;
+  font: 900 clamp(28px, 3vw, 43px)/0.92 var(--font-sans);
+  letter-spacing: -0.055em;
+}
+
+.archive-heading span {
+  color: #403b35;
+  font: 10px/1.6 var(--font-mono);
+}
+
+.archive-series-list {
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+}
+
+.archive-series-list button {
+  display: grid;
+  width: 100%;
+  min-height: 66px;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  color: var(--ink);
+  text-align: left;
+  background: transparent;
+  border-bottom: 1px solid rgba(14, 14, 14, 0.2);
+  cursor: pointer;
+}
+
+.archive-series-list button:hover {
+  background: var(--green);
+}
+
+.archive-series-list button > span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.archive-series-list b {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 800 15px/1 var(--font-sans);
+}
+
+.archive-series-list small {
+  color: var(--blue);
+  font: 8px/1 var(--font-mono);
+}
+
+.archive-series-list i {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 7px;
+  font-style: normal;
+}
+
+.about-window {
+  top: 12%;
+  left: calc(50% - 240px);
+  width: 480px;
+  height: min(72%, 520px);
+}
+
+.about-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: clamp(25px, 3vw, 42px);
+  background:
+    linear-gradient(90deg, transparent calc(100% - 20px), rgba(14, 14, 14, 0.05) calc(100% - 20px)),
+    var(--paper-bright);
+}
+
+.about-kicker {
+  margin: 0 0 22px;
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+
+.about-content h2 {
+  max-width: 390px;
+  margin: 0;
+  font: 900 clamp(30px, 3.2vw, 48px)/0.93 var(--font-sans);
+  letter-spacing: -0.055em;
+}
+
+.about-copy {
+  display: grid;
+  gap: 12px;
+  max-width: 390px;
+  margin-top: 30px;
+  color: #373431;
+  font: 11px/1.65 var(--font-mono);
+}
+
+.about-copy p {
+  margin: 0;
+}
+
+.about-signoff {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 22px;
+  border-top: var(--border);
+}
+
+.about-signoff > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.about-signoff i {
+  width: 7px;
+  height: 7px;
+  background: var(--green);
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+}
+
+.about-signoff a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  color: var(--paper-bright);
+  background: var(--ink);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.about-signoff a:hover {
+  color: var(--ink);
+  background: var(--green);
+}
+
 .settings-window {
   top: 6%;
   left: calc(50% - 280px);
@@ -2501,6 +2678,38 @@ a:focus-visible {
 
   .settings-window {
     order: 0;
+  }
+
+  .about-window {
+    order: 0;
+    min-height: 500px;
+  }
+
+  .archive-window {
+    order: 0;
+    min-height: 620px;
+  }
+
+  .archive-content {
+    grid-template-columns: 1fr;
+  }
+
+  .archive-heading {
+    padding: 24px;
+    border-right: 0;
+    border-bottom: var(--border);
+  }
+
+  .archive-heading h2 {
+    font-size: 36px;
+  }
+
+  .about-content {
+    padding: 25px 22px;
+  }
+
+  .about-content h2 {
+    font-size: clamp(34px, 10vw, 48px);
   }
 
   .settings-content {

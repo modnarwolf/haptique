@@ -125,8 +125,17 @@ const SHELL_COPY = {
       welcome: "WELCOME.TXT", preview: "PREVIEW.EXE", series: "SERIES.SELECT",
       shopSeries: "SHOP.SELECT", curated: "CURATED.EXE", irl: "IRL.EXE",
       seed: "SEED.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTES.CFG",
-      export: "EXPORT.ORDER", settings: "SETTINGS.CFG",
+      export: "EXPORT.ORDER", settings: "SETTINGS.CFG", about: "ABOUT.TXT", archive: "ARCHIVE.DIR",
     },
+    aboutKicker: "HAPTIQUE / ABOUT",
+    aboutTitle: "CREATIVE SOFTWARE FOR REAL THINGS.",
+    aboutBody: [
+      "Haptique is a generative design studio for creating original patterns and carrying them into physical objects.",
+      "Explore an algorithmic series, tune its color and structure, then save, share, or turn the result into a made-to-order piece.",
+    ],
+    archiveTitle: "GENERATOR ARCHIVE",
+    archiveIntro: "Browse the complete collection of algorithmic series. Choose one to open it directly in Studio.",
+    openSeries: "OPEN SERIES",
     controls: { minimize: "Minimize", maximize: "Maximize", restore: "Restore", close: "Close" },
     themeNames: { auto: "AUTO", apple: "APPLE", windows: "WINDOWS" },
     backgroundNames: { haptique: "HAPTIQUE", sunset: "SUNSET", blueprint: "BLUEPRINT", mono: "MONO" },
@@ -138,8 +147,17 @@ const SHELL_COPY = {
       welcome: "BIENVENUE.TXT", preview: "APERÇU.EXE", series: "SÉRIE.SELECT",
       shopSeries: "BOUTIQUE.SELECT", curated: "SÉLECTION.EXE", irl: "RÉEL.EXE",
       seed: "GRAINE.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTS.CFG",
-      export: "EXPORTER.ORDER", settings: "RÉGLAGES.CFG",
+      export: "EXPORTER.ORDER", settings: "RÉGLAGES.CFG", about: "À_PROPOS.TXT", archive: "ARCHIVES.DIR",
     },
+    aboutKicker: "HAPTIQUE / À PROPOS",
+    aboutTitle: "LOGICIEL CRÉATIF POUR OBJETS RÉELS.",
+    aboutBody: [
+      "Haptique est un studio de design génératif qui crée des motifs originaux et les transpose dans des objets physiques.",
+      "Explorez une série algorithmique, ajustez ses couleurs et sa structure, puis enregistrez, partagez ou fabriquez votre création à la demande.",
+    ],
+    archiveTitle: "ARCHIVES DES GÉNÉRATEURS",
+    archiveIntro: "Parcourez toute la collection de séries algorithmiques. Choisissez-en une pour l’ouvrir directement dans le Studio.",
+    openSeries: "OUVRIR LA SÉRIE",
     controls: { minimize: "Réduire", maximize: "Agrandir", restore: "Restaurer", close: "Fermer" },
     themeNames: { auto: "AUTO", apple: "APPLE", windows: "WINDOWS" },
     backgroundNames: { haptique: "HAPTIQUE", sunset: "COUCHER DE SOLEIL", blueprint: "PLAN BLEU", mono: "MONO" },
@@ -151,8 +169,17 @@ const SHELL_COPY = {
       welcome: "BIENVENIDA.TXT", preview: "VISTA_PREVIA.EXE", series: "SERIE.SELECT",
       shopSeries: "TIENDA.SELECT", curated: "SELECCIÓN.EXE", irl: "REAL.EXE",
       seed: "SEMILLA.EXE", palette: "PALETA.DAT", attributes: "ATRIBUTOS.CFG",
-      export: "EXPORTAR.ORDER", settings: "AJUSTES.CFG",
+      export: "EXPORTAR.ORDER", settings: "AJUSTES.CFG", about: "ACERCA_DE.TXT", archive: "ARCHIVO.DIR",
     },
+    aboutKicker: "HAPTIQUE / ACERCA DE",
+    aboutTitle: "SOFTWARE CREATIVO PARA OBJETOS REALES.",
+    aboutBody: [
+      "Haptique es un estudio de diseño generativo para crear patrones originales y llevarlos a objetos físicos.",
+      "Explora una serie algorítmica, ajusta su color y estructura, y después guarda, comparte o convierte el resultado en una pieza hecha bajo pedido.",
+    ],
+    archiveTitle: "ARCHIVO DE GENERADORES",
+    archiveIntro: "Explora la colección completa de series algorítmicas. Elige una para abrirla directamente en el Estudio.",
+    openSeries: "ABRIR SERIE",
     controls: { minimize: "Minimizar", maximize: "Maximizar", restore: "Restaurar", close: "Cerrar" },
     themeNames: { auto: "AUTO", apple: "APPLE", windows: "WINDOWS" },
     backgroundNames: { haptique: "HAPTIQUE", sunset: "ATARDECER", blueprint: "PLANO AZUL", mono: "MONO" },
@@ -164,8 +191,17 @@ const SHELL_COPY = {
       welcome: "欢迎.TXT", preview: "预览.EXE", series: "系列.SELECT",
       shopSeries: "商店.SELECT", curated: "精选.EXE", irl: "实物.EXE",
       seed: "种子.EXE", palette: "调色板.DAT", attributes: "属性.CFG",
-      export: "导出.ORDER", settings: "设置.CFG",
+      export: "导出.ORDER", settings: "设置.CFG", about: "关于.TXT", archive: "档案.DIR",
     },
+    aboutKicker: "HAPTIQUE / 关于",
+    aboutTitle: "为真实物品而生的创意软件。",
+    aboutBody: [
+      "Haptique 是一个生成式设计工作室，用于创作原创图案并将它们应用到实体物品中。",
+      "探索算法系列，调整颜色和结构，然后保存、分享设计，或将成果制作成按需生产的作品。",
+    ],
+    archiveTitle: "生成器档案",
+    archiveIntro: "浏览完整的算法系列。选择一个系列即可直接在工作室中打开。",
+    openSeries: "打开系列",
     controls: { minimize: "最小化", maximize: "最大化", restore: "还原", close: "关闭" },
     themeNames: { auto: "自动", apple: "苹果", windows: "视窗" },
     backgroundNames: { haptique: "HAPTIQUE", sunset: "日落", blueprint: "蓝图", mono: "单色" },
@@ -243,6 +279,7 @@ const WINDOW_ICONS = {
   attributes: Settings2,
   export: Download,
   settings: Settings2,
+  about: Info,
 };
 
 function AppGlyph({ id, size = 14 }) {
@@ -329,7 +366,7 @@ function CartIcon() {
   return jsx(ShoppingCart, { className: "cart-icon", size: 19, strokeWidth: 1.8, "aria-hidden": "true" });
 }
 
-function SiteHeader({ copy, cartCount, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, onOpenShop, onHome }) {
+function SiteHeader({ copy, activePage, cartCount, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, onOpenShop, onOpenArchive, onOpenAbout, onHome }) {
   return jsxs("header", {
     className: "site-header",
     children: [
@@ -351,9 +388,13 @@ function SiteHeader({ copy, cartCount, menuOpen, onMenuToggle, onMenuClose, onOp
         children: APP_LINKS.map(([id]) =>
           jsx("a", {
             href: `#${id}`,
+            className: activePage === id ? "is-active" : "",
+            "aria-current": activePage === id ? "page" : undefined,
             onClick: () => {
               if (id === "studio") onOpenStudio();
               if (id === "shop") onOpenShop();
+              if (id === "archive") onOpenArchive();
+              if (id === "about") onOpenAbout();
               onMenuClose();
             },
             children: copy.apps[id],
@@ -567,6 +608,73 @@ function SettingsWindow({ copy, themePreference, detectedTheme, background, loca
                 "aria-pressed": locale === value,
                 children: label,
               }, value)),
+            }),
+          ],
+        }),
+      ],
+    }),
+  });
+}
+
+function ArchiveWindow({ copy, onOpenSeries, ...windowProps }) {
+  return jsx(OSWindow, {
+    ...windowProps,
+    id: "archive",
+    title: copy.windows.archive,
+    controls: copy.controls,
+    className: "archive-window",
+    children: jsxs("div", {
+      className: "archive-content",
+      children: [
+        jsxs("div", {
+          className: "archive-heading",
+          children: [
+            jsx("p", { children: `HAPTIQUE / ${copy.apps.archive}` }),
+            jsx("h2", { children: copy.archiveTitle }),
+            jsx("span", { children: copy.archiveIntro }),
+          ],
+        }),
+        jsx("div", {
+          className: "archive-series-list",
+          children: SERIES.map((series, index) => jsxs("button", {
+            type: "button",
+            onClick: () => onOpenSeries(series.id),
+            children: [
+              jsx("span", { children: String(index + 1).padStart(2, "0") }),
+              jsxs("b", { children: [jsx("small", { children: series.id.toUpperCase() }), series.name] }),
+              jsxs("i", { children: [copy.openSeries, jsx(ArrowRight, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" })] }),
+            ],
+          }, series.id)),
+        }),
+      ],
+    }),
+  });
+}
+
+function AboutWindow({ copy, onOpenStudio, ...windowProps }) {
+  return jsx(OSWindow, {
+    ...windowProps,
+    id: "about",
+    title: copy.windows.about,
+    controls: copy.controls,
+    className: "about-window",
+    children: jsxs("div", {
+      className: "about-content",
+      children: [
+        jsx("p", { className: "about-kicker", children: copy.aboutKicker }),
+        jsx("h2", { children: copy.aboutTitle }),
+        jsx("div", {
+          className: "about-copy",
+          children: copy.aboutBody.map((paragraph) => jsx("p", { children: paragraph }, paragraph)),
+        }),
+        jsxs("div", {
+          className: "about-signoff",
+          children: [
+            jsxs("span", { children: [jsx("i", { "aria-hidden": "true" }), "HAPTIQUE OS / 001"] }),
+            jsxs("a", {
+              href: "#studio",
+              onClick: onOpenStudio,
+              children: [copy.openStudio, jsx(ArrowRight, { size: 14, strokeWidth: 1.8, "aria-hidden": "true" })],
             }),
           ],
         }),
@@ -1421,7 +1529,7 @@ function ShopWorkspace({
   });
 }
 
-function StartMenu({ copy, open, onOpenWindow, onOpenStudio, onOpenShop }) {
+function StartMenu({ copy, open, onOpenWindow, onOpenStudio, onOpenShop, onOpenArchive, onOpenAbout }) {
   if (!open) return null;
   return jsxs("div", {
     className: "start-menu",
@@ -1442,7 +1550,7 @@ function StartMenu({ copy, open, onOpenWindow, onOpenStudio, onOpenShop }) {
                 className: "start-app",
                 href: `#${id}`,
                 role: "menuitem",
-                onClick: id === "studio" ? onOpenStudio : id === "shop" ? onOpenShop : undefined,
+                onClick: id === "studio" ? onOpenStudio : id === "shop" ? onOpenShop : id === "archive" ? onOpenArchive : id === "about" ? onOpenAbout : undefined,
                 children: [jsx("span", { className: "start-app-icon", children: jsx(AppGlyph, { id, size: 14 }) }), jsx("b", { children: copy.apps[id] }), jsx(ArrowRight, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" })],
               },
               id,
@@ -1458,11 +1566,11 @@ function StartMenu({ copy, open, onOpenWindow, onOpenStudio, onOpenShop }) {
   });
 }
 
-function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onStart, onRestore, onTaskWindow, onLocale, onOpenSettings, onOpenStudio, onOpenShop }) {
+function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onStart, onRestore, onTaskWindow, onLocale, onOpenSettings, onOpenStudio, onOpenShop, onOpenArchive, onOpenAbout }) {
   return jsxs("footer", {
     className: "taskbar",
     children: [
-      jsx(StartMenu, { copy, open: startOpen, onOpenWindow: onRestore, onOpenStudio, onOpenShop }),
+      jsx(StartMenu, { copy, open: startOpen, onOpenWindow: onRestore, onOpenStudio, onOpenShop, onOpenArchive, onOpenAbout }),
       jsxs("button", {
         type: "button",
         className: startOpen ? "start-button is-active" : "start-button",
@@ -1527,7 +1635,7 @@ function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onSta
   });
 }
 
-function MobileDock({ copy, onOpenStudio, onOpenShop, onOpenSettings }) {
+function MobileDock({ copy, activePage, onOpenStudio, onOpenShop, onOpenArchive, onOpenSettings }) {
   return jsxs("nav", {
     className: "mobile-dock",
     "aria-label": "Mobile navigation",
@@ -1535,12 +1643,15 @@ function MobileDock({ copy, onOpenStudio, onOpenShop, onOpenSettings }) {
       ...APP_LINKS.slice(0, 3).map(([id]) =>
         jsxs("a", {
           href: `#${id}`,
-          onClick: id === "studio" ? onOpenStudio : id === "shop" ? onOpenShop : undefined,
+          className: activePage === id ? "is-active" : "",
+          "aria-current": activePage === id ? "page" : undefined,
+          onClick: id === "studio" ? onOpenStudio : id === "shop" ? onOpenShop : onOpenArchive,
           children: [jsx("span", { children: jsx(AppGlyph, { id, size: 15 }) }), copy.apps[id]],
         }, id),
       ),
       jsxs("button", {
         type: "button",
+        className: activePage === "settings" ? "is-active" : "",
         onClick: onOpenSettings,
         "aria-label": copy.settings,
         children: [jsx("span", { children: jsx(Settings, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }) }), copy.settings],
@@ -1553,6 +1664,8 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   const [windows, setWindows] = React.useState({
     welcome: "open",
     preview: "open",
+    about: "closed",
+    archive: "closed",
     series: "closed",
     shopSeries: "closed",
     curated: "closed",
@@ -1567,6 +1680,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   const [maximized, setMaximized] = React.useState(false);
   const [previewResetKey, setPreviewResetKey] = React.useState(0);
   const [workspaceMode, setWorkspaceMode] = React.useState("home");
+  const [activePage, setActivePage] = React.useState("home");
   const [cartItems, setCartItems] = React.useState([]);
   const [startOpen, setStartOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -1612,6 +1726,23 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     }
     if (windows[id] === "open") setActive(id);
   };
+  const openSoloWindow = (id, page) => {
+    setWindows((current) => Object.fromEntries(
+      Object.entries(current).map(([windowId, status]) => [
+        windowId,
+        windowId === id ? "open" : status === "closed" ? "closed" : "minimized",
+      ]),
+    ));
+    setActive(id);
+    setActivePage(page);
+    setStartOpen(false);
+    setMenuOpen(false);
+    window.requestAnimationFrame(() => {
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        document.querySelector(`[data-window-id="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  };
   const openStudio = () => {
     setWorkspaceMode("studio");
     setMaximized(false);
@@ -1620,6 +1751,9 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       ...current,
       welcome: "minimized",
       preview: "open",
+      about: "closed",
+      archive: "closed",
+      settings: "closed",
       series: "open",
       shopSeries: "closed",
       curated: "closed",
@@ -1630,7 +1764,9 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       export: "open",
     }));
     setActive("preview");
+    setActivePage("studio");
     setStartOpen(false);
+    setMenuOpen(false);
   };
   const openShop = () => {
     setWorkspaceMode("shop");
@@ -1640,6 +1776,9 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       ...current,
       welcome: "minimized",
       preview: "open",
+      about: "closed",
+      archive: "closed",
+      settings: "closed",
       series: "closed",
       seed: "closed",
       palette: "closed",
@@ -1650,7 +1789,9 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       irl: "open",
     }));
     setActive("curated");
+    setActivePage("shop");
     setStartOpen(false);
+    setMenuOpen(false);
   };
   const openHome = () => {
     setWorkspaceMode("home");
@@ -1659,6 +1800,9 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       ...current,
       welcome: "open",
       preview: "open",
+      about: "closed",
+      archive: "closed",
+      settings: "closed",
       series: "closed",
       shopSeries: "closed",
       curated: "closed",
@@ -1669,14 +1813,21 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       export: "closed",
     }));
     setActive("preview");
+    setActivePage("home");
+    setMenuOpen(false);
   };
   const openSettings = () => {
-    setWindowStatus("settings", "open");
-    window.requestAnimationFrame(() => {
-      if (window.matchMedia("(max-width: 760px)").matches) {
-        document.querySelector('[data-window-id="settings"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    });
+    openSoloWindow("settings", "settings");
+  };
+  const openAbout = () => {
+    openSoloWindow("about", "about");
+  };
+  const openArchive = () => {
+    openSoloWindow("archive", "archive");
+  };
+  const openArchivedSeries = (seriesId) => {
+    onStudioStateChange({ ...studioState, seriesId });
+    openStudio();
   };
 
   React.useEffect(() => {
@@ -1692,12 +1843,15 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     children: [
       jsx(SiteHeader, {
         copy,
+        activePage,
         cartCount: cartItems.length,
         menuOpen,
         onMenuToggle: () => setMenuOpen((value) => !value),
         onMenuClose: () => setMenuOpen(false),
         onOpenStudio: openStudio,
         onOpenShop: openShop,
+        onOpenArchive: openArchive,
+        onOpenAbout: openAbout,
         onHome: openHome,
       }),
       jsxs("main", {
@@ -1706,6 +1860,24 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         children: [
           jsx("div", { className: "desktop-watermark", "aria-hidden": "true", children: "H/01" }),
           jsx("p", { className: "desktop-coordinate", children: "34.0522° N / 118.2437° W" }),
+          jsx(ArchiveWindow, {
+            copy,
+            onOpenSeries: openArchivedSeries,
+            status: windows.archive,
+            active: active === "archive",
+            onFocus: () => setActive("archive"),
+            onMinimize: () => setWindowStatus("archive", "minimized"),
+            onClose: () => setWindowStatus("archive", "closed"),
+          }),
+          jsx(AboutWindow, {
+            copy,
+            onOpenStudio: openStudio,
+            status: windows.about,
+            active: active === "about",
+            onFocus: () => setActive("about"),
+            onMinimize: () => setWindowStatus("about", "minimized"),
+            onClose: () => setWindowStatus("about", "closed"),
+          }),
           jsx(SettingsWindow, {
             copy,
             themePreference,
@@ -1787,8 +1959,17 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         onOpenSettings: openSettings,
         onOpenStudio: openStudio,
         onOpenShop: openShop,
+        onOpenArchive: openArchive,
+        onOpenAbout: openAbout,
       }),
-      jsx(MobileDock, { copy, onOpenStudio: openStudio, onOpenShop: openShop, onOpenSettings: openSettings }),
+      jsx(MobileDock, {
+        copy,
+        activePage,
+        onOpenStudio: openStudio,
+        onOpenShop: openShop,
+        onOpenArchive: openArchive,
+        onOpenSettings: openSettings,
+      }),
     ],
   });
 }
