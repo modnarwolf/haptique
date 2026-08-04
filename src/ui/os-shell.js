@@ -1,5 +1,33 @@
 import * as React from "react";
 import { jsx, jsxs } from "react/jsx-runtime";
+import {
+  Archive,
+  ArrowRight,
+  BookmarkPlus,
+  Dices,
+  Download,
+  FileImage,
+  FileText,
+  Globe,
+  Grid3X3,
+  Hash,
+  Info,
+  Maximize2,
+  Menu,
+  Minimize2,
+  Minus,
+  MonitorPlay,
+  Palette,
+  RotateCcw,
+  Settings2,
+  ShoppingBag,
+  ShoppingCart,
+  Shapes,
+  Sparkles,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
 import { SERIES, SERIES_BY_ID, getPalette } from "../pattern-studio/pattern-data.js";
 
 const COPY = {
@@ -8,7 +36,6 @@ const COPY = {
     headline: ["MAKE SOMETHING", "THAT’S NEVER", "BEEN MADE"],
     features: ["algorithmic art", "soft goods", "made to order", "1of1 or 1toMany"],
     openStudio: "OPEN STUDIO",
-    touch: "p l e a s e   t o u c h  ~ ^ - ^ ~",
     start: "START",
     local: "LOCAL",
     soundOn: "Sound on",
@@ -19,7 +46,6 @@ const COPY = {
     headline: ["CRÉEZ QUELQUE", "CHOSE QUI N’A", "JAMAIS EXISTÉ"],
     features: ["art algorithmique", "objets souples", "fabriqué à la demande", "1sur1 ou 1àPlusieurs"],
     openStudio: "OUVRIR LE STUDIO",
-    touch: "t o u c h e z   s ’ i l   v o u s   p l a î t",
     start: "DÉMARRER",
     local: "LOCAL",
     soundOn: "Son activé",
@@ -33,6 +59,28 @@ const APP_LINKS = [
   ["archive", "ARCHIVE"],
   ["about", "ABOUT"],
 ];
+
+const APP_ICONS = {
+  studio: Sparkles,
+  shop: ShoppingBag,
+  archive: Archive,
+  about: Info,
+};
+
+const WINDOW_ICONS = {
+  welcome: FileText,
+  preview: MonitorPlay,
+  series: Grid3X3,
+  seed: Hash,
+  palette: Palette,
+  attributes: Settings2,
+  export: Download,
+};
+
+function AppGlyph({ id, size = 14 }) {
+  const Icon = APP_ICONS[id] || WINDOW_ICONS[id] || FileText;
+  return jsx(Icon, { size, strokeWidth: 1.8, "aria-hidden": "true" });
+}
 
 function useLocalClock() {
   const [now, setNow] = React.useState(() => new Date());
@@ -110,11 +158,7 @@ function Brand({ onHome }) {
 }
 
 function CartIcon() {
-  return jsxs("span", {
-    className: "cart-icon",
-    "aria-hidden": "true",
-    children: [jsx("i", {}), jsx("b", {}), jsx("b", {})],
-  });
+  return jsx(ShoppingCart, { className: "cart-icon", size: 19, strokeWidth: 1.8, "aria-hidden": "true" });
 }
 
 function SiteHeader({ copy, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, onHome }) {
@@ -127,7 +171,9 @@ function SiteHeader({ copy, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, o
         onClick: onMenuToggle,
         "aria-expanded": menuOpen,
         "aria-label": "Toggle navigation",
-        children: jsx("span", { children: menuOpen ? "×" : "≡" }),
+        children: menuOpen
+          ? jsx(X, { size: 21, strokeWidth: 1.8, "aria-hidden": "true" })
+          : jsx(Menu, { size: 21, strokeWidth: 1.8, "aria-hidden": "true" }),
       }),
       jsx(Brand, { onHome }),
       jsx("p", { className: "brand-tagline", children: copy.tagline }),
@@ -179,15 +225,34 @@ function OSWindow({
   onMinimize,
   onClose,
   onMaximize,
+  resetPositionKey,
   children,
 }) {
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
+  const [recentering, setRecentering] = React.useState(false);
   const dragRef = React.useRef(null);
+  const previousResetKey = React.useRef(resetPositionKey);
+  const TitleIcon = WINDOW_ICONS[id] || FileText;
+
+  React.useEffect(() => {
+    if (resetPositionKey === undefined || resetPositionKey === previousResetKey.current) return;
+    previousResetKey.current = resetPositionKey;
+    setRecentering(true);
+    const frame = window.requestAnimationFrame(() => setOffset({ x: 0, y: 0 }));
+    const timer = window.setTimeout(() => setRecentering(false), 230);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [resetPositionKey]);
 
   const correctedDrag = (event) => {
     const start = dragRef.current;
     if (!start) return;
-    setOffset({ x: start.x + event.clientX - start.pointerX, y: start.y + event.clientY - start.pointerY });
+    setOffset({
+      x: Math.round(start.x + event.clientX - start.pointerX),
+      y: Math.round(start.y + event.clientY - start.pointerY),
+    });
   };
   const startDrag = (event) => {
     if (maximized || event.button !== 0) return;
@@ -200,11 +265,14 @@ function OSWindow({
   };
 
   return jsxs("section", {
-    className: `os-window ${className} ${active ? "is-active" : ""} ${maximized ? "is-maximized" : ""} ${status !== "open" ? "is-hidden" : ""}`,
-    style: maximized ? undefined : { "--drag-x": `${offset.x}px`, "--drag-y": `${offset.y}px` },
+    className: `os-window ${className} ${active ? "is-active" : ""} ${maximized ? "is-maximized" : ""} ${recentering ? "is-recentering" : ""} is-${status} ${status !== "open" ? "is-hidden" : ""}`,
+    style: maximized || (offset.x === 0 && offset.y === 0)
+      ? undefined
+      : { transform: `translate(${offset.x}px, ${offset.y}px)` },
     onPointerDown: onFocus,
     "data-window-id": id,
     "aria-hidden": status !== "open",
+    inert: status !== "open",
     children: [
       jsxs("div", {
         className: "window-titlebar",
@@ -216,19 +284,29 @@ function OSWindow({
         children: [
           jsxs("div", {
             className: "window-title",
-            children: [jsx("span", { className: "title-file-icon", "aria-hidden": "true" }), title],
+            children: [jsx(TitleIcon, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" }), title],
           }),
           jsxs("div", {
             className: "window-actions",
             children: [
-              jsx(WindowButton, { label: `Minimize ${title}`, glyph: "_", onClick: onMinimize }),
+              jsx(WindowButton, {
+                label: `Minimize ${title}`,
+                glyph: jsx(Minus, { size: 14, strokeWidth: 1.8, "aria-hidden": "true" }),
+                onClick: onMinimize,
+              }),
               onMaximize &&
                 jsx(WindowButton, {
                   label: maximized ? `Restore ${title}` : `Maximize ${title}`,
-                  glyph: maximized ? "❐" : "□",
+                  glyph: maximized
+                    ? jsx(Minimize2, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" })
+                    : jsx(Maximize2, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" }),
                   onClick: onMaximize,
                 }),
-              jsx(WindowButton, { label: `Close ${title}`, glyph: "×", onClick: onClose }),
+              jsx(WindowButton, {
+                label: `Close ${title}`,
+                glyph: jsx(X, { size: 14, strokeWidth: 1.8, "aria-hidden": "true" }),
+                onClick: onClose,
+              }),
             ],
           }),
         ],
@@ -251,7 +329,7 @@ function WelcomeWindow({ copy, onOpenStudio, ...windowProps }) {
         jsxs("h1", {
           children: [
             copy.headline.map((line) => jsx("span", { children: line }, line)),
-            jsx("i", { "aria-hidden": "true", children: "✣" }),
+            jsx("i", { "aria-hidden": "true", children: jsx(Sparkles, { size: 18, strokeWidth: 1.8 }) }),
           ],
         }),
         jsx("ul", {
@@ -262,14 +340,14 @@ function WelcomeWindow({ copy, onOpenStudio, ...windowProps }) {
           className: "primary-button",
           href: "#studio",
           onClick: onOpenStudio,
-          children: [jsx("span", { "aria-hidden": "true", children: ">" }), copy.openStudio],
+          children: [jsx(ArrowRight, { size: 16, strokeWidth: 1.8, "aria-hidden": "true" }), copy.openStudio],
         }),
       ],
     }),
   });
 }
 
-function PreviewWindow({ copy, preview, studioMode, studioState, ...windowProps }) {
+function PreviewWindow({ preview, studioMode, studioState, ...windowProps }) {
   return jsx(OSWindow, {
     ...windowProps,
     id: "preview",
@@ -278,10 +356,6 @@ function PreviewWindow({ copy, preview, studioMode, studioState, ...windowProps 
     children: jsxs("div", {
       className: "preview-content",
       children: [
-        jsxs("div", {
-          className: "preview-message",
-          children: [jsx("span", { className: "status-dot" }), jsx("span", { children: copy.touch })],
-        }),
         jsxs("div", {
           className: "cloth-viewport",
           children: [
@@ -448,13 +522,18 @@ function StudioWorkspace({
             jsxs("div", {
               className: "button-pair",
               children: [
-                jsx("button", {
+                jsxs("button", {
                   type: "button",
                   className: "panel-button is-accent",
                   onClick: () => updateSeed(Math.floor(Math.random() * 1000000)),
-                  children: "RANDOMIZE",
+                  children: [jsx(Dices, { size: 12, strokeWidth: 1.8, "aria-hidden": "true" }), "RANDOMIZE"],
                 }),
-                jsx("button", { type: "button", className: "panel-button", onClick: saveSeed, children: "SAVE" }),
+                jsxs("button", {
+                  type: "button",
+                  className: "panel-button",
+                  onClick: saveSeed,
+                  children: [jsx(BookmarkPlus, { size: 12, strokeWidth: 1.8, "aria-hidden": "true" }), "SAVE"],
+                }),
               ],
             }),
             savedSeeds.length > 0 &&
@@ -551,16 +630,32 @@ function StudioWorkspace({
             jsxs("div", {
               className: "export-grid",
               children: [
-                jsx("button", { type: "button", onClick: () => actionsRef.current?.exportFlatPattern(), children: "FLAT PNG" }),
-                jsx("button", { type: "button", onClick: () => actionsRef.current?.exportCloth(), children: "3D PNG" }),
-                jsx("button", { type: "button", onClick: () => actionsRef.current?.resetCloth(), children: "RESET CLOTH" }),
-                jsx("button", { type: "button", onClick: () => actionsRef.current?.resetFlatCloth(), children: "LAY FLAT" }),
+                jsxs("button", {
+                  type: "button",
+                  onClick: () => actionsRef.current?.exportFlatPattern(),
+                  children: [jsx(Download, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "FLAT PNG"],
+                }),
+                jsxs("button", {
+                  type: "button",
+                  onClick: () => actionsRef.current?.exportCloth(),
+                  children: [jsx(FileImage, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "3D PNG"],
+                }),
+                jsxs("button", {
+                  type: "button",
+                  onClick: () => actionsRef.current?.resetCloth(),
+                  children: [jsx(RotateCcw, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "RESET CLOTH"],
+                }),
+                jsxs("button", {
+                  type: "button",
+                  onClick: () => actionsRef.current?.resetFlatCloth(),
+                  children: [jsx(Minimize2, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "LAY FLAT"],
+                }),
               ],
             }),
             jsxs("a", {
               className: "continue-button",
               href: "#order",
-              children: [jsx("span", { children: "CONTINUE TO ORDER" }), jsx("b", { children: "→" })],
+              children: [jsx("span", { children: "CONTINUE TO ORDER" }), jsx(ArrowRight, { size: 16, strokeWidth: 1.8, "aria-hidden": "true" })],
             }),
           ],
         }),
@@ -583,7 +678,7 @@ function StartMenu({ open, onOpenWindow, onOpenStudio }) {
         className: "start-menu-content",
         children: [
           jsx("p", { children: "APPLICATIONS" }),
-          APP_LINKS.map(([id, label], index) =>
+          APP_LINKS.map(([id, label]) =>
             jsxs(
               "a",
               {
@@ -591,7 +686,7 @@ function StartMenu({ open, onOpenWindow, onOpenStudio }) {
                 href: `#${id}`,
                 role: "menuitem",
                 onClick: id === "studio" ? onOpenStudio : undefined,
-                children: [jsx("span", { style: { "--app-color": `var(--accent-${index + 1})` } }), jsx("b", { children: label }), jsx("i", { children: "↗" })],
+                children: [jsx("span", { className: "start-app-icon", children: jsx(AppGlyph, { id, size: 14 }) }), jsx("b", { children: label }), jsx(ArrowRight, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" })],
               },
               id,
             ),
@@ -615,7 +710,7 @@ const WINDOW_LABELS = {
   export: "EXPORT.ORDER",
 };
 
-function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onStart, onRestore, onLocale, onOpenStudio }) {
+function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onStart, onRestore, onTaskWindow, onLocale, onOpenStudio }) {
   return jsxs("footer", {
     className: "taskbar",
     children: [
@@ -625,7 +720,7 @@ function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onSta
         className: startOpen ? "start-button is-active" : "start-button",
         onClick: onStart,
         "aria-expanded": startOpen,
-        children: [jsx("span", { className: "start-mark", children: "✣" }), copy.start],
+        children: [jsx("span", { className: "start-mark", children: jsx(Shapes, { size: 14, strokeWidth: 1.8, "aria-hidden": "true" }) }), copy.start],
       }),
       jsx("div", { className: "taskbar-divider" }),
       jsx("div", {
@@ -639,8 +734,8 @@ function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onSta
               {
                 type: "button",
                 className: `${active === id && status === "open" ? "is-active" : ""} ${status === "minimized" ? "is-minimized" : ""}`,
-                onClick: () => onRestore(id),
-                children: [jsx("span", { className: "task-app-icon" }), WINDOW_LABELS[id]],
+                onClick: () => onTaskWindow(id),
+                children: [jsx("span", { className: "task-app-icon", children: jsx(AppGlyph, { id, size: 12 }) }), WINDOW_LABELS[id]],
               },
               id,
             ),
@@ -655,14 +750,16 @@ function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onSta
             onClick: sound.toggle,
             "aria-label": sound.enabled ? copy.soundOn : copy.soundOff,
             "aria-pressed": sound.enabled,
-            children: sound.enabled ? "◖)))" : "◖×",
+            children: sound.enabled
+              ? jsx(Volume2, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" })
+              : jsx(VolumeX, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }),
           }),
           jsxs("button", {
             type: "button",
             className: "language-toggle",
             onClick: onLocale,
             "aria-label": `Change language. Current language ${locale.toUpperCase()}`,
-            children: [jsx("span", { children: "◎" }), locale.toUpperCase()],
+            children: [jsx(Globe, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }), locale.toUpperCase()],
           }),
           jsxs("div", {
             className: "clock",
@@ -678,11 +775,11 @@ function MobileDock({ onOpenStudio }) {
   return jsx("nav", {
     className: "mobile-dock",
     "aria-label": "Mobile navigation",
-    children: APP_LINKS.slice(0, 3).map(([id, label], index) =>
+    children: APP_LINKS.slice(0, 3).map(([id, label]) =>
       jsxs("a", {
         href: `#${id}`,
         onClick: id === "studio" ? onOpenStudio : undefined,
-        children: [jsx("span", { children: index === 0 ? "✣" : index === 1 ? "▣" : "⌁" }), label],
+        children: [jsx("span", { children: jsx(AppGlyph, { id, size: 15 }) }), label],
       }, id),
     ),
   });
@@ -700,6 +797,7 @@ export function OSShell({ preview, studioState, onStudioStateChange, studioActio
   });
   const [active, setActive] = React.useState("preview");
   const [maximized, setMaximized] = React.useState(false);
+  const [previewResetKey, setPreviewResetKey] = React.useState(0);
   const [studioMode, setStudioMode] = React.useState(false);
   const [startOpen, setStartOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -717,9 +815,21 @@ export function OSShell({ preview, studioState, onStudioStateChange, studioActio
     }
     setStartOpen(false);
   };
+  const toggleTaskbarWindow = (id) => {
+    if (windows[id] === "minimized") {
+      setWindowStatus(id, "open");
+      return;
+    }
+    if (windows[id] === "open" && active === id) {
+      setWindowStatus(id, "minimized");
+      return;
+    }
+    if (windows[id] === "open") setActive(id);
+  };
   const openStudio = () => {
     setStudioMode(true);
     setMaximized(false);
+    setPreviewResetKey((value) => value + 1);
     setWindows((current) => ({
       ...current,
       welcome: "minimized",
@@ -784,10 +894,10 @@ export function OSShell({ preview, studioState, onStudioStateChange, studioActio
             onClose: () => setWindowStatus("welcome", "closed"),
           }),
           jsx(PreviewWindow, {
-            copy,
             preview,
             studioMode,
             studioState,
+            resetPositionKey: previewResetKey,
             status: windows.preview,
             active: active === "preview",
             maximized,
@@ -819,6 +929,7 @@ export function OSShell({ preview, studioState, onStudioStateChange, studioActio
         startOpen,
         onStart: () => setStartOpen((value) => !value),
         onRestore: (id) => setWindowStatus(id, "open"),
+        onTaskWindow: toggleTaskbarWindow,
         onLocale: () => setLocale((value) => (value === "en" ? "fr" : "en")),
         onOpenStudio: openStudio,
       }),

@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap");
+
 :root {
   --bone: #ccc4bc;
   --paper: #e8e3dc;
@@ -13,9 +15,9 @@
   --accent-3: var(--pink);
   --accent-4: var(--green);
   --border: 1px solid var(--ink);
-  --shadow: 6px 7px 0 rgba(14, 14, 14, 0.22);
+  --shadow: 0 18px 42px rgba(14, 14, 14, 0.26), 0 4px 12px rgba(14, 14, 14, 0.16);
   --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: "Courier New", Courier, monospace;
+  --font-mono: "IBM Plex Mono", "Courier New", Courier, monospace;
   color: var(--ink);
   font-family: var(--font-mono);
   font-synthesis: none;
@@ -157,48 +159,9 @@ a:focus-visible {
 }
 
 .cart-icon {
-  position: relative;
   display: block;
   width: 19px;
-  height: 18px;
-}
-
-.cart-icon i {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 14px;
-  height: 10px;
-  border: 2px solid currentColor;
-  border-top: 0;
-  transform: skew(-8deg);
-}
-
-.cart-icon::before {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 6px;
-  height: 5px;
-  border-top: 2px solid currentColor;
-  content: "";
-}
-
-.cart-icon b {
-  position: absolute;
-  bottom: 0;
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.cart-icon b:first-of-type {
-  left: 5px;
-}
-
-.cart-icon b:last-of-type {
-  right: 1px;
+  height: 19px;
 }
 
 .mobile-menu-button {
@@ -258,13 +221,16 @@ a:focus-visible {
   background: var(--paper);
   border: var(--border);
   box-shadow: var(--shadow);
-  transform: translate(var(--drag-x, 0), var(--drag-y, 0));
-  transition: opacity 140ms ease, visibility 140ms ease;
+  transform-origin: 50% 50%;
 }
 
 .os-window.is-active {
-  z-index: 20;
-  box-shadow: 8px 9px 0 rgba(14, 14, 14, 0.28);
+  z-index: 100;
+  box-shadow: 0 22px 54px rgba(14, 14, 14, 0.32), 0 5px 15px rgba(14, 14, 14, 0.18);
+}
+
+.os-window.is-recentering {
+  transition: transform 210ms cubic-bezier(0.22, 0.78, 0.24, 1);
 }
 
 .os-window.is-hidden {
@@ -279,6 +245,88 @@ a:focus-visible {
   width: auto !important;
   height: auto !important;
   transform: none;
+}
+
+.os-window.is-maximized.is-active {
+  z-index: 120;
+}
+
+.os-window.is-open:not(.is-maximized) {
+  animation: window-open 180ms cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.os-window.is-maximized:not(.is-hidden) {
+  animation: window-maximize 220ms cubic-bezier(0.2, 0.78, 0.24, 1);
+}
+
+.os-window.is-minimized {
+  visibility: hidden;
+  animation: window-minimize 135ms cubic-bezier(0.4, 0, 0.85, 0.3);
+  transition: visibility 0s linear 135ms;
+}
+
+.os-window.is-closed {
+  visibility: hidden;
+  animation: window-close 105ms ease-in;
+  transition: visibility 0s linear 105ms;
+}
+
+@keyframes window-minimize {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+
+  to {
+    opacity: 0;
+    scale: 0.76;
+  }
+}
+
+@keyframes window-open {
+  0% {
+    opacity: 0;
+    scale: 0.9;
+  }
+
+  72% {
+    opacity: 1;
+    scale: 1.014;
+  }
+
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes window-maximize {
+  0% {
+    opacity: 0.92;
+    scale: 0.94;
+  }
+
+  68% {
+    opacity: 1;
+    scale: 1.018;
+  }
+
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes window-close {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+
+  to {
+    opacity: 0;
+    scale: 0.96;
+  }
 }
 
 .window-titlebar {
@@ -304,20 +352,17 @@ a:focus-visible {
   align-items: center;
   gap: 8px;
   padding-left: 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
 
-.title-file-icon {
-  width: 9px;
-  height: 11px;
-  background: var(--yellow);
-  border: 1px solid currentColor;
+.window-title .lucide {
+  color: var(--yellow);
 }
 
-.preview-window .title-file-icon {
-  background: var(--green);
+.preview-window .window-title .lucide {
+  color: var(--green);
 }
 
 .window-actions {
@@ -330,7 +375,7 @@ a:focus-visible {
   width: 31px;
   height: 30px;
   place-items: center;
-  padding: 0 0 3px;
+  padding: 0;
   color: var(--paper-bright);
   background: transparent;
   border-left: 1px solid rgba(244, 241, 236, 0.3);
@@ -344,8 +389,8 @@ a:focus-visible {
 }
 
 .welcome-window {
-  top: 8%;
-  left: 4%;
+  top: 7.5%;
+  left: 15%;
   width: clamp(340px, 35vw, 500px);
   height: min(76%, 650px);
 }
@@ -401,7 +446,7 @@ a:focus-visible {
   margin: auto 0 24px;
   padding: 0;
   list-style: none;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.3;
 }
 
@@ -437,49 +482,39 @@ a:focus-visible {
 }
 
 .preview-window {
-  top: 16%;
-  right: 4.5%;
+  top: 18%;
+  right: 13%;
   width: clamp(490px, 53vw, 790px);
   height: min(72%, 620px);
+  transition:
+    top 210ms cubic-bezier(0.22, 0.78, 0.24, 1),
+    right 210ms cubic-bezier(0.22, 0.78, 0.24, 1),
+    width 210ms cubic-bezier(0.22, 0.78, 0.24, 1),
+    height 210ms cubic-bezier(0.22, 0.78, 0.24, 1);
+}
+
+.preview-window.is-recentering {
+  transition:
+    transform 210ms cubic-bezier(0.22, 0.78, 0.24, 1),
+    top 210ms cubic-bezier(0.22, 0.78, 0.24, 1),
+    right 210ms cubic-bezier(0.22, 0.78, 0.24, 1),
+    width 210ms cubic-bezier(0.22, 0.78, 0.24, 1),
+    height 210ms cubic-bezier(0.22, 0.78, 0.24, 1);
 }
 
 .preview-content {
   display: grid;
   flex: 1;
   min-height: 0;
-  grid-template-rows: 29px minmax(0, 1fr) 27px;
+  grid-template-rows: minmax(0, 1fr) 27px;
   background: var(--ink);
 }
 
-.preview-message,
 .preview-statusbar {
   display: flex;
   align-items: center;
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.07em;
-}
-
-.preview-message {
-  justify-content: center;
-  gap: 9px;
-  color: var(--ink);
-  background: var(--green);
-  border-bottom: var(--border);
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--pink);
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(14, 14, 14, 0.18);
-  animation: status-pulse 1.8s steps(2, jump-none) infinite;
-}
-
-@keyframes status-pulse {
-  50% {
-    opacity: 0.3;
-  }
 }
 
 .cloth-viewport {
@@ -550,20 +585,20 @@ a:focus-visible {
   color: var(--paper-bright);
   background: var(--blue);
   border-right: var(--border);
-  font-size: 8px;
+  font-size: 9px;
 }
 
 .studio-preview-badge b,
 .studio-preview-badge i {
   padding: 5px 8px 3px;
-  font-size: 8px;
+  font-size: 9px;
   font-style: normal;
 }
 
 .studio-preview-badge i {
   padding-top: 1px;
   color: var(--muted);
-  font-size: 7px;
+  font-size: 8px;
 }
 
 .desktop.is-studio {
@@ -576,9 +611,9 @@ a:focus-visible {
 }
 
 .is-studio .preview-window {
-  top: 7%;
-  right: auto;
-  left: 24%;
+  top: 2.5%;
+  right: 24%;
+  left: auto;
   width: 52%;
   height: 76%;
 }
@@ -586,12 +621,12 @@ a:focus-visible {
 .studio-tool-window {
   z-index: 25;
   background: var(--paper-bright);
-  box-shadow: 4px 5px 0 rgba(14, 14, 14, 0.24);
+  box-shadow: 0 16px 36px rgba(14, 14, 14, 0.25), 0 3px 10px rgba(14, 14, 14, 0.15);
 }
 
 .studio-tool-window.is-active {
-  z-index: 40;
-  box-shadow: 6px 7px 0 rgba(14, 14, 14, 0.3);
+  z-index: 110;
+  box-shadow: 0 22px 50px rgba(14, 14, 14, 0.31), 0 5px 14px rgba(14, 14, 14, 0.17);
 }
 
 .series-window {
@@ -644,7 +679,7 @@ a:focus-visible {
 .panel-index {
   margin: 0 0 11px;
   color: var(--muted);
-  font-size: 7px;
+  font-size: 9px;
   letter-spacing: 0.12em;
 }
 
@@ -659,7 +694,7 @@ a:focus-visible {
 .range-field > span:first-child,
 .saved-seeds > span {
   color: var(--muted);
-  font-size: 7px;
+  font-size: 9px;
   letter-spacing: 0.08em;
 }
 
@@ -672,7 +707,7 @@ a:focus-visible {
   background: var(--paper);
   border: var(--border);
   border-radius: 0;
-  font: 9px/1 var(--font-mono);
+  font: 10px/1 var(--font-mono);
 }
 
 .series-readout {
@@ -688,7 +723,7 @@ a:focus-visible {
 
 .series-readout > strong {
   color: var(--green);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .series-readout > span {
@@ -698,14 +733,14 @@ a:focus-visible {
   gap: 3px;
   overflow: hidden;
   color: #aaa49e;
-  font-size: 7px;
+  font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .series-readout b {
   color: var(--paper-bright);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .series-ticks {
@@ -721,7 +756,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--paper);
   border-right: var(--border);
-  font-size: 7px;
+  font-size: 8px;
   cursor: pointer;
 }
 
@@ -753,12 +788,16 @@ a:focus-visible {
 }
 
 .panel-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 31px;
   padding: 0 10px;
   color: var(--ink);
   background: var(--paper);
   border-right: var(--border);
-  font-size: 8px;
+  font-size: 9px;
   cursor: pointer;
 }
 
@@ -789,7 +828,7 @@ a:focus-visible {
   color: var(--ink);
   background: transparent;
   border: 1px solid rgba(14, 14, 14, 0.32);
-  font-size: 7px;
+  font-size: 8px;
   cursor: pointer;
 }
 
@@ -885,13 +924,17 @@ a:focus-visible {
 }
 
 .export-grid button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   min-height: 24px;
   padding: 3px;
   color: var(--ink);
   background: var(--paper);
   border-right: var(--border);
   border-bottom: var(--border);
-  font-size: 7px;
+  font-size: 8px;
   cursor: pointer;
 }
 
@@ -915,7 +958,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--yellow);
   border: var(--border);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
 }
 
@@ -924,9 +967,6 @@ a:focus-visible {
   background: var(--blue);
 }
 
-.continue-button b {
-  font-size: 16px;
-}
 
 .cloth-loading {
   position: absolute;
@@ -1033,10 +1073,12 @@ a:focus-visible {
 }
 
 .task-app-icon {
+  display: grid;
   flex: 0 0 auto;
-  width: 9px;
-  height: 10px;
-  background: var(--blue);
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  color: var(--blue);
 }
 
 .system-tray {
@@ -1066,10 +1108,6 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.language-toggle span {
-  font-size: 18px;
 }
 
 .clock {
@@ -1147,10 +1185,13 @@ a:focus-visible {
   background: var(--ink);
 }
 
-.start-app span {
-  width: 12px;
-  height: 12px;
-  background: var(--app-color);
+.start-app .start-app-icon {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: var(--ink);
+  background: var(--green);
   border: 1px solid var(--ink);
 }
 
@@ -1209,7 +1250,8 @@ a:focus-visible {
   }
 
   .is-studio .preview-window {
-    left: 23%;
+    right: 23%;
+    left: auto;
     width: 54%;
   }
 
@@ -1350,7 +1392,7 @@ a:focus-visible {
     z-index: auto;
     width: 100% !important;
     height: auto !important;
-    box-shadow: 4px 4px 0 rgba(14, 14, 14, 0.22);
+    box-shadow: 0 14px 34px rgba(14, 14, 14, 0.24), 0 3px 10px rgba(14, 14, 14, 0.14);
     transform: none;
   }
 
@@ -1485,7 +1527,7 @@ a:focus-visible {
     color: var(--paper-bright);
     background: var(--ink);
     border: var(--border);
-    box-shadow: 4px 4px 0 rgba(14, 14, 14, 0.25);
+    box-shadow: 0 12px 30px rgba(14, 14, 14, 0.28), 0 3px 9px rgba(14, 14, 14, 0.16);
   }
 
   .mobile-dock a {
