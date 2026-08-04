@@ -1526,8 +1526,8 @@ a:focus-visible {
   width: 21px;
   height: 21px;
   place-items: center;
-  background: var(--ink);
-  color: var(--green);
+  color: var(--ink);
+  background: transparent;
   font-size: 13px;
 }
 
@@ -1691,9 +1691,9 @@ a:focus-visible {
   width: 24px;
   height: 24px;
   place-items: center;
-  color: var(--ink);
-  background: var(--green);
-  border: 1px solid var(--ink);
+  color: inherit;
+  background: transparent;
+  border: 0;
 }
 
 .start-app i {
@@ -2131,6 +2131,440 @@ a:focus-visible {
 
   .welcome-content {
     min-height: 450px;
+  }
+}
+
+/* Personalization */
+.settings-window {
+  top: 6%;
+  left: calc(50% - 280px);
+  width: 560px;
+  height: min(84%, 640px);
+}
+
+.settings-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 22px;
+  background:
+    linear-gradient(rgba(14, 14, 14, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 14, 14, 0.035) 1px, transparent 1px),
+    var(--paper-bright);
+  background-size: 18px 18px;
+}
+
+.settings-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 18px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.settings-heading > span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  color: var(--paper-bright);
+  background: var(--blue);
+  border: var(--border);
+}
+
+.settings-heading b {
+  font: 800 17px/1 var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+.settings-heading p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 0.09em;
+}
+
+.settings-section {
+  margin-top: 20px;
+}
+
+.settings-label {
+  margin-bottom: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.settings-options {
+  display: grid;
+  gap: 0;
+}
+
+.theme-options {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.language-options {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.settings-options button {
+  min-height: 38px;
+  padding: 7px 9px;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--border);
+  border-right: 0;
+  font-size: 9px;
+  cursor: pointer;
+  transition: background 90ms ease, color 90ms ease;
+}
+
+.settings-options button:last-child {
+  border-right: var(--border);
+}
+
+.settings-options button:hover {
+  background: var(--yellow);
+}
+
+.settings-options button.is-selected {
+  color: var(--paper-bright);
+  background: var(--ink);
+}
+
+.settings-options button.is-selected::before {
+  margin-right: 6px;
+  color: var(--green);
+  content: "●";
+}
+
+.settings-detected {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.background-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.background-options button {
+  padding: 5px;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--border);
+  cursor: pointer;
+}
+
+.background-options button.is-selected {
+  box-shadow: 0 0 0 3px var(--blue);
+}
+
+.background-options b {
+  display: block;
+  padding: 7px 2px 3px;
+  font-size: 8px;
+}
+
+.background-swatch {
+  display: block;
+  height: 56px;
+  border: 1px solid rgba(14, 14, 14, 0.65);
+}
+
+.background-swatch--haptique {
+  background: linear-gradient(135deg, var(--bone) 0 55%, var(--yellow) 55% 70%, var(--green) 70%);
+}
+
+.background-swatch--sunset {
+  background: radial-gradient(circle at 72% 25%, #ffc857 0 17%, transparent 18%), linear-gradient(145deg, #f2d6c9 0 48%, #fc7680 48% 70%, #7b6bd6 70%);
+}
+
+.background-swatch--blueprint {
+  background: linear-gradient(rgba(255, 255, 255, 0.24) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.24) 1px, transparent 1px), #345eb5;
+  background-size: 9px 9px;
+}
+
+.background-swatch--mono {
+  background: radial-gradient(circle at 72% 28%, #f4f1ec 0 15%, transparent 16%), linear-gradient(145deg, #c9c6c1 0 52%, #7d7b78 52% 68%, #242424 68%);
+}
+
+.desktop.background-haptique,
+.theme-apple.background-haptique {
+  background:
+    linear-gradient(rgba(14, 14, 14, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 14, 14, 0.055) 1px, transparent 1px),
+    radial-gradient(circle at 70% 24%, rgba(255, 200, 87, 0.72), transparent 0 21%, transparent 38%),
+    linear-gradient(132deg, var(--bone) 0 57%, #bdb5ad 57% 67%, var(--green) 67% 100%);
+  background-size: 40px 40px, 40px 40px, auto, auto;
+}
+
+.desktop.background-sunset,
+.theme-apple.background-sunset {
+  background:
+    linear-gradient(rgba(14, 14, 14, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 14, 14, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 75% 22%, rgba(255, 200, 87, 0.88), transparent 0 16%, transparent 34%),
+    linear-gradient(132deg, #ead7cd 0 54%, #fc7680 54% 68%, #7969c8 68% 100%);
+  background-size: 40px 40px, 40px 40px, auto, auto;
+}
+
+.desktop.background-blueprint,
+.theme-apple.background-blueprint {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+    radial-gradient(circle at 75% 24%, rgba(144, 220, 154, 0.8), transparent 0 18%, transparent 35%),
+    #345eb5;
+  background-size: 32px 32px, 32px 32px, auto, auto;
+}
+
+.desktop.background-mono,
+.theme-apple.background-mono {
+  background:
+    linear-gradient(rgba(14, 14, 14, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 14, 14, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 72% 22%, rgba(244, 241, 236, 0.86), transparent 0 17%, transparent 34%),
+    linear-gradient(132deg, #d0ccc6 0 56%, #8a8782 56% 68%, #333 68% 100%);
+  background-size: 40px 40px, 40px 40px, auto, auto;
+}
+
+.taskbar-settings {
+  display: grid;
+  width: 43px;
+  flex: 0 0 43px;
+  place-items: center;
+  padding: 0;
+  color: var(--paper-bright);
+  background: transparent;
+  border-right: 1px solid rgba(244, 241, 236, 0.18);
+  border-left: 1px solid rgba(244, 241, 236, 0.18);
+  cursor: pointer;
+}
+
+.taskbar-settings:hover,
+.taskbar-settings.is-active {
+  color: var(--ink);
+  background: var(--yellow);
+}
+
+/* Apple window chrome: macOS, iOS, and iPadOS use traffic-light controls. */
+.theme-apple .site-header {
+  width: calc(100% - 24px);
+  height: 48px;
+  margin: 10px 12px 0;
+  color: var(--paper-bright);
+  background: rgba(14, 14, 14, 0.96);
+  border: 1px solid rgba(244, 241, 236, 0.18);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(14, 14, 14, 0.2);
+}
+
+.theme-apple .desktop {
+  background: transparent;
+}
+
+.theme-apple .brand {
+  border-radius: 999px 0 0 999px;
+}
+
+.theme-apple .cart-button {
+  border-radius: 0 999px 999px 0;
+}
+
+.theme-apple .running-apps button {
+  border-radius: 8px;
+}
+
+.theme-apple .start-button {
+  min-width: 126px;
+  margin: 5px 0 5px 6px;
+  padding: 0 16px;
+  border-radius: 999px;
+}
+
+.theme-apple .os-window {
+  border-radius: 13px;
+}
+
+.theme-apple .window-titlebar {
+  position: relative;
+  min-height: 36px;
+  flex-basis: 36px;
+  justify-content: center;
+}
+
+.theme-apple .window-title {
+  position: absolute;
+  left: 50%;
+  max-width: calc(100% - 150px);
+  overflow: hidden;
+  padding: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.theme-apple .window-actions {
+  position: absolute;
+  left: 12px;
+  order: -1;
+  flex-direction: row-reverse;
+  gap: 7px;
+  align-self: auto;
+}
+
+.theme-apple .window-button {
+  width: 12px;
+  height: 12px;
+  overflow: hidden;
+  padding: 0;
+  color: rgba(14, 14, 14, 0.7);
+  border: 0;
+  border-radius: 50%;
+}
+
+.theme-apple .window-button--close {
+  background: #ff5f57;
+}
+
+.theme-apple .window-button--minimize {
+  background: #febc2e;
+}
+
+.theme-apple .window-button--maximize {
+  background: #28c840;
+}
+
+.theme-apple .window-button:hover {
+  color: rgba(14, 14, 14, 0.8);
+  filter: brightness(0.94);
+}
+
+.theme-apple .window-button svg {
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+}
+
+.theme-apple .window-actions:hover svg,
+.theme-apple .window-button:focus-visible svg {
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .theme-apple .site-header {
+    top: 10px;
+  }
+
+  .theme-apple .mobile-menu-button,
+  .theme-apple .cart-button {
+    color: var(--paper-bright);
+  }
+
+  .theme-apple .primary-nav {
+    top: 70px;
+    right: 12px;
+    left: 12px;
+    overflow: hidden;
+    border-radius: 14px;
+  }
+
+  .desktop {
+    align-items: center;
+  }
+
+  .os-window,
+  .os-window.is-active,
+  .os-window.is-maximized {
+    max-width: 680px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .theme-apple.background-haptique,
+  .theme-apple.background-sunset,
+  .theme-apple.background-blueprint,
+  .theme-apple.background-mono {
+    background-size: 24px 24px, 24px 24px, auto, auto;
+  }
+
+  .desktop.background-haptique,
+  .desktop.background-sunset,
+  .desktop.background-blueprint,
+  .desktop.background-mono {
+    background-size: 24px 24px, 24px 24px, auto, auto;
+  }
+
+  .settings-window {
+    order: 0;
+  }
+
+  .settings-content {
+    padding: 18px;
+  }
+
+  .language-options,
+  .background-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .language-options {
+    gap: 6px;
+  }
+
+  .language-options button,
+  .language-options button:last-child {
+    border: var(--border);
+  }
+
+  .theme-apple .window-actions {
+    display: flex;
+  }
+
+  .theme-apple .os-window,
+  .theme-apple .os-window.is-active,
+  .theme-apple .os-window.is-maximized {
+    border-radius: 14px;
+  }
+
+  .theme-apple .os-window.is-maximized {
+    position: fixed;
+    z-index: 1300;
+    inset: 67px 12px 84px !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0;
+  }
+
+  .mobile-dock {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .mobile-dock a,
+  .mobile-dock button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--paper-bright);
+    background: transparent;
+    border-right: 1px solid rgba(244, 241, 236, 0.22);
+    font-size: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .mobile-dock button:last-child {
+    border-right: 0;
   }
 }
 

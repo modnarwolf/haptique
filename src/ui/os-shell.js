@@ -22,6 +22,7 @@ import {
   Palette,
   QrCode,
   RotateCcw,
+  Settings,
   Settings2,
   ShoppingBag,
   ShoppingCart,
@@ -64,6 +65,158 @@ const COPY = {
   },
 };
 
+Object.assign(COPY.en, {
+  settings: "SETTINGS",
+  settingsIntro: "PERSONALIZE HAPTIQUE OS",
+  windowStyle: "WINDOW STYLE",
+  detected: "DETECTED",
+  backgrounds: "DESKTOP BACKGROUND",
+  language: "LANGUAGE",
+});
+
+Object.assign(COPY.fr, {
+  settings: "RÉGLAGES",
+  settingsIntro: "PERSONNALISER HAPTIQUE OS",
+  windowStyle: "STYLE DES FENÊTRES",
+  detected: "DÉTECTÉ",
+  backgrounds: "FOND DU BUREAU",
+  language: "LANGUE",
+});
+
+COPY.es = {
+  tagline: "software creativo para objetos reales.",
+  headline: ["HAZ ALGO", "QUE NUNCA", "SE HIZO"],
+  features: ["arte algorítmico", "objetos textiles", "hecho bajo pedido", "1de1 o 1aMuchos"],
+  openStudio: "ABRIR ESTUDIO",
+  start: "INICIO",
+  local: "LOCAL",
+  soundOn: "Sonido activado",
+  soundOff: "Sonido desactivado",
+  settings: "AJUSTES",
+  settingsIntro: "PERSONALIZA HAPTIQUE OS",
+  windowStyle: "ESTILO DE VENTANAS",
+  detected: "DETECTADO",
+  backgrounds: "FONDO DE ESCRITORIO",
+  language: "IDIOMA",
+};
+
+COPY.zh = {
+  tagline: "为真实物品而生的创意软件。",
+  headline: ["创造前所", "未有的", "全新作品"],
+  features: ["算法艺术", "柔性织物", "按需制作", "独一件或多件"],
+  openStudio: "打开工作室",
+  start: "开始",
+  local: "本地",
+  soundOn: "开启声音",
+  soundOff: "关闭声音",
+  settings: "设置",
+  settingsIntro: "个性化 HAPTIQUE OS",
+  windowStyle: "窗口样式",
+  detected: "已检测",
+  backgrounds: "桌面背景",
+  language: "语言",
+};
+
+const SHELL_COPY = {
+  en: {
+    applications: "APPLICATIONS",
+    apps: { studio: "STUDIO", shop: "SHOP", archive: "ARCHIVE", about: "ABOUT" },
+    windows: {
+      welcome: "WELCOME.TXT", preview: "PREVIEW.EXE", series: "SERIES.SELECT",
+      shopSeries: "SHOP.SELECT", curated: "CURATED.EXE", irl: "IRL.EXE",
+      seed: "SEED.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTES.CFG",
+      export: "EXPORT.ORDER", settings: "SETTINGS.CFG",
+    },
+    controls: { minimize: "Minimize", maximize: "Maximize", restore: "Restore", close: "Close" },
+    themeNames: { auto: "AUTO", apple: "APPLE", windows: "WINDOWS" },
+    backgroundNames: { haptique: "HAPTIQUE", sunset: "SUNSET", blueprint: "BLUEPRINT", mono: "MONO" },
+  },
+  fr: {
+    applications: "APPLICATIONS",
+    apps: { studio: "STUDIO", shop: "BOUTIQUE", archive: "ARCHIVES", about: "À PROPOS" },
+    windows: {
+      welcome: "BIENVENUE.TXT", preview: "APERÇU.EXE", series: "SÉRIE.SELECT",
+      shopSeries: "BOUTIQUE.SELECT", curated: "SÉLECTION.EXE", irl: "RÉEL.EXE",
+      seed: "GRAINE.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTS.CFG",
+      export: "EXPORTER.ORDER", settings: "RÉGLAGES.CFG",
+    },
+    controls: { minimize: "Réduire", maximize: "Agrandir", restore: "Restaurer", close: "Fermer" },
+    themeNames: { auto: "AUTO", apple: "APPLE", windows: "WINDOWS" },
+    backgroundNames: { haptique: "HAPTIQUE", sunset: "COUCHER DE SOLEIL", blueprint: "PLAN BLEU", mono: "MONO" },
+  },
+  es: {
+    applications: "APLICACIONES",
+    apps: { studio: "ESTUDIO", shop: "TIENDA", archive: "ARCHIVO", about: "ACERCA DE" },
+    windows: {
+      welcome: "BIENVENIDA.TXT", preview: "VISTA_PREVIA.EXE", series: "SERIE.SELECT",
+      shopSeries: "TIENDA.SELECT", curated: "SELECCIÓN.EXE", irl: "REAL.EXE",
+      seed: "SEMILLA.EXE", palette: "PALETA.DAT", attributes: "ATRIBUTOS.CFG",
+      export: "EXPORTAR.ORDER", settings: "AJUSTES.CFG",
+    },
+    controls: { minimize: "Minimizar", maximize: "Maximizar", restore: "Restaurar", close: "Cerrar" },
+    themeNames: { auto: "AUTO", apple: "APPLE", windows: "WINDOWS" },
+    backgroundNames: { haptique: "HAPTIQUE", sunset: "ATARDECER", blueprint: "PLANO AZUL", mono: "MONO" },
+  },
+  zh: {
+    applications: "应用程序",
+    apps: { studio: "工作室", shop: "商店", archive: "档案", about: "关于" },
+    windows: {
+      welcome: "欢迎.TXT", preview: "预览.EXE", series: "系列.SELECT",
+      shopSeries: "商店.SELECT", curated: "精选.EXE", irl: "实物.EXE",
+      seed: "种子.EXE", palette: "调色板.DAT", attributes: "属性.CFG",
+      export: "导出.ORDER", settings: "设置.CFG",
+    },
+    controls: { minimize: "最小化", maximize: "最大化", restore: "还原", close: "关闭" },
+    themeNames: { auto: "自动", apple: "苹果", windows: "视窗" },
+    backgroundNames: { haptique: "HAPTIQUE", sunset: "日落", blueprint: "蓝图", mono: "单色" },
+  },
+};
+
+Object.entries(SHELL_COPY).forEach(([locale, shellCopy]) => Object.assign(COPY[locale], shellCopy));
+
+const LOCALES = [
+  ["en", "ENGLISH"],
+  ["fr", "FRANÇAIS"],
+  ["es", "ESPAÑOL"],
+  ["zh", "简体中文"],
+];
+
+const THEMES = [
+  ["auto", "AUTO"],
+  ["apple", "APPLE"],
+  ["windows", "WINDOWS"],
+];
+
+const BACKGROUNDS = [
+  ["haptique", "HAPTIQUE"],
+  ["sunset", "SUNSET"],
+  ["blueprint", "BLUEPRINT"],
+  ["mono", "MONO"],
+];
+
+function getStoredPreference(key, fallback, allowed) {
+  try {
+    const value = window.localStorage.getItem(key);
+    return allowed.includes(value) ? value : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function storePreference(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Preferences still apply for the current session when storage is unavailable.
+  }
+}
+
+function detectSystemTheme() {
+  const platform = navigator.userAgentData?.platform || navigator.platform || "";
+  const userAgent = navigator.userAgent || "";
+  return /Mac|iPhone|iPad|iPod/i.test(`${platform} ${userAgent}`) ? "apple" : "windows";
+}
+
 const APP_LINKS = [
   ["studio", "STUDIO"],
   ["shop", "SHOP"],
@@ -89,6 +242,7 @@ const WINDOW_ICONS = {
   palette: Palette,
   attributes: Settings2,
   export: Download,
+  settings: Settings2,
 };
 
 function AppGlyph({ id, size = 14 }) {
@@ -194,7 +348,7 @@ function SiteHeader({ copy, cartCount, menuOpen, onMenuToggle, onMenuClose, onOp
       jsx("nav", {
         className: menuOpen ? "primary-nav is-open" : "primary-nav",
         "aria-label": "Primary navigation",
-        children: APP_LINKS.map(([id, label]) =>
+        children: APP_LINKS.map(([id]) =>
           jsx("a", {
             href: `#${id}`,
             onClick: () => {
@@ -202,7 +356,7 @@ function SiteHeader({ copy, cartCount, menuOpen, onMenuToggle, onMenuClose, onOp
               if (id === "shop") onOpenShop();
               onMenuClose();
             },
-            children: label,
+            children: copy.apps[id],
           }, id),
         ),
       }),
@@ -218,10 +372,10 @@ function SiteHeader({ copy, cartCount, menuOpen, onMenuToggle, onMenuClose, onOp
   });
 }
 
-function WindowButton({ label, glyph, onClick }) {
+function WindowButton({ label, glyph, onClick, kind }) {
   return jsx("button", {
     type: "button",
-    className: "window-button",
+    className: `window-button window-button--${kind}`,
     onPointerDown: (event) => event.stopPropagation(),
     onClick,
     "aria-label": label,
@@ -235,19 +389,27 @@ function OSWindow({
   className = "",
   status,
   active,
-  maximized = false,
+  maximized: controlledMaximized,
   onFocus,
   onMinimize,
   onClose,
   onMaximize,
+  controls = SHELL_COPY.en.controls,
   resetPositionKey,
   children,
 }) {
   const [offset, setOffset] = React.useState({ x: 0, y: 0 });
+  const [internalMaximized, setInternalMaximized] = React.useState(false);
   const [recentering, setRecentering] = React.useState(false);
   const dragRef = React.useRef(null);
   const previousResetKey = React.useRef(resetPositionKey);
   const TitleIcon = WINDOW_ICONS[id] || FileText;
+  const maximized = controlledMaximized ?? internalMaximized;
+  const toggleMaximized = onMaximize || (() => setInternalMaximized((value) => !value));
+
+  React.useEffect(() => {
+    if (status !== "open" && controlledMaximized === undefined) setInternalMaximized(false);
+  }, [status, controlledMaximized]);
 
   React.useEffect(() => {
     if (resetPositionKey === undefined || resetPositionKey === previousResetKey.current) return;
@@ -295,7 +457,7 @@ function OSWindow({
         onPointerMove: correctedDrag,
         onPointerUp: endDrag,
         onPointerCancel: endDrag,
-        onDoubleClick: onMaximize,
+        onDoubleClick: toggleMaximized,
         children: [
           jsxs("div", {
             className: "window-title",
@@ -305,22 +467,24 @@ function OSWindow({
             className: "window-actions",
             children: [
               jsx(WindowButton, {
-                label: `Minimize ${title}`,
+                label: `${controls.minimize} ${title}`,
                 glyph: jsx(Minus, { size: 14, strokeWidth: 1.8, "aria-hidden": "true" }),
                 onClick: onMinimize,
+                kind: "minimize",
               }),
-              onMaximize &&
-                jsx(WindowButton, {
-                  label: maximized ? `Restore ${title}` : `Maximize ${title}`,
-                  glyph: maximized
-                    ? jsx(Minimize2, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" })
-                    : jsx(Maximize2, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" }),
-                  onClick: onMaximize,
-                }),
               jsx(WindowButton, {
-                label: `Close ${title}`,
+                label: maximized ? `${controls.restore} ${title}` : `${controls.maximize} ${title}`,
+                glyph: maximized
+                  ? jsx(Minimize2, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" })
+                  : jsx(Maximize2, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" }),
+                onClick: toggleMaximized,
+                kind: "maximize",
+              }),
+              jsx(WindowButton, {
+                label: `${controls.close} ${title}`,
                 glyph: jsx(X, { size: 14, strokeWidth: 1.8, "aria-hidden": "true" }),
                 onClick: onClose,
+                kind: "close",
               }),
             ],
           }),
@@ -331,11 +495,92 @@ function OSWindow({
   });
 }
 
+function SettingsWindow({ copy, themePreference, detectedTheme, background, locale, onTheme, onBackground, onLocale, ...windowProps }) {
+  return jsx(OSWindow, {
+    ...windowProps,
+    id: "settings",
+    title: copy.windows.settings,
+    controls: copy.controls,
+    className: "settings-window",
+    children: jsxs("div", {
+      className: "settings-content",
+      children: [
+        jsxs("div", {
+          className: "settings-heading",
+          children: [
+            jsx("span", { children: jsx(Settings2, { size: 18, strokeWidth: 1.8, "aria-hidden": "true" }) }),
+            jsxs("div", { children: [jsx("b", { children: copy.settings }), jsx("p", { children: copy.settingsIntro })] }),
+          ],
+        }),
+        jsxs("section", {
+          className: "settings-section",
+          children: [
+            jsx("div", { className: "settings-label", children: copy.windowStyle }),
+            jsx("div", {
+              className: "settings-options theme-options",
+              role: "group",
+              "aria-label": copy.windowStyle,
+              children: THEMES.map(([value]) => jsx("button", {
+                type: "button",
+                className: themePreference === value ? "is-selected" : "",
+                onClick: () => onTheme(value),
+                "aria-pressed": themePreference === value,
+                children: copy.themeNames[value],
+              }, value)),
+            }),
+            jsx("p", { className: "settings-detected", children: `${copy.detected}: ${copy.themeNames[detectedTheme]}` }),
+          ],
+        }),
+        jsxs("section", {
+          className: "settings-section",
+          children: [
+            jsx("div", { className: "settings-label", children: copy.backgrounds }),
+            jsx("div", {
+              className: "background-options",
+              role: "group",
+              "aria-label": copy.backgrounds,
+              children: BACKGROUNDS.map(([value]) => jsxs("button", {
+                type: "button",
+                className: background === value ? "is-selected" : "",
+                onClick: () => onBackground(value),
+                "aria-pressed": background === value,
+                children: [
+                  jsx("span", { className: `background-swatch background-swatch--${value}`, "aria-hidden": "true" }),
+                  jsx("b", { children: copy.backgroundNames[value] }),
+                ],
+              }, value)),
+            }),
+          ],
+        }),
+        jsxs("section", {
+          className: "settings-section",
+          children: [
+            jsx("div", { className: "settings-label", children: copy.language }),
+            jsx("div", {
+              className: "settings-options language-options",
+              role: "group",
+              "aria-label": copy.language,
+              children: LOCALES.map(([value, label]) => jsx("button", {
+                type: "button",
+                className: locale === value ? "is-selected" : "",
+                onClick: () => onLocale(value),
+                "aria-pressed": locale === value,
+                children: label,
+              }, value)),
+            }),
+          ],
+        }),
+      ],
+    }),
+  });
+}
+
 function WelcomeWindow({ copy, onOpenStudio, ...windowProps }) {
   return jsx(OSWindow, {
     ...windowProps,
     id: "welcome",
-    title: "WELCOME.TXT",
+    title: copy.windows.welcome,
+    controls: copy.controls,
     className: "welcome-window",
     children: jsxs("div", {
       className: "welcome-content",
@@ -362,11 +607,12 @@ function WelcomeWindow({ copy, onOpenStudio, ...windowProps }) {
   });
 }
 
-function PreviewWindow({ preview, previewZoom, workspaceMode, studioState, actionsRef, ...windowProps }) {
+function PreviewWindow({ copy, preview, previewZoom, workspaceMode, studioState, actionsRef, ...windowProps }) {
   return jsx(OSWindow, {
     ...windowProps,
     id: "preview",
-    title: "PREVIEW.EXE",
+    title: copy.windows.preview,
+    controls: copy.controls,
     className: "preview-window",
     children: jsxs("div", {
       className: "preview-content",
@@ -446,6 +692,7 @@ async function copyText(value) {
 }
 
 function StudioWorkspace({
+  copy,
   state,
   onStateChange,
   actionsRef,
@@ -604,7 +851,8 @@ function StudioWorkspace({
   };
   const windowProps = (id, title, className) => ({
     id,
-    title,
+    title: copy.windows[id] || title,
+    controls: copy.controls,
     className: `studio-tool-window ${className}`,
     status: windows[id],
     active: active === id,
@@ -887,6 +1135,7 @@ function randomParameterValue(parameter) {
 }
 
 function ShopWorkspace({
+  copy,
   state,
   onStateChange,
   windows,
@@ -1040,7 +1289,8 @@ function ShopWorkspace({
   };
   const windowProps = (id, title, className) => ({
     id,
-    title,
+    title: copy.windows[id] || title,
+    controls: copy.controls,
     className: `shop-tool-window ${className}`,
     status: windows[id],
     active: active === id,
@@ -1171,7 +1421,7 @@ function ShopWorkspace({
   });
 }
 
-function StartMenu({ open, onOpenWindow, onOpenStudio, onOpenShop }) {
+function StartMenu({ copy, open, onOpenWindow, onOpenStudio, onOpenShop }) {
   if (!open) return null;
   return jsxs("div", {
     className: "start-menu",
@@ -1184,8 +1434,8 @@ function StartMenu({ open, onOpenWindow, onOpenStudio, onOpenShop }) {
       jsxs("div", {
         className: "start-menu-content",
         children: [
-          jsx("p", { children: "APPLICATIONS" }),
-          APP_LINKS.map(([id, label]) =>
+          jsx("p", { children: copy.applications }),
+          APP_LINKS.map(([id]) =>
             jsxs(
               "a",
               {
@@ -1193,38 +1443,26 @@ function StartMenu({ open, onOpenWindow, onOpenStudio, onOpenShop }) {
                 href: `#${id}`,
                 role: "menuitem",
                 onClick: id === "studio" ? onOpenStudio : id === "shop" ? onOpenShop : undefined,
-                children: [jsx("span", { className: "start-app-icon", children: jsx(AppGlyph, { id, size: 14 }) }), jsx("b", { children: label }), jsx(ArrowRight, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" })],
+                children: [jsx("span", { className: "start-app-icon", children: jsx(AppGlyph, { id, size: 14 }) }), jsx("b", { children: copy.apps[id] }), jsx(ArrowRight, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" })],
               },
               id,
             ),
           ),
           jsx("div", { className: "start-divider" }),
-          jsx("button", { type: "button", onClick: () => onOpenWindow("welcome"), children: "WELCOME.TXT" }),
-          jsx("button", { type: "button", onClick: () => onOpenWindow("preview"), children: "PREVIEW.EXE" }),
+          jsx("button", { type: "button", onClick: () => onOpenWindow("welcome"), children: copy.windows.welcome }),
+          jsx("button", { type: "button", onClick: () => onOpenWindow("preview"), children: copy.windows.preview }),
+          jsx("button", { type: "button", onClick: () => onOpenWindow("settings"), children: copy.windows.settings }),
         ],
       }),
     ],
   });
 }
 
-const WINDOW_LABELS = {
-  welcome: "WELCOME.TXT",
-  preview: "PREVIEW.EXE",
-  series: "SERIES.SELECT",
-  shopSeries: "SHOP.SELECT",
-  curated: "CURATED.EXE",
-  irl: "IRL.EXE",
-  seed: "SEED.EXE",
-  palette: "PALETTE.DAT",
-  attributes: "ATTRIBUTES.CFG",
-  export: "EXPORT.ORDER",
-};
-
-function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onStart, onRestore, onTaskWindow, onLocale, onOpenStudio, onOpenShop }) {
+function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onStart, onRestore, onTaskWindow, onLocale, onOpenSettings, onOpenStudio, onOpenShop }) {
   return jsxs("footer", {
     className: "taskbar",
     children: [
-      jsx(StartMenu, { open: startOpen, onOpenWindow: onRestore, onOpenStudio, onOpenShop }),
+      jsx(StartMenu, { copy, open: startOpen, onOpenWindow: onRestore, onOpenStudio, onOpenShop }),
       jsxs("button", {
         type: "button",
         className: startOpen ? "start-button is-active" : "start-button",
@@ -1237,7 +1475,7 @@ function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onSta
         className: "running-apps",
         "aria-label": "Open applications",
         children: Object.entries(windows)
-          .filter(([, status]) => status !== "closed")
+          .filter(([id, status]) => id !== "settings" && status !== "closed")
           .map(([id, status]) =>
             jsxs(
               "button",
@@ -1245,11 +1483,19 @@ function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onSta
                 type: "button",
                 className: `${active === id && status === "open" ? "is-active" : ""} ${status === "minimized" ? "is-minimized" : ""}`,
                 onClick: () => onTaskWindow(id),
-                children: [jsx("span", { className: "task-app-icon", children: jsx(AppGlyph, { id, size: 12 }) }), WINDOW_LABELS[id]],
+                children: [jsx("span", { className: "task-app-icon", children: jsx(AppGlyph, { id, size: 12 }) }), copy.windows[id]],
               },
               id,
             ),
           ),
+      }),
+      jsx("button", {
+        type: "button",
+        className: active === "settings" && windows.settings === "open" ? "taskbar-settings is-active" : "taskbar-settings",
+        onClick: onOpenSettings,
+        "aria-label": copy.settings,
+        title: copy.settings,
+        children: jsx(Settings, { size: 16, strokeWidth: 1.8, "aria-hidden": "true" }),
       }),
       jsxs("div", {
         className: "system-tray",
@@ -1281,17 +1527,25 @@ function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onSta
   });
 }
 
-function MobileDock({ onOpenStudio, onOpenShop }) {
-  return jsx("nav", {
+function MobileDock({ copy, onOpenStudio, onOpenShop, onOpenSettings }) {
+  return jsxs("nav", {
     className: "mobile-dock",
     "aria-label": "Mobile navigation",
-    children: APP_LINKS.slice(0, 3).map(([id, label]) =>
-      jsxs("a", {
-        href: `#${id}`,
-        onClick: id === "studio" ? onOpenStudio : id === "shop" ? onOpenShop : undefined,
-        children: [jsx("span", { children: jsx(AppGlyph, { id, size: 15 }) }), label],
-      }, id),
-    ),
+    children: [
+      ...APP_LINKS.slice(0, 3).map(([id]) =>
+        jsxs("a", {
+          href: `#${id}`,
+          onClick: id === "studio" ? onOpenStudio : id === "shop" ? onOpenShop : undefined,
+          children: [jsx("span", { children: jsx(AppGlyph, { id, size: 15 }) }), copy.apps[id]],
+        }, id),
+      ),
+      jsxs("button", {
+        type: "button",
+        onClick: onOpenSettings,
+        "aria-label": copy.settings,
+        children: [jsx("span", { children: jsx(Settings, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }) }), copy.settings],
+      }),
+    ],
   });
 }
 
@@ -1307,6 +1561,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     palette: "closed",
     attributes: "closed",
     export: "closed",
+    settings: "closed",
   });
   const [active, setActive] = React.useState("preview");
   const [maximized, setMaximized] = React.useState(false);
@@ -1315,10 +1570,27 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   const [cartItems, setCartItems] = React.useState([]);
   const [startOpen, setStartOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const [locale, setLocale] = React.useState("en");
+  const [locale, setLocale] = React.useState(() => getStoredPreference("haptique.locale", "en", LOCALES.map(([value]) => value)));
+  const [themePreference, setThemePreference] = React.useState(() => getStoredPreference("haptique.theme", "auto", THEMES.map(([value]) => value)));
+  const [background, setBackground] = React.useState(() => getStoredPreference("haptique.background", "haptique", BACKGROUNDS.map(([value]) => value)));
+  const [detectedTheme] = React.useState(detectSystemTheme);
   const clock = useLocalClock();
   const sound = useAmbientSound();
   const copy = COPY[locale];
+  const theme = themePreference === "auto" ? detectedTheme : themePreference;
+
+  React.useEffect(() => {
+    storePreference("haptique.locale", locale);
+    document.documentElement.lang = locale === "zh" ? "zh-Hans" : locale;
+  }, [locale]);
+
+  React.useEffect(() => {
+    storePreference("haptique.theme", themePreference);
+  }, [themePreference]);
+
+  React.useEffect(() => {
+    storePreference("haptique.background", background);
+  }, [background]);
 
   const setWindowStatus = (id, status) => {
     setWindows((current) => ({ ...current, [id]: status }));
@@ -1398,6 +1670,14 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     }));
     setActive("preview");
   };
+  const openSettings = () => {
+    setWindowStatus("settings", "open");
+    window.requestAnimationFrame(() => {
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        document.querySelector('[data-window-id="settings"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  };
 
   React.useEffect(() => {
     const closeStart = (event) => {
@@ -1408,7 +1688,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   }, []);
 
   return jsxs("div", {
-    className: "os-shell",
+    className: `os-shell theme-${theme} background-${background}`,
     children: [
       jsx(SiteHeader, {
         copy,
@@ -1421,11 +1701,26 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         onHome: openHome,
       }),
       jsxs("main", {
-        className: `desktop is-${workspaceMode}`,
+        className: `desktop is-${workspaceMode} background-${background}`,
         id: "home",
         children: [
           jsx("div", { className: "desktop-watermark", "aria-hidden": "true", children: "H/01" }),
           jsx("p", { className: "desktop-coordinate", children: "34.0522° N / 118.2437° W" }),
+          jsx(SettingsWindow, {
+            copy,
+            themePreference,
+            detectedTheme,
+            background,
+            locale,
+            onTheme: setThemePreference,
+            onBackground: setBackground,
+            onLocale: setLocale,
+            status: windows.settings,
+            active: active === "settings",
+            onFocus: () => setActive("settings"),
+            onMinimize: () => setWindowStatus("settings", "minimized"),
+            onClose: () => setWindowStatus("settings", "closed"),
+          }),
           jsx(WelcomeWindow, {
             copy,
             onOpenStudio: openStudio,
@@ -1436,6 +1731,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             onClose: () => setWindowStatus("welcome", "closed"),
           }),
           jsx(PreviewWindow, {
+            copy,
             preview,
             previewZoom,
             workspaceMode,
@@ -1452,6 +1748,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
           }),
           workspaceMode === "studio" &&
             jsx(StudioWorkspace, {
+              copy,
               state: studioState,
               onStateChange: onStudioStateChange,
               actionsRef: studioActionsRef,
@@ -1463,6 +1760,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             }),
           workspaceMode === "shop" &&
             jsx(ShopWorkspace, {
+              copy,
               state: studioState,
               onStateChange: onStudioStateChange,
               windows,
@@ -1485,11 +1783,12 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         onStart: () => setStartOpen((value) => !value),
         onRestore: (id) => setWindowStatus(id, "open"),
         onTaskWindow: toggleTaskbarWindow,
-        onLocale: () => setLocale((value) => (value === "en" ? "fr" : "en")),
+        onLocale: () => setLocale((value) => LOCALES[(LOCALES.findIndex(([id]) => id === value) + 1) % LOCALES.length][0]),
+        onOpenSettings: openSettings,
         onOpenStudio: openStudio,
         onOpenShop: openShop,
       }),
-      jsx(MobileDock, { onOpenStudio: openStudio, onOpenShop: openShop }),
+      jsx(MobileDock, { copy, onOpenStudio: openStudio, onOpenShop: openShop, onOpenSettings: openSettings }),
     ],
   });
 }
