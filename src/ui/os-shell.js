@@ -39,6 +39,7 @@ import {
   decodePatternShare,
   encodePatternShare,
 } from "../pattern-studio/pattern-share.js";
+import { useCuratedPatternPreviews } from "./curated-pattern-previews.js";
 
 const COPY = {
   en: {
@@ -81,6 +82,9 @@ const WINDOW_ICONS = {
   welcome: FileText,
   preview: MonitorPlay,
   series: Grid3X3,
+  shopSeries: ShoppingBag,
+  curated: Grid3X3,
+  irl: FileImage,
   seed: Hash,
   palette: Palette,
   attributes: Settings2,
@@ -171,7 +175,7 @@ function CartIcon() {
   return jsx(ShoppingCart, { className: "cart-icon", size: 19, strokeWidth: 1.8, "aria-hidden": "true" });
 }
 
-function SiteHeader({ copy, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, onHome }) {
+function SiteHeader({ copy, cartCount, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, onOpenShop, onHome }) {
   return jsxs("header", {
     className: "site-header",
     children: [
@@ -195,6 +199,7 @@ function SiteHeader({ copy, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, o
             href: `#${id}`,
             onClick: () => {
               if (id === "studio") onOpenStudio();
+              if (id === "shop") onOpenShop();
               onMenuClose();
             },
             children: label,
@@ -204,9 +209,9 @@ function SiteHeader({ copy, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, o
       jsx("a", {
         className: "cart-button",
         href: "#cart",
-        "aria-label": "Open shopping cart, 0 items",
+        "aria-label": `Open shopping cart, ${cartCount} items`,
         children: jsxs(React.Fragment, {
-          children: [jsx(CartIcon, {}), jsx("span", { children: "00" })],
+          children: [jsx(CartIcon, {}), jsx("span", { children: String(cartCount).padStart(2, "0") })],
         }),
       }),
     ],
@@ -265,7 +270,7 @@ function OSWindow({
     });
   };
   const startDrag = (event) => {
-    if (maximized || event.button !== 0) return;
+    if (maximized || event.button !== 0 || window.matchMedia("(max-width: 760px)").matches) return;
     onFocus();
     dragRef.current = { pointerX: event.clientX, pointerY: event.clientY, x: offset.x, y: offset.y };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -357,7 +362,7 @@ function WelcomeWindow({ copy, onOpenStudio, ...windowProps }) {
   });
 }
 
-function PreviewWindow({ preview, previewZoom, studioMode, studioState, actionsRef, ...windowProps }) {
+function PreviewWindow({ preview, previewZoom, workspaceMode, studioState, actionsRef, ...windowProps }) {
   return jsx(OSWindow, {
     ...windowProps,
     id: "preview",
@@ -370,28 +375,29 @@ function PreviewWindow({ preview, previewZoom, studioMode, studioState, actionsR
           className: "cloth-viewport",
           children: [
             preview,
-            studioMode &&
+            workspaceMode !== "home" &&
               jsxs("div", {
                 className: "studio-preview-badge",
                 children: [
                   jsx("span", { children: studioState.seriesId.toUpperCase() }),
                   jsx("b", { children: SERIES_BY_ID[studioState.seriesId].name }),
                   jsx("i", { children: `SEED ${String(studioState.seed).padStart(6, "0")}` }),
-                  jsxs("div", {
-                    className: "preview-cloth-actions",
-                    children: [
-                      jsxs("button", {
-                        type: "button",
-                        onClick: () => actionsRef.current?.resetCloth(),
-                        children: [jsx(RotateCcw, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "RESET CLOTH"],
-                      }),
-                      jsxs("button", {
-                        type: "button",
-                        onClick: () => actionsRef.current?.resetFlatCloth(),
-                        children: [jsx(Minimize2, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "FLAT CLOTH"],
-                      }),
-                    ],
-                  }),
+                  workspaceMode !== "home" &&
+                    jsxs("div", {
+                      className: "preview-cloth-actions",
+                      children: [
+                        jsxs("button", {
+                          type: "button",
+                          onClick: () => actionsRef.current?.resetCloth(),
+                          children: [jsx(RotateCcw, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "RESET CLOTH"],
+                        }),
+                        jsxs("button", {
+                          type: "button",
+                          onClick: () => actionsRef.current?.resetFlatCloth(),
+                          children: [jsx(Minimize2, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "FLAT CLOTH"],
+                        }),
+                      ],
+                    }),
                 ],
               }),
           ],
@@ -453,6 +459,10 @@ function StudioWorkspace({
   const palette = getPalette(state);
   const paletteIndex = state.paletteIndexesBySeriesId[state.seriesId];
   const parameters = state.parametersBySeriesId[state.seriesId];
+  const [products, setProducts] = React.useState([
+    { id: "blankets", displayName: "Woven Blanket" },
+  ]);
+  const [productId, setProductId] = React.useState("blankets");
   const shareCode = React.useMemo(
     () => encodePatternShare(createPatternSnapshot(state)),
     [state],
@@ -476,6 +486,28 @@ function StudioWorkspace({
   const [shareStatus, setShareStatus] = React.useState("");
   const [showQr, setShowQr] = React.useState(false);
   const [qrDataUrl, setQrDataUrl] = React.useState("");
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("./textures/curated/catalog.json")
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((catalog) => {
+        if (cancelled || !Array.isArray(catalog.products)) return;
+        const enabledProducts = catalog.products.filter((product) => product.enabled !== false);
+        if (!enabledProducts.length) return;
+        setProducts(enabledProducts);
+        setProductId((current) => enabledProducts.some((product) => product.id === current)
+          ? current
+          : (catalog.defaultProductId || enabledProducts[0].id));
+      })
+      .catch((error) => console.error("[haptique] product catalog failed", error));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   React.useEffect(() => {
     if (!showQr) return undefined;
@@ -589,6 +621,16 @@ function StudioWorkspace({
           className: "studio-panel-content",
           children: [
             jsx("p", { className: "panel-index", children: "01 / GENERATOR FAMILY" }),
+            jsx(StudioField, {
+              label: "PRODUCT TYPE",
+              children: jsx("select", {
+                value: productId,
+                onChange: (event) => setProductId(event.target.value),
+                children: products.map((product) =>
+                  jsx("option", { value: product.id, children: product.displayName }, product.id),
+                ),
+              }),
+            }),
             jsx(StudioField, {
               label: "ACTIVE SERIES",
               children: jsx("select", {
@@ -834,7 +876,302 @@ function StudioWorkspace({
   });
 }
 
-function StartMenu({ open, onOpenWindow, onOpenStudio }) {
+function randomParameterValue(parameter) {
+  if (parameter.options) {
+    return parameter.options[Math.floor(Math.random() * parameter.options.length)];
+  }
+  const steps = Math.round((parameter.max - parameter.min) / parameter.step);
+  const value = parameter.min + Math.floor(Math.random() * (steps + 1)) * parameter.step;
+  const precision = Math.max(0, (String(parameter.step).split(".")[1] || "").length);
+  return Number(value.toFixed(precision));
+}
+
+function ShopWorkspace({
+  state,
+  onStateChange,
+  windows,
+  active,
+  onFocus,
+  onMinimize,
+  onClose,
+  onAddToCart,
+}) {
+  const fallbackProducts = React.useMemo(() => [
+    {
+      id: "blankets",
+      name: "Blanket",
+      displayName: "Woven Blanket",
+      manifestPath: "./textures/curated/blankets/curated_list.json",
+      enabled: true,
+    },
+  ], []);
+  const [products, setProducts] = React.useState(fallbackProducts);
+  const [productId, setProductId] = React.useState("blankets");
+  const [items, setItems] = React.useState([]);
+  const [randomItem, setRandomItem] = React.useState(null);
+  const [selectedItem, setSelectedItem] = React.useState(null);
+  const [catalogStatus, setCatalogStatus] = React.useState("LOADING CURATED EDITIONS...");
+  const [cartStatus, setCartStatus] = React.useState("");
+  const stateRef = React.useRef(state);
+  stateRef.current = state;
+  const previewItems = React.useMemo(
+    () => randomItem ? [...items, randomItem] : items,
+    [items, randomItem],
+  );
+  const previews = useCuratedPatternPreviews(previewItems);
+  const currentProduct = products.find((product) => product.id === productId) || products[0];
+  const selectedPreview = selectedItem ? previews[selectedItem.id] : null;
+
+  const selectItem = React.useCallback((item) => {
+    try {
+      const snapshot = decodePatternShare(item.hash);
+      onStateChange(applyPatternSnapshot(stateRef.current, snapshot));
+      setSelectedItem(item);
+      setRandomItem(null);
+      setCartStatus("");
+    } catch (error) {
+      setCatalogStatus(error.message);
+    }
+  }, [onStateChange]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch("./textures/curated/catalog.json")
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((catalog) => {
+        if (cancelled || !Array.isArray(catalog.products) || !catalog.products.length) return;
+        const enabledProducts = catalog.products.filter((product) => product.enabled !== false);
+        if (!enabledProducts.length) return;
+        setProducts(enabledProducts);
+        setProductId((current) => enabledProducts.some((product) => product.id === current)
+          ? current
+          : (catalog.defaultProductId || enabledProducts[0].id));
+      })
+      .catch((error) => console.error("[haptique] curated catalog failed", error));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!currentProduct) return undefined;
+    let cancelled = false;
+    setItems([]);
+    setRandomItem(null);
+    setSelectedItem(null);
+    setCatalogStatus("LOADING CURATED EDITIONS...");
+    const path = currentProduct.manifestPath.replace("{seriesId}", state.seriesId);
+    fetch(path)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((manifest) => {
+        if (cancelled) return;
+        const seriesItems = manifest.series?.[state.seriesId];
+        const nextItems = Array.isArray(seriesItems)
+          ? seriesItems.slice(0, 12)
+          : Array.isArray(manifest.items)
+            ? manifest.items.slice(0, 12)
+            : [];
+        setItems(nextItems);
+        setCatalogStatus(nextItems.length ? "" : "NO CURATED EDITIONS FOUND");
+        if (nextItems[0]) selectItem(nextItems[0]);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("[haptique] curated manifest failed", error);
+        setCatalogStatus("CURATED LIST UNAVAILABLE");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentProduct, selectItem, state.seriesId]);
+
+  const chooseSeries = (seriesId) => {
+    onStateChange({ ...stateRef.current, seriesId });
+    setCartStatus("");
+  };
+  const generateRandom = () => {
+    const series = SERIES_BY_ID[state.seriesId];
+    const paletteIndex = Math.floor(Math.random() * series.palettes.length);
+    const palette = series.palettes[paletteIndex];
+    const nextState = {
+      ...state,
+      seed: Math.floor(Math.random() * 1000000),
+      paletteIndexesBySeriesId: {
+        ...state.paletteIndexesBySeriesId,
+        [state.seriesId]: paletteIndex,
+      },
+      paletteValuesBySeriesId: {
+        ...state.paletteValuesBySeriesId,
+        [state.seriesId]: { bg: palette.bg, colors: [...palette.colors] },
+      },
+      parametersBySeriesId: {
+        ...state.parametersBySeriesId,
+        [state.seriesId]: Object.fromEntries(
+          series.parameters.map((parameter) => [parameter.key, randomParameterValue(parameter)]),
+        ),
+      },
+    };
+    const item = {
+      id: `random-${state.seriesId}-${nextState.seed}`,
+      name: "Random generation",
+      hash: encodePatternShare(createPatternSnapshot(nextState)),
+    };
+    onStateChange(nextState);
+    setRandomItem(item);
+    setSelectedItem(item);
+    setCartStatus("");
+  };
+  const addSelectedToCart = () => {
+    if (!selectedItem || !currentProduct) return;
+    onAddToCart({
+      productId: currentProduct.id,
+      productName: currentProduct.displayName,
+      seriesId: state.seriesId,
+      designName: selectedItem.name,
+      designHash: selectedItem.hash,
+    });
+    setCartStatus("ADDED TO CART");
+  };
+  const windowProps = (id, title, className) => ({
+    id,
+    title,
+    className: `shop-tool-window ${className}`,
+    status: windows[id],
+    active: active === id,
+    onFocus: () => onFocus(id),
+    onMinimize: () => onMinimize(id),
+    onClose: () => onClose(id),
+  });
+
+  return jsxs(React.Fragment, {
+    children: [
+      jsx(OSWindow, {
+        ...windowProps("curated", "CURATED.EXE", "curated-window"),
+        children: jsxs("div", {
+          className: "curated-panel",
+          children: [
+            jsxs("div", {
+              className: "curated-heading",
+              children: [
+                jsxs("span", { children: [SERIES_BY_ID[state.seriesId].name, " / ", currentProduct?.displayName || "Product"] }),
+                jsx("b", { children: "12 SELECTED EDITIONS" }),
+              ],
+            }),
+            catalogStatus && jsx("div", { className: "curated-status", children: catalogStatus }),
+            jsx("div", {
+              className: "curated-grid",
+              children: items.map((item, index) =>
+                jsxs("button", {
+                  type: "button",
+                  className: selectedItem?.id === item.id ? "curated-card is-selected" : "curated-card",
+                  onClick: () => selectItem(item),
+                  "aria-pressed": selectedItem?.id === item.id,
+                  children: [
+                    jsx("span", {
+                      className: previews[item.id] ? "curated-card-media is-ready" : "curated-card-media",
+                      children: previews[item.id]
+                        ? jsx("img", { src: previews[item.id], alt: "" })
+                        : jsx("i", { children: "RENDERING" }),
+                    }),
+                    jsxs("span", {
+                      className: "curated-card-meta",
+                      children: [
+                        jsx("b", { children: String(index + 1).padStart(2, "0") }),
+                        jsx("span", { children: item.name }),
+                      ],
+                    }),
+                  ],
+                }, item.id),
+              ),
+            }),
+          ],
+        }),
+      }),
+      jsx(OSWindow, {
+        ...windowProps("shopSeries", "SHOP.SELECT", "shop-series-window"),
+        children: jsxs("div", {
+          className: "shop-select-panel",
+          children: [
+            jsx(StudioField, {
+              label: "PRODUCT TYPE",
+              children: jsx("select", {
+                value: productId,
+                onChange: (event) => setProductId(event.target.value),
+                children: products.map((product) =>
+                  jsx("option", { value: product.id, children: product.displayName }, product.id),
+                ),
+              }),
+            }),
+            jsx(StudioField, {
+              label: "SERIES",
+              children: jsx("select", {
+                value: state.seriesId,
+                onChange: (event) => chooseSeries(event.target.value),
+                children: SERIES.map((series) =>
+                  jsx("option", { value: series.id, children: `${series.id.toUpperCase()} — ${series.name}` }, series.id),
+                ),
+              }),
+            }),
+            jsxs("button", {
+              type: "button",
+              className: "random-shop-button",
+              onClick: generateRandom,
+              children: [jsx(Dices, { size: 14, strokeWidth: 1.8, "aria-hidden": "true" }), "RANDOM GENERATE"],
+            }),
+          ],
+        }),
+      }),
+      jsx(OSWindow, {
+        ...windowProps("irl", "IRL.EXE", "irl-window"),
+        children: jsxs("div", {
+          className: "irl-panel",
+          children: [
+            jsxs("div", {
+              className: "irl-heading",
+              children: [jsx("span", { children: "PRODUCT IMAGE / 01" }), jsx("b", { children: "IRL ASSET SLOT" })],
+            }),
+            jsx("div", {
+              className: "irl-stage",
+              children: selectedPreview
+                ? jsxs("div", {
+                    className: "irl-blanket",
+                    children: [jsx("img", { src: selectedPreview, alt: "Selected blanket pattern preview" }), jsx("span", { "aria-hidden": "true" })],
+                  })
+                : jsx("span", { className: "irl-empty", children: "SELECT AN EDITION" }),
+            }),
+            jsxs("div", {
+              className: "irl-selection",
+              children: [
+                jsx("span", { children: currentProduct?.displayName || "PRODUCT" }),
+                jsx("b", { children: selectedItem?.name || "NO DESIGN SELECTED" }),
+                jsx("i", { children: `${state.seriesId.toUpperCase()} / SEED ${String(state.seed).padStart(6, "0")}` }),
+              ],
+            }),
+            jsxs("button", {
+              type: "button",
+              className: "add-cart-button",
+              disabled: !selectedItem,
+              onClick: addSelectedToCart,
+              children: [
+                jsx(ShoppingCart, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }),
+                jsx("span", { children: cartStatus || "ADD TO CART" }),
+                jsx(ArrowRight, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }),
+              ],
+            }),
+          ],
+        }),
+      }),
+    ],
+  });
+}
+
+function StartMenu({ open, onOpenWindow, onOpenStudio, onOpenShop }) {
   if (!open) return null;
   return jsxs("div", {
     className: "start-menu",
@@ -855,7 +1192,7 @@ function StartMenu({ open, onOpenWindow, onOpenStudio }) {
                 className: "start-app",
                 href: `#${id}`,
                 role: "menuitem",
-                onClick: id === "studio" ? onOpenStudio : undefined,
+                onClick: id === "studio" ? onOpenStudio : id === "shop" ? onOpenShop : undefined,
                 children: [jsx("span", { className: "start-app-icon", children: jsx(AppGlyph, { id, size: 14 }) }), jsx("b", { children: label }), jsx(ArrowRight, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" })],
               },
               id,
@@ -874,17 +1211,20 @@ const WINDOW_LABELS = {
   welcome: "WELCOME.TXT",
   preview: "PREVIEW.EXE",
   series: "SERIES.SELECT",
+  shopSeries: "SHOP.SELECT",
+  curated: "CURATED.EXE",
+  irl: "IRL.EXE",
   seed: "SEED.EXE",
   palette: "PALETTE.DAT",
   attributes: "ATTRIBUTES.CFG",
   export: "EXPORT.ORDER",
 };
 
-function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onStart, onRestore, onTaskWindow, onLocale, onOpenStudio }) {
+function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onStart, onRestore, onTaskWindow, onLocale, onOpenStudio, onOpenShop }) {
   return jsxs("footer", {
     className: "taskbar",
     children: [
-      jsx(StartMenu, { open: startOpen, onOpenWindow: onRestore, onOpenStudio }),
+      jsx(StartMenu, { open: startOpen, onOpenWindow: onRestore, onOpenStudio, onOpenShop }),
       jsxs("button", {
         type: "button",
         className: startOpen ? "start-button is-active" : "start-button",
@@ -941,14 +1281,14 @@ function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onSta
   });
 }
 
-function MobileDock({ onOpenStudio }) {
+function MobileDock({ onOpenStudio, onOpenShop }) {
   return jsx("nav", {
     className: "mobile-dock",
     "aria-label": "Mobile navigation",
     children: APP_LINKS.slice(0, 3).map(([id, label]) =>
       jsxs("a", {
         href: `#${id}`,
-        onClick: id === "studio" ? onOpenStudio : undefined,
+        onClick: id === "studio" ? onOpenStudio : id === "shop" ? onOpenShop : undefined,
         children: [jsx("span", { children: jsx(AppGlyph, { id, size: 15 }) }), label],
       }, id),
     ),
@@ -960,6 +1300,9 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     welcome: "open",
     preview: "open",
     series: "closed",
+    shopSeries: "closed",
+    curated: "closed",
+    irl: "closed",
     seed: "closed",
     palette: "closed",
     attributes: "closed",
@@ -968,7 +1311,8 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   const [active, setActive] = React.useState("preview");
   const [maximized, setMaximized] = React.useState(false);
   const [previewResetKey, setPreviewResetKey] = React.useState(0);
-  const [studioMode, setStudioMode] = React.useState(false);
+  const [workspaceMode, setWorkspaceMode] = React.useState("home");
+  const [cartItems, setCartItems] = React.useState([]);
   const [startOpen, setStartOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [locale, setLocale] = React.useState("en");
@@ -997,7 +1341,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     if (windows[id] === "open") setActive(id);
   };
   const openStudio = () => {
-    setStudioMode(true);
+    setWorkspaceMode("studio");
     setMaximized(false);
     setPreviewResetKey((value) => value + 1);
     setWindows((current) => ({
@@ -1005,6 +1349,9 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       welcome: "minimized",
       preview: "open",
       series: "open",
+      shopSeries: "closed",
+      curated: "closed",
+      irl: "closed",
       seed: "open",
       palette: "open",
       attributes: "open",
@@ -1013,14 +1360,37 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     setActive("preview");
     setStartOpen(false);
   };
+  const openShop = () => {
+    setWorkspaceMode("shop");
+    setMaximized(false);
+    setPreviewResetKey((value) => value + 1);
+    setWindows((current) => ({
+      ...current,
+      welcome: "minimized",
+      preview: "open",
+      series: "closed",
+      seed: "closed",
+      palette: "closed",
+      attributes: "closed",
+      export: "closed",
+      shopSeries: "open",
+      curated: "open",
+      irl: "open",
+    }));
+    setActive("curated");
+    setStartOpen(false);
+  };
   const openHome = () => {
-    setStudioMode(false);
+    setWorkspaceMode("home");
     setMaximized(false);
     setWindows((current) => ({
       ...current,
       welcome: "open",
       preview: "open",
       series: "closed",
+      shopSeries: "closed",
+      curated: "closed",
+      irl: "closed",
       seed: "closed",
       palette: "closed",
       attributes: "closed",
@@ -1042,14 +1412,16 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     children: [
       jsx(SiteHeader, {
         copy,
+        cartCount: cartItems.length,
         menuOpen,
         onMenuToggle: () => setMenuOpen((value) => !value),
         onMenuClose: () => setMenuOpen(false),
         onOpenStudio: openStudio,
+        onOpenShop: openShop,
         onHome: openHome,
       }),
       jsxs("main", {
-        className: studioMode ? "desktop is-studio" : "desktop",
+        className: `desktop is-${workspaceMode}`,
         id: "home",
         children: [
           jsx("div", { className: "desktop-watermark", "aria-hidden": "true", children: "H/01" }),
@@ -1066,7 +1438,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
           jsx(PreviewWindow, {
             preview,
             previewZoom,
-            studioMode,
+            workspaceMode,
             studioState,
             actionsRef: studioActionsRef,
             resetPositionKey: previewResetKey,
@@ -1078,7 +1450,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             onClose: () => setWindowStatus("preview", "closed"),
             onMaximize: () => setMaximized((value) => !value),
           }),
-          studioMode &&
+          workspaceMode === "studio" &&
             jsx(StudioWorkspace, {
               state: studioState,
               onStateChange: onStudioStateChange,
@@ -1088,6 +1460,17 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
               onFocus: setActive,
               onMinimize: (id) => setWindowStatus(id, "minimized"),
               onClose: (id) => setWindowStatus(id, "closed"),
+            }),
+          workspaceMode === "shop" &&
+            jsx(ShopWorkspace, {
+              state: studioState,
+              onStateChange: onStudioStateChange,
+              windows,
+              active,
+              onFocus: setActive,
+              onMinimize: (id) => setWindowStatus(id, "minimized"),
+              onClose: (id) => setWindowStatus(id, "closed"),
+              onAddToCart: (item) => setCartItems((current) => [...current, item]),
             }),
         ],
       }),
@@ -1104,8 +1487,9 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         onTaskWindow: toggleTaskbarWindow,
         onLocale: () => setLocale((value) => (value === "en" ? "fr" : "en")),
         onOpenStudio: openStudio,
+        onOpenShop: openShop,
       }),
-      jsx(MobileDock, { onOpenStudio: openStudio }),
+      jsx(MobileDock, { onOpenStudio: openStudio, onOpenShop: openShop }),
     ],
   });
 }

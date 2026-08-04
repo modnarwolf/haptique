@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "defaultProductId": "blankets",
+  "products": [
+    {
+      "id": "blankets",
+      "name": "Blanket",
+      "displayName": "Woven Blanket",
+      "manifestPath": "./textures/curated/blankets/curated_list.json",
+      "enabled": true
+    }
+  ]
+}
