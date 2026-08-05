@@ -124,7 +124,7 @@ const SHELL_COPY = {
     apps: { studio: "STUDIO", shop: "SHOP", archive: "ARCHIVE", about: "ABOUT" },
     windows: {
       welcome: "WELCOME.TXT", preview: "PREVIEW.EXE", series: "SERIES.SELECT",
-      shopSeries: "SHOP.SELECT", curated: "CURATED.EXE", irl: "IRL.EXE",
+      shopSeries: "SHOP.SELECT", curated: "CURATED.EXE", irl: "IRL.EXE", orderInfo: "ORDER.INFO",
       seed: "SEED.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTES.CFG",
       settings: "SETTINGS.CFG", about: "ABOUT.TXT", archive: "ARCHIVE.DIR", cart: "CART.EXE",
     },
@@ -146,7 +146,7 @@ const SHELL_COPY = {
     apps: { studio: "STUDIO", shop: "BOUTIQUE", archive: "ARCHIVES", about: "À PROPOS" },
     windows: {
       welcome: "BIENVENUE.TXT", preview: "APERÇU.EXE", series: "SÉRIE.SELECT",
-      shopSeries: "BOUTIQUE.SELECT", curated: "SÉLECTION.EXE", irl: "RÉEL.EXE",
+      shopSeries: "BOUTIQUE.SELECT", curated: "SÉLECTION.EXE", irl: "RÉEL.EXE", orderInfo: "COMMANDE.INFO",
       seed: "GRAINE.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTS.CFG",
       settings: "RÉGLAGES.CFG", about: "À_PROPOS.TXT", archive: "ARCHIVES.DIR", cart: "CART.EXE",
     },
@@ -168,7 +168,7 @@ const SHELL_COPY = {
     apps: { studio: "ESTUDIO", shop: "TIENDA", archive: "ARCHIVO", about: "ACERCA DE" },
     windows: {
       welcome: "BIENVENIDA.TXT", preview: "VISTA_PREVIA.EXE", series: "SERIE.SELECT",
-      shopSeries: "TIENDA.SELECT", curated: "SELECCIÓN.EXE", irl: "REAL.EXE",
+      shopSeries: "TIENDA.SELECT", curated: "SELECCIÓN.EXE", irl: "REAL.EXE", orderInfo: "PEDIDO.INFO",
       seed: "SEMILLA.EXE", palette: "PALETA.DAT", attributes: "ATRIBUTOS.CFG",
       settings: "AJUSTES.CFG", about: "ACERCA_DE.TXT", archive: "ARCHIVO.DIR", cart: "CART.EXE",
     },
@@ -190,7 +190,7 @@ const SHELL_COPY = {
     apps: { studio: "工作室", shop: "商店", archive: "档案", about: "关于" },
     windows: {
       welcome: "欢迎.TXT", preview: "预览.EXE", series: "系列.SELECT",
-      shopSeries: "商店.SELECT", curated: "精选.EXE", irl: "实物.EXE",
+      shopSeries: "商店.SELECT", curated: "精选.EXE", irl: "实物.EXE", orderInfo: "订单.INFO",
       seed: "种子.EXE", palette: "调色板.DAT", attributes: "属性.CFG",
       settings: "设置.CFG", about: "关于.TXT", archive: "档案.DIR", cart: "CART.EXE",
     },
@@ -302,6 +302,7 @@ const WINDOW_ICONS = {
   shopSeries: ShoppingBag,
   curated: Grid3X3,
   irl: FileImage,
+  orderInfo: ShoppingCart,
   seed: Hash,
   palette: Palette,
   attributes: Settings2,
@@ -1048,14 +1049,6 @@ function StudioWorkspace({
     () => encodePatternShare(createPatternSnapshot(state)),
     [state],
   );
-  const [productPreviewHash, setProductPreviewHash] = React.useState(shareCode);
-  const studioPreviewItems = React.useMemo(
-    () => [{ id: "studio-live-product", hash: productPreviewHash }],
-    [productPreviewHash],
-  );
-  const studioProductPreviews = useCuratedPatternPreviews(studioPreviewItems);
-  const studioProductPreview = studioProductPreviews["studio-live-product"];
-  const studioProductPreviewCurrent = productPreviewHash === shareCode ? studioProductPreview : null;
   const shareUrl = React.useMemo(() => createPatternShareUrl(shareCode), [shareCode]);
   const [savedDesigns, setSavedDesigns] = React.useState(() => {
     try {
@@ -1075,11 +1068,6 @@ function StudioWorkspace({
   const [shareStatus, setShareStatus] = React.useState("");
   const [showQr, setShowQr] = React.useState(false);
   const [qrDataUrl, setQrDataUrl] = React.useState("");
-
-  React.useEffect(() => {
-    const timer = window.setTimeout(() => setProductPreviewHash(shareCode), 160);
-    return () => window.clearTimeout(timer);
-  }, [shareCode]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -1232,16 +1220,6 @@ function StudioWorkspace({
           className: "studio-panel-content",
           children: [
             jsx("p", { className: "panel-index", children: "01 / GENERATOR FAMILY" }),
-            jsx(StudioField, {
-              label: "PRODUCT TYPE",
-              children: jsx("select", {
-                value: productId,
-                onChange: (event) => setProductId(event.target.value),
-                children: products.map((product) =>
-                  jsx("option", { value: product.id, children: product.displayName }, product.id),
-                ),
-              }),
-            }),
             jsx(StudioField, {
               label: "ACTIVE SERIES",
               children: jsx("select", {
@@ -1455,42 +1433,56 @@ function StudioWorkspace({
         }),
       }),
       jsx(OSWindow, {
-        ...windowProps("irl", "IRL.EXE", "studio-irl-window"),
+        ...windowProps("orderInfo", "ORDER.INFO", "order-info-window"),
         children: jsxs("div", {
-          className: "irl-panel studio-irl-panel",
+          className: "order-info-panel",
           children: [
             jsxs("div", {
-              className: "irl-heading",
-              children: [jsx("span", { children: "FLAT PATTERN / LIVE" }), jsx("b", { children: "PRICE + OBJECT" })],
-            }),
-            jsx("div", {
-              className: "irl-stage studio-flat-stage",
-              children: studioProductPreviewCurrent
-                ? jsx("div", {
-                    className: "studio-flat-pattern",
-                    children: jsx("img", { src: studioProductPreviewCurrent, alt: `Flat pattern for ${currentProduct?.displayName || "product"}` }),
-                  })
-                : jsx("span", { className: "irl-empty", children: "UPDATING FLAT PATTERN" }),
-            }),
-            jsxs("div", {
-              className: "irl-selection studio-product-details",
+              className: "order-info-specs",
               children: [
-                jsx("span", { children: currentProduct?.displayName || "PRODUCT" }),
-                jsx("b", { children: `Custom ${series.name}` }),
-                jsx("span", { children: currentProduct?.option || "50 × 60 IN" }),
-                jsx("b", { children: formatMoney(currentProduct?.priceCents || 0, currentProduct?.currency || "USD") }),
-                jsx("i", { children: `${state.seriesId.toUpperCase()} / SEED ${String(state.seed).padStart(6, "0")}` }),
+                jsx(StudioField, {
+                  label: "PRODUCT TYPE",
+                  className: "order-product-field",
+                  children: jsx("select", {
+                    value: productId,
+                    onChange: (event) => setProductId(event.target.value),
+                    children: products.map((product) =>
+                      jsx("option", { value: product.id, children: product.displayName }, product.id),
+                    ),
+                  }),
+                }),
+                jsxs("dl", {
+                  className: "order-info-readout",
+                  children: [
+                    jsx("dt", { children: "DIMENSIONS" }),
+                    jsx("dd", { children: currentProduct?.option || "50 × 60 IN" }),
+                    jsx("dt", { children: "SERIES / SEED" }),
+                    jsx("dd", { children: `${state.seriesId.toUpperCase()} / ${String(state.seed).padStart(6, "0")}` }),
+                  ],
+                }),
               ],
             }),
-            jsxs("button", {
-              type: "button",
-              className: "add-cart-button",
-              disabled: !studioProductPreviewCurrent,
-              onClick: addCurrentDesignToCart,
+            jsxs("div", {
+              className: "order-info-purchase",
               children: [
-                jsx(ShoppingCart, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }),
-                jsx("span", { children: "ADD CUSTOM OBJECT" }),
-                jsx(ArrowRight, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }),
+                jsxs("div", {
+                  className: "order-price",
+                  children: [
+                    jsx("span", { children: "MADE TO ORDER" }),
+                    jsx("strong", { children: formatMoney(currentProduct?.priceCents || 0, currentProduct?.currency || "USD") }),
+                    jsx("small", { children: `CUSTOM ${series.name.toUpperCase()}` }),
+                  ],
+                }),
+                jsxs("button", {
+                  type: "button",
+                  className: "order-add-cart",
+                  onClick: addCurrentDesignToCart,
+                  children: [
+                    jsx(ShoppingCart, { size: 16, strokeWidth: 1.9, "aria-hidden": "true" }),
+                    jsx("span", { children: "ADD TO CART" }),
+                    jsx(ArrowRight, { size: 16, strokeWidth: 1.9, "aria-hidden": "true" }),
+                  ],
+                }),
               ],
             }),
           ],
@@ -1941,7 +1933,7 @@ function Taskbar({ copy, windows, active, clock, locale, sound, startOpen, onSta
                 type: "button",
                 className: `${active === id && status === "open" ? "is-active" : ""} ${status === "minimized" ? "is-minimized" : ""}`,
                 onClick: () => onTaskWindow(id),
-                children: [jsx("span", { className: "task-app-icon", children: jsx(AppGlyph, { id, size: 12 }) }), copy.windows[id]],
+                children: [jsx("span", { className: "task-app-icon", children: jsx(AppGlyph, { id, size: 12 }) }), copy.windows[id] || id.toUpperCase()],
               },
               id,
             ),
@@ -2020,6 +2012,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     shopSeries: "closed",
     curated: "closed",
     irl: "closed",
+    orderInfo: "closed",
     seed: "closed",
     palette: "closed",
     attributes: "closed",
@@ -2146,7 +2139,8 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       series: "open",
       shopSeries: "closed",
       curated: "closed",
-      irl: "open",
+      irl: "closed",
+      orderInfo: "open",
       seed: "open",
       palette: "open",
       attributes: "open",
@@ -2172,6 +2166,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       seed: "closed",
       palette: "closed",
       attributes: "closed",
+      orderInfo: "closed",
       shopSeries: "open",
       curated: "open",
       irl: "open",
@@ -2196,6 +2191,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       shopSeries: "closed",
       curated: "closed",
       irl: "closed",
+      orderInfo: "closed",
       seed: "closed",
       palette: "closed",
       attributes: "closed",
