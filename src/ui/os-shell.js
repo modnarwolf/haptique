@@ -126,7 +126,7 @@ const SHELL_COPY = {
       welcome: "WELCOME.TXT", preview: "PREVIEW.EXE", series: "SERIES.SELECT",
       shopSeries: "SHOP.SELECT", curated: "CURATED.EXE", irl: "IRL.EXE",
       seed: "SEED.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTES.CFG",
-      export: "EXPORT.ORDER", settings: "SETTINGS.CFG", about: "ABOUT.TXT", archive: "ARCHIVE.DIR", cart: "CART.EXE",
+      settings: "SETTINGS.CFG", about: "ABOUT.TXT", archive: "ARCHIVE.DIR", cart: "CART.EXE",
     },
     aboutKicker: "HAPTIQUE / ABOUT",
     aboutTitle: "CREATIVE SOFTWARE FOR REAL THINGS.",
@@ -148,7 +148,7 @@ const SHELL_COPY = {
       welcome: "BIENVENUE.TXT", preview: "APERÇU.EXE", series: "SÉRIE.SELECT",
       shopSeries: "BOUTIQUE.SELECT", curated: "SÉLECTION.EXE", irl: "RÉEL.EXE",
       seed: "GRAINE.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTS.CFG",
-      export: "EXPORTER.ORDER", settings: "RÉGLAGES.CFG", about: "À_PROPOS.TXT", archive: "ARCHIVES.DIR", cart: "CART.EXE",
+      settings: "RÉGLAGES.CFG", about: "À_PROPOS.TXT", archive: "ARCHIVES.DIR", cart: "CART.EXE",
     },
     aboutKicker: "HAPTIQUE / À PROPOS",
     aboutTitle: "LOGICIEL CRÉATIF POUR OBJETS RÉELS.",
@@ -170,7 +170,7 @@ const SHELL_COPY = {
       welcome: "BIENVENIDA.TXT", preview: "VISTA_PREVIA.EXE", series: "SERIE.SELECT",
       shopSeries: "TIENDA.SELECT", curated: "SELECCIÓN.EXE", irl: "REAL.EXE",
       seed: "SEMILLA.EXE", palette: "PALETA.DAT", attributes: "ATRIBUTOS.CFG",
-      export: "EXPORTAR.ORDER", settings: "AJUSTES.CFG", about: "ACERCA_DE.TXT", archive: "ARCHIVO.DIR", cart: "CART.EXE",
+      settings: "AJUSTES.CFG", about: "ACERCA_DE.TXT", archive: "ARCHIVO.DIR", cart: "CART.EXE",
     },
     aboutKicker: "HAPTIQUE / ACERCA DE",
     aboutTitle: "SOFTWARE CREATIVO PARA OBJETOS REALES.",
@@ -192,7 +192,7 @@ const SHELL_COPY = {
       welcome: "欢迎.TXT", preview: "预览.EXE", series: "系列.SELECT",
       shopSeries: "商店.SELECT", curated: "精选.EXE", irl: "实物.EXE",
       seed: "种子.EXE", palette: "调色板.DAT", attributes: "属性.CFG",
-      export: "导出.ORDER", settings: "设置.CFG", about: "关于.TXT", archive: "档案.DIR", cart: "CART.EXE",
+      settings: "设置.CFG", about: "关于.TXT", archive: "档案.DIR", cart: "CART.EXE",
     },
     aboutKicker: "HAPTIQUE / 关于",
     aboutTitle: "为真实物品而生的创意软件。",
@@ -305,7 +305,6 @@ const WINDOW_ICONS = {
   seed: Hash,
   palette: Palette,
   attributes: Settings2,
-  export: Download,
   settings: Settings2,
   about: Info,
   cart: ShoppingCart,
@@ -395,7 +394,7 @@ function CartIcon() {
   return jsx(ShoppingCart, { className: "cart-icon", size: 19, strokeWidth: 1.8, "aria-hidden": "true" });
 }
 
-function SiteHeader({ copy, activePage, cartCount, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, onOpenShop, onOpenArchive, onOpenAbout, onOpenCart, onHome }) {
+function SiteHeader({ copy, activePage, cartCount, cartOpen, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, onOpenShop, onOpenArchive, onOpenAbout, onToggleCart, onHome }) {
   return jsxs("header", {
     className: "site-header",
     children: [
@@ -433,8 +432,9 @@ function SiteHeader({ copy, activePage, cartCount, menuOpen, onMenuToggle, onMen
       jsx("button", {
         className: "cart-button",
         type: "button",
-        onClick: onOpenCart,
-        "aria-label": `Open shopping cart, ${cartCount} items`,
+        onClick: onToggleCart,
+        "aria-expanded": cartOpen,
+        "aria-label": `${cartOpen ? "Close" : "Open"} shopping cart, ${cartCount} items`,
         children: jsxs(React.Fragment, {
           children: [
             jsx(CartIcon, {}),
@@ -965,12 +965,33 @@ function PreviewWindow({ copy, preview, previewZoom, workspaceMode, studioState,
           children: [
             jsx("span", { children: "LIVE CLOTH / WEBGL" }),
             jsx("span", { children: "DRAG TO MOVE · SCROLL TO ZOOM" }),
-            jsxs("span", {
-              className: "preview-zoom",
-              "aria-label": `Zoom ${previewZoom}%`,
+            jsxs("div", {
+              className: "preview-status-tools",
               children: [
-                jsx("i", { "aria-hidden": "true", children: jsx("b", { style: { width: `${previewZoom}%` } }) }),
-                jsx("output", { children: `${previewZoom}%` }),
+                workspaceMode === "studio" && jsxs("div", {
+                  className: "preview-export-actions",
+                  "aria-label": "Export image",
+                  children: [
+                    jsxs("button", {
+                      type: "button",
+                      onClick: () => actionsRef.current?.exportFlatPattern(),
+                      children: [jsx(Download, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "FLAT PNG"],
+                    }),
+                    jsxs("button", {
+                      type: "button",
+                      onClick: () => actionsRef.current?.exportCloth(),
+                      children: [jsx(FileImage, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "3D PNG"],
+                    }),
+                  ],
+                }),
+                jsxs("span", {
+                  className: "preview-zoom",
+                  "aria-label": `Zoom ${previewZoom}%`,
+                  children: [
+                    jsx("i", { "aria-hidden": "true", children: jsx("b", { style: { width: `${previewZoom}%` } }) }),
+                    jsx("output", { children: `${previewZoom}%` }),
+                  ],
+                }),
               ],
             }),
           ],
@@ -1007,7 +1028,7 @@ function StudioWorkspace({
   copy,
   state,
   onStateChange,
-  actionsRef,
+  onAddToCart,
   windows,
   active,
   onFocus,
@@ -1019,13 +1040,22 @@ function StudioWorkspace({
   const paletteIndex = state.paletteIndexesBySeriesId[state.seriesId];
   const parameters = state.parametersBySeriesId[state.seriesId];
   const [products, setProducts] = React.useState([
-    { id: "blankets", displayName: "Woven Blanket" },
+    { id: "blankets", displayName: "Woven Blanket", priceCents: 24800, currency: "USD", option: "50 × 60 IN" },
   ]);
   const [productId, setProductId] = React.useState("blankets");
+  const currentProduct = products.find((product) => product.id === productId) || products[0];
   const shareCode = React.useMemo(
     () => encodePatternShare(createPatternSnapshot(state)),
     [state],
   );
+  const [productPreviewHash, setProductPreviewHash] = React.useState(shareCode);
+  const studioPreviewItems = React.useMemo(
+    () => [{ id: "studio-live-product", hash: productPreviewHash }],
+    [productPreviewHash],
+  );
+  const studioProductPreviews = useCuratedPatternPreviews(studioPreviewItems);
+  const studioProductPreview = studioProductPreviews["studio-live-product"];
+  const studioProductPreviewCurrent = productPreviewHash === shareCode ? studioProductPreview : null;
   const shareUrl = React.useMemo(() => createPatternShareUrl(shareCode), [shareCode]);
   const [savedDesigns, setSavedDesigns] = React.useState(() => {
     try {
@@ -1045,6 +1075,11 @@ function StudioWorkspace({
   const [shareStatus, setShareStatus] = React.useState("");
   const [showQr, setShowQr] = React.useState(false);
   const [qrDataUrl, setQrDataUrl] = React.useState("");
+
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setProductPreviewHash(shareCode), 160);
+    return () => window.clearTimeout(timer);
+  }, [shareCode]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -1160,6 +1195,22 @@ function StudioWorkspace({
     } catch (error) {
       setShareStatus(error.message);
     }
+  };
+  const addCurrentDesignToCart = () => {
+    if (!currentProduct) return;
+    onAddToCart({
+      lineId: `${currentProduct.id}:${state.seriesId}:custom:${shareCode}`,
+      productId: currentProduct.id,
+      productName: currentProduct.displayName,
+      seriesId: state.seriesId,
+      designId: `custom-${state.seriesId}-${state.seed}`,
+      designName: `Custom ${series.name}`,
+      designHash: shareCode,
+      option: currentProduct.option || "50 × 60 IN",
+      unitPriceCents: currentProduct.priceCents || 0,
+      currency: currentProduct.currency || "USD",
+      quantity: 1,
+    });
   };
   const windowProps = (id, title, className) => ({
     id,
@@ -1404,30 +1455,43 @@ function StudioWorkspace({
         }),
       }),
       jsx(OSWindow, {
-        ...windowProps("export", "EXPORT.ORDER", "export-window"),
+        ...windowProps("irl", "IRL.EXE", "studio-irl-window"),
         children: jsxs("div", {
-          className: "studio-panel-content export-panel",
+          className: "irl-panel studio-irl-panel",
           children: [
-            jsx("p", { className: "panel-index", children: "05 / SAVE + CONTINUE" }),
             jsxs("div", {
-              className: "export-grid",
+              className: "irl-heading",
+              children: [jsx("span", { children: "FLAT PATTERN / LIVE" }), jsx("b", { children: "PRICE + OBJECT" })],
+            }),
+            jsx("div", {
+              className: "irl-stage studio-flat-stage",
+              children: studioProductPreviewCurrent
+                ? jsx("div", {
+                    className: "studio-flat-pattern",
+                    children: jsx("img", { src: studioProductPreviewCurrent, alt: `Flat pattern for ${currentProduct?.displayName || "product"}` }),
+                  })
+                : jsx("span", { className: "irl-empty", children: "UPDATING FLAT PATTERN" }),
+            }),
+            jsxs("div", {
+              className: "irl-selection studio-product-details",
               children: [
-                jsxs("button", {
-                  type: "button",
-                  onClick: () => actionsRef.current?.exportFlatPattern(),
-                  children: [jsx(Download, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "FLAT PNG"],
-                }),
-                jsxs("button", {
-                  type: "button",
-                  onClick: () => actionsRef.current?.exportCloth(),
-                  children: [jsx(FileImage, { size: 11, strokeWidth: 1.8, "aria-hidden": "true" }), "3D PNG"],
-                }),
+                jsx("span", { children: currentProduct?.displayName || "PRODUCT" }),
+                jsx("b", { children: `Custom ${series.name}` }),
+                jsx("span", { children: currentProduct?.option || "50 × 60 IN" }),
+                jsx("b", { children: formatMoney(currentProduct?.priceCents || 0, currentProduct?.currency || "USD") }),
+                jsx("i", { children: `${state.seriesId.toUpperCase()} / SEED ${String(state.seed).padStart(6, "0")}` }),
               ],
             }),
-            jsxs("a", {
-              className: "continue-button",
-              href: "#order",
-              children: [jsx("span", { children: "CONTINUE TO ORDER" }), jsx(ArrowRight, { size: 16, strokeWidth: 1.8, "aria-hidden": "true" })],
+            jsxs("button", {
+              type: "button",
+              className: "add-cart-button",
+              disabled: !studioProductPreviewCurrent,
+              onClick: addCurrentDesignToCart,
+              children: [
+                jsx(ShoppingCart, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }),
+                jsx("span", { children: "ADD CUSTOM OBJECT" }),
+                jsx(ArrowRight, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" }),
+              ],
             }),
           ],
         }),
@@ -1444,6 +1508,77 @@ function randomParameterValue(parameter) {
   const value = parameter.min + Math.floor(Math.random() * (steps + 1)) * parameter.step;
   const precision = Math.max(0, (String(parameter.step).split(".")[1] || "").length);
   return Number(value.toFixed(precision));
+}
+
+const CART_CELEBRATIONS = [
+  {
+    title: "YAY! IT’S IN THE CART.",
+    body: "Your made-to-order object is saved and ready when you are.",
+  },
+  {
+    title: "NICE PICK. CART UPGRADED.",
+    body: "That pattern looks good in there. Keep exploring.",
+  },
+  {
+    title: "ONE STEP CLOSER TO REAL.",
+    body: "Your digital design is queued for the physical world.",
+  },
+  {
+    title: "GOOD CHOICE. ALMOST YOURS.",
+    body: "Keep shopping or check out whenever you’re ready.",
+  },
+];
+
+function CartAddedPopup({ message, onClose }) {
+  const continueRef = React.useRef(null);
+
+  React.useEffect(() => {
+    continueRef.current?.focus();
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") onClose();
+      if (event.key === "Tab") {
+        event.preventDefault();
+        continueRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return jsxs(React.Fragment, {
+    children: [
+      jsx("button", {
+        type: "button",
+        className: "cart-added-scrim",
+        onClick: onClose,
+        tabIndex: -1,
+        "aria-label": "Dismiss cart confirmation",
+      }),
+      jsxs("section", {
+        className: "cart-added-popup",
+        role: "alertdialog",
+        "aria-modal": "true",
+        "aria-labelledby": "cart-added-title",
+        "aria-describedby": "cart-added-description",
+        children: [
+          jsxs("div", {
+            className: "cart-added-popup-label",
+            children: [jsx(Sparkles, { size: 14, strokeWidth: 1.8, "aria-hidden": "true" }), "CART UPDATED / NICE"],
+          }),
+          jsx("span", { className: "cart-added-popup-mark", "aria-hidden": "true", children: "✓" }),
+          jsx("h2", { id: "cart-added-title", children: message.title }),
+          jsx("p", { id: "cart-added-description", children: message.body }),
+          jsxs("button", {
+            ref: continueRef,
+            type: "button",
+            className: "cart-added-continue",
+            onClick: onClose,
+            children: [jsx("span", { children: "OK, CONTINUE" }), jsx(ArrowRight, { size: 16, strokeWidth: 1.8, "aria-hidden": "true" })],
+          }),
+        ],
+      }),
+    ],
+  });
 }
 
 function ShopWorkspace({
@@ -1888,7 +2023,6 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     seed: "closed",
     palette: "closed",
     attributes: "closed",
-    export: "closed",
     settings: "closed",
     cart: "closed",
   });
@@ -1898,6 +2032,9 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   const [workspaceMode, setWorkspaceMode] = React.useState("home");
   const [activePage, setActivePage] = React.useState("home");
   const [cartItems, setCartItems] = React.useState(getStoredCart);
+  const [cartCelebration, setCartCelebration] = React.useState(null);
+  const cartCelebrationIndexRef = React.useRef(-1);
+  const cartReturnFocusRef = React.useRef(null);
   const [startOpen, setStartOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [locale, setLocale] = React.useState(() => getStoredPreference("haptique.locale", "en", LOCALES.map(([value]) => value)));
@@ -1928,6 +2065,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   }, [cartItems]);
 
   const addCartItem = (item) => {
+    cartReturnFocusRef.current = document.activeElement;
     setCartItems((current) => {
       const existing = current.find((line) => line.lineId === item.lineId);
       if (!existing) return [...current, item];
@@ -1935,7 +2073,17 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         ? { ...line, quantity: Math.min(99, line.quantity + 1) }
         : line);
     });
+    const previousIndex = cartCelebrationIndexRef.current;
+    const choiceCount = previousIndex < 0 ? CART_CELEBRATIONS.length : CART_CELEBRATIONS.length - 1;
+    let nextIndex = choiceCount > 0 ? Math.floor(Math.random() * choiceCount) : 0;
+    if (previousIndex >= 0 && nextIndex >= previousIndex) nextIndex += 1;
+    cartCelebrationIndexRef.current = nextIndex;
+    setCartCelebration(CART_CELEBRATIONS[nextIndex]);
   };
+  const closeCartCelebration = React.useCallback(() => {
+    setCartCelebration(null);
+    window.requestAnimationFrame(() => cartReturnFocusRef.current?.focus());
+  }, []);
   const changeCartQuantity = (lineId, quantity) => {
     const nextQuantity = Math.min(99, Math.max(1, Number(quantity) || 1));
     setCartItems((current) => current.map((item) => item.lineId === lineId
@@ -1998,11 +2146,10 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       series: "open",
       shopSeries: "closed",
       curated: "closed",
-      irl: "closed",
+      irl: "open",
       seed: "open",
       palette: "open",
       attributes: "open",
-      export: "open",
     }));
     setActive("preview");
     setActivePage("studio");
@@ -2025,7 +2172,6 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       seed: "closed",
       palette: "closed",
       attributes: "closed",
-      export: "closed",
       shopSeries: "open",
       curated: "open",
       irl: "open",
@@ -2053,7 +2199,6 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       seed: "closed",
       palette: "closed",
       attributes: "closed",
-      export: "closed",
     }));
     setActive("preview");
     setActivePage("home");
@@ -2079,6 +2224,10 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     setWindowStatus("cart", "closed");
     setActivePage(workspaceMode);
   };
+  const toggleCart = () => {
+    if (windows.cart === "open") closeCart();
+    else openCart();
+  };
   const openArchivedSeries = (seriesId) => {
     onStudioStateChange({ ...studioState, seriesId });
     openStudio();
@@ -2099,6 +2248,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         copy,
         activePage,
         cartCount,
+        cartOpen: windows.cart === "open",
         menuOpen,
         onMenuToggle: () => setMenuOpen((value) => !value),
         onMenuClose: () => setMenuOpen(false),
@@ -2106,7 +2256,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         onOpenShop: openShop,
         onOpenArchive: openArchive,
         onOpenAbout: openAbout,
-        onOpenCart: openCart,
+        onToggleCart: toggleCart,
         onHome: openHome,
       }),
       jsxs("main", {
@@ -2196,7 +2346,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
               copy,
               state: studioState,
               onStateChange: onStudioStateChange,
-              actionsRef: studioActionsRef,
+              onAddToCart: addCartItem,
               windows,
               active,
               onFocus: setActive,
@@ -2243,6 +2393,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         onOpenArchive: openArchive,
         onOpenSettings: openSettings,
       }),
+      cartCelebration && jsx(CartAddedPopup, { message: cartCelebration, onClose: closeCartCelebration }),
     ],
   });
 }
