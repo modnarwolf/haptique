@@ -20,6 +20,7 @@ import {
   Minus,
   MonitorPlay,
   Palette,
+  Plus,
   QrCode,
   RotateCcw,
   Settings,
@@ -125,7 +126,7 @@ const SHELL_COPY = {
       welcome: "WELCOME.TXT", preview: "PREVIEW.EXE", series: "SERIES.SELECT",
       shopSeries: "SHOP.SELECT", curated: "CURATED.EXE", irl: "IRL.EXE",
       seed: "SEED.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTES.CFG",
-      export: "EXPORT.ORDER", settings: "SETTINGS.CFG", about: "ABOUT.TXT", archive: "ARCHIVE.DIR",
+      export: "EXPORT.ORDER", settings: "SETTINGS.CFG", about: "ABOUT.TXT", archive: "ARCHIVE.DIR", cart: "CART.EXE",
     },
     aboutKicker: "HAPTIQUE / ABOUT",
     aboutTitle: "CREATIVE SOFTWARE FOR REAL THINGS.",
@@ -147,7 +148,7 @@ const SHELL_COPY = {
       welcome: "BIENVENUE.TXT", preview: "APERÇU.EXE", series: "SÉRIE.SELECT",
       shopSeries: "BOUTIQUE.SELECT", curated: "SÉLECTION.EXE", irl: "RÉEL.EXE",
       seed: "GRAINE.EXE", palette: "PALETTE.DAT", attributes: "ATTRIBUTS.CFG",
-      export: "EXPORTER.ORDER", settings: "RÉGLAGES.CFG", about: "À_PROPOS.TXT", archive: "ARCHIVES.DIR",
+      export: "EXPORTER.ORDER", settings: "RÉGLAGES.CFG", about: "À_PROPOS.TXT", archive: "ARCHIVES.DIR", cart: "CART.EXE",
     },
     aboutKicker: "HAPTIQUE / À PROPOS",
     aboutTitle: "LOGICIEL CRÉATIF POUR OBJETS RÉELS.",
@@ -169,7 +170,7 @@ const SHELL_COPY = {
       welcome: "BIENVENIDA.TXT", preview: "VISTA_PREVIA.EXE", series: "SERIE.SELECT",
       shopSeries: "TIENDA.SELECT", curated: "SELECCIÓN.EXE", irl: "REAL.EXE",
       seed: "SEMILLA.EXE", palette: "PALETA.DAT", attributes: "ATRIBUTOS.CFG",
-      export: "EXPORTAR.ORDER", settings: "AJUSTES.CFG", about: "ACERCA_DE.TXT", archive: "ARCHIVO.DIR",
+      export: "EXPORTAR.ORDER", settings: "AJUSTES.CFG", about: "ACERCA_DE.TXT", archive: "ARCHIVO.DIR", cart: "CART.EXE",
     },
     aboutKicker: "HAPTIQUE / ACERCA DE",
     aboutTitle: "SOFTWARE CREATIVO PARA OBJETOS REALES.",
@@ -191,7 +192,7 @@ const SHELL_COPY = {
       welcome: "欢迎.TXT", preview: "预览.EXE", series: "系列.SELECT",
       shopSeries: "商店.SELECT", curated: "精选.EXE", irl: "实物.EXE",
       seed: "种子.EXE", palette: "调色板.DAT", attributes: "属性.CFG",
-      export: "导出.ORDER", settings: "设置.CFG", about: "关于.TXT", archive: "档案.DIR",
+      export: "导出.ORDER", settings: "设置.CFG", about: "关于.TXT", archive: "档案.DIR", cart: "CART.EXE",
     },
     aboutKicker: "HAPTIQUE / 关于",
     aboutTitle: "为真实物品而生的创意软件。",
@@ -247,6 +248,33 @@ function storePreference(key, value) {
   }
 }
 
+function getStoredCart() {
+  try {
+    const value = JSON.parse(window.localStorage.getItem("haptique.cart") || "[]");
+    if (!Array.isArray(value)) return [];
+    return value.flatMap((item) => {
+      if (!item || !item.productId || !item.designHash || !item.lineId) return [];
+      return [{
+        ...item,
+        quantity: Math.min(99, Math.max(1, Number(item.quantity) || 1)),
+        unitPriceCents: Math.max(0, Number(item.unitPriceCents) || 0),
+        currency: item.currency || "USD",
+      }];
+    });
+  } catch {
+    return [];
+  }
+}
+
+function formatMoney(cents, currency = "USD") {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
 function detectSystemTheme() {
   const platform = navigator.userAgentData?.platform || navigator.platform || "";
   const userAgent = navigator.userAgent || "";
@@ -280,6 +308,7 @@ const WINDOW_ICONS = {
   export: Download,
   settings: Settings2,
   about: Info,
+  cart: ShoppingCart,
 };
 
 function AppGlyph({ id, size = 14 }) {
@@ -366,7 +395,7 @@ function CartIcon() {
   return jsx(ShoppingCart, { className: "cart-icon", size: 19, strokeWidth: 1.8, "aria-hidden": "true" });
 }
 
-function SiteHeader({ copy, activePage, cartCount, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, onOpenShop, onOpenArchive, onOpenAbout, onHome }) {
+function SiteHeader({ copy, activePage, cartCount, menuOpen, onMenuToggle, onMenuClose, onOpenStudio, onOpenShop, onOpenArchive, onOpenAbout, onOpenCart, onHome }) {
   return jsxs("header", {
     className: "site-header",
     children: [
@@ -401,12 +430,16 @@ function SiteHeader({ copy, activePage, cartCount, menuOpen, onMenuToggle, onMen
           }, id),
         ),
       }),
-      jsx("a", {
+      jsx("button", {
         className: "cart-button",
-        href: "#cart",
+        type: "button",
+        onClick: onOpenCart,
         "aria-label": `Open shopping cart, ${cartCount} items`,
         children: jsxs(React.Fragment, {
-          children: [jsx(CartIcon, {}), jsx("span", { children: String(cartCount).padStart(2, "0") })],
+          children: [
+            jsx(CartIcon, {}),
+            jsx("span", { className: "cart-count", "aria-hidden": "true", children: String(cartCount).padStart(2, "0") }),
+          ],
         }),
       }),
     ],
@@ -533,6 +566,177 @@ function OSWindow({
       }),
       children,
     ],
+  });
+}
+
+function CartWindow({ items, onQuantityChange, onRemove, onContinueShopping, ...windowProps }) {
+  const [checkoutStatus, setCheckoutStatus] = React.useState("");
+  const previewItems = React.useMemo(
+    () => items.map((item) => ({ id: item.lineId, hash: item.designHash })),
+    [items],
+  );
+  const previews = useCuratedPatternPreviews(previewItems);
+  const itemCount = items.reduce((total, item) => total + item.quantity, 0);
+  const subtotalCents = items.reduce((total, item) => total + item.unitPriceCents * item.quantity, 0);
+  const currency = items[0]?.currency || "USD";
+
+  React.useEffect(() => setCheckoutStatus(""), [items]);
+
+  const beginCheckout = () => {
+    setCheckoutStatus("CHECKOUT HANDOFF READY — PAYMENT PROVIDER NOT CONNECTED.");
+  };
+
+  return jsx(OSWindow, {
+    ...windowProps,
+    id: "cart",
+    title: "CART.EXE",
+    className: "cart-window",
+    children: items.length
+      ? jsxs("div", {
+          className: "cart-content",
+          children: [
+            jsxs("section", {
+              className: "cart-lines",
+              "aria-label": "Cart items",
+              children: [
+                jsxs("div", {
+                  className: "cart-heading",
+                  children: [
+                    jsxs("div", {
+                      children: [
+                        jsx("span", { children: "HAPTIQUE / MADE TO ORDER" }),
+                        jsx("h2", { children: "YOUR OBJECTS" }),
+                      ],
+                    }),
+                    jsx("b", { children: `${String(itemCount).padStart(2, "0")} ${itemCount === 1 ? "ITEM" : "ITEMS"}` }),
+                  ],
+                }),
+                jsx("div", {
+                  className: "cart-line-list",
+                  children: items.map((item) => jsxs("article", {
+                    className: "cart-line",
+                    children: [
+                      jsx("div", {
+                        className: previews[item.lineId] ? "cart-line-media is-ready" : "cart-line-media",
+                        children: previews[item.lineId]
+                          ? jsx("img", { src: previews[item.lineId], alt: `${item.designName} pattern` })
+                          : jsx("span", { children: "RENDERING" }),
+                      }),
+                      jsxs("div", {
+                        className: "cart-line-info",
+                        children: [
+                          jsxs("div", {
+                            className: "cart-line-title",
+                            children: [
+                              jsxs("div", {
+                                children: [
+                                  jsx("span", { children: item.productName }),
+                                  jsx("h3", { children: item.designName }),
+                                ],
+                              }),
+                              jsx("b", { children: formatMoney(item.unitPriceCents * item.quantity, item.currency) }),
+                            ],
+                          }),
+                          jsxs("dl", {
+                            className: "cart-line-specs",
+                            children: [
+                              jsx("dt", { children: "SERIES" }),
+                              jsx("dd", { children: `${item.seriesId.toUpperCase()} / ${SERIES_BY_ID[item.seriesId]?.name || "CUSTOM"}` }),
+                              jsx("dt", { children: "SIZE" }),
+                              jsx("dd", { children: item.option || "50 × 60 IN" }),
+                            ],
+                          }),
+                          jsxs("div", {
+                            className: "cart-line-actions",
+                            children: [
+                              jsxs("div", {
+                                className: "quantity-control",
+                                children: [
+                                  jsx("button", {
+                                    type: "button",
+                                    onClick: () => onQuantityChange(item.lineId, item.quantity - 1),
+                                    disabled: item.quantity <= 1,
+                                    "aria-label": `Decrease ${item.designName} quantity`,
+                                    children: jsx(Minus, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" }),
+                                  }),
+                                  jsx("output", { "aria-label": "Quantity", children: item.quantity }),
+                                  jsx("button", {
+                                    type: "button",
+                                    onClick: () => onQuantityChange(item.lineId, item.quantity + 1),
+                                    disabled: item.quantity >= 99,
+                                    "aria-label": `Increase ${item.designName} quantity`,
+                                    children: jsx(Plus, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" }),
+                                  }),
+                                ],
+                              }),
+                              jsx("button", {
+                                type: "button",
+                                className: "cart-remove",
+                                onClick: () => onRemove(item.lineId),
+                                children: "REMOVE",
+                              }),
+                            ],
+                          }),
+                        ],
+                      }),
+                    ],
+                  }, item.lineId)),
+                }),
+              ],
+            }),
+            jsxs("aside", {
+              className: "cart-summary",
+              "aria-label": "Order summary",
+              children: [
+                jsx("p", { className: "cart-summary-index", children: "ORDER SUMMARY / 01" }),
+                jsxs("div", {
+                  className: "cart-summary-row",
+                  children: [jsx("span", { children: `SUBTOTAL · ${itemCount}` }), jsx("b", { children: formatMoney(subtotalCents, currency) })],
+                }),
+                jsxs("div", {
+                  className: "cart-summary-row",
+                  children: [jsx("span", { children: "SHIPPING" }), jsx("b", { children: "COMPLIMENTARY" })],
+                }),
+                jsxs("div", {
+                  className: "cart-summary-total",
+                  children: [jsx("span", { children: "ESTIMATED TOTAL" }), jsx("strong", { children: formatMoney(subtotalCents, currency) })],
+                }),
+                jsx("p", { className: "cart-summary-note", children: "Taxes calculated at checkout. Each piece is woven to order and typically ships in 3–4 weeks." }),
+                jsxs("button", {
+                  type: "button",
+                  className: "cart-checkout",
+                  onClick: beginCheckout,
+                  children: [jsx("span", { children: "CHECKOUT" }), jsx(ArrowRight, { size: 16, strokeWidth: 1.8, "aria-hidden": "true" })],
+                }),
+                checkoutStatus && jsx("p", { className: "cart-checkout-status", role: "status", children: checkoutStatus }),
+                jsx("button", {
+                  type: "button",
+                  className: "cart-continue",
+                  onClick: onContinueShopping,
+                  children: "← CONTINUE SHOPPING",
+                }),
+                jsx("div", {
+                  className: "cart-promise",
+                  children: "SECURE CHECKOUT / MADE ON DEMAND / ORIGINAL DESIGN",
+                }),
+              ],
+            }),
+          ],
+        })
+      : jsxs("div", {
+          className: "cart-empty",
+          children: [
+            jsx("span", { className: "cart-empty-code", children: "CART / 00" }),
+            jsx(ShoppingBag, { size: 38, strokeWidth: 1.4, "aria-hidden": "true" }),
+            jsx("h2", { children: "NOTHING HERE YET." }),
+            jsx("p", { children: "Choose a generated edition and make it real." }),
+            jsxs("button", {
+              type: "button",
+              onClick: onContinueShopping,
+              children: [jsx("span", { children: "EXPLORE THE SHOP" }), jsx(ArrowRight, { size: 15, strokeWidth: 1.8, "aria-hidden": "true" })],
+            }),
+          ],
+        }),
   });
 }
 
@@ -1259,6 +1463,9 @@ function ShopWorkspace({
       name: "Blanket",
       displayName: "Woven Blanket",
       manifestPath: "./textures/curated/blankets/curated_list.json",
+      priceCents: 24800,
+      currency: "USD",
+      option: "50 × 60 IN",
       enabled: true,
     },
   ], []);
@@ -1387,11 +1594,17 @@ function ShopWorkspace({
   const addSelectedToCart = () => {
     if (!selectedItem || !currentProduct) return;
     onAddToCart({
+      lineId: `${currentProduct.id}:${state.seriesId}:${selectedItem.id}`,
       productId: currentProduct.id,
       productName: currentProduct.displayName,
       seriesId: state.seriesId,
+      designId: selectedItem.id,
       designName: selectedItem.name,
       designHash: selectedItem.hash,
+      option: currentProduct.option || "50 × 60 IN",
+      unitPriceCents: currentProduct.priceCents || 0,
+      currency: currentProduct.currency || "USD",
+      quantity: 1,
     });
     setCartStatus("ADDED TO CART");
   };
@@ -1508,6 +1721,8 @@ function ShopWorkspace({
               children: [
                 jsx("span", { children: currentProduct?.displayName || "PRODUCT" }),
                 jsx("b", { children: selectedItem?.name || "NO DESIGN SELECTED" }),
+                jsx("span", { children: currentProduct?.option || "50 × 60 IN" }),
+                jsx("b", { children: formatMoney(currentProduct?.priceCents || 0, currentProduct?.currency || "USD") }),
                 jsx("i", { children: `${state.seriesId.toUpperCase()} / SEED ${String(state.seed).padStart(6, "0")}` }),
               ],
             }),
@@ -1675,13 +1890,14 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
     attributes: "closed",
     export: "closed",
     settings: "closed",
+    cart: "closed",
   });
   const [active, setActive] = React.useState("preview");
   const [maximized, setMaximized] = React.useState(false);
   const [previewResetKey, setPreviewResetKey] = React.useState(0);
   const [workspaceMode, setWorkspaceMode] = React.useState("home");
   const [activePage, setActivePage] = React.useState("home");
-  const [cartItems, setCartItems] = React.useState([]);
+  const [cartItems, setCartItems] = React.useState(getStoredCart);
   const [startOpen, setStartOpen] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [locale, setLocale] = React.useState(() => getStoredPreference("haptique.locale", "en", LOCALES.map(([value]) => value)));
@@ -1692,6 +1908,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   const sound = useAmbientSound();
   const copy = COPY[locale];
   const theme = themePreference === "auto" ? detectedTheme : themePreference;
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   React.useEffect(() => {
     storePreference("haptique.locale", locale);
@@ -1705,6 +1922,29 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   React.useEffect(() => {
     storePreference("haptique.background", background);
   }, [background]);
+
+  React.useEffect(() => {
+    storePreference("haptique.cart", JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  const addCartItem = (item) => {
+    setCartItems((current) => {
+      const existing = current.find((line) => line.lineId === item.lineId);
+      if (!existing) return [...current, item];
+      return current.map((line) => line.lineId === item.lineId
+        ? { ...line, quantity: Math.min(99, line.quantity + 1) }
+        : line);
+    });
+  };
+  const changeCartQuantity = (lineId, quantity) => {
+    const nextQuantity = Math.min(99, Math.max(1, Number(quantity) || 1));
+    setCartItems((current) => current.map((item) => item.lineId === lineId
+      ? { ...item, quantity: nextQuantity }
+      : item));
+  };
+  const removeCartItem = (lineId) => {
+    setCartItems((current) => current.filter((item) => item.lineId !== lineId));
+  };
 
   const setWindowStatus = (id, status) => {
     setWindows((current) => ({ ...current, [id]: status }));
@@ -1754,6 +1994,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       about: "closed",
       archive: "closed",
       settings: "closed",
+      cart: "closed",
       series: "open",
       shopSeries: "closed",
       curated: "closed",
@@ -1779,6 +2020,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       about: "closed",
       archive: "closed",
       settings: "closed",
+      cart: "closed",
       series: "closed",
       seed: "closed",
       palette: "closed",
@@ -1803,6 +2045,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       about: "closed",
       archive: "closed",
       settings: "closed",
+      cart: "closed",
       series: "closed",
       shopSeries: "closed",
       curated: "closed",
@@ -1825,6 +2068,17 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   const openArchive = () => {
     openSoloWindow("archive", "archive");
   };
+  const openCart = () => {
+    setWindows((current) => ({ ...current, cart: "open" }));
+    setActive("cart");
+    setActivePage("cart");
+    setStartOpen(false);
+    setMenuOpen(false);
+  };
+  const closeCart = () => {
+    setWindowStatus("cart", "closed");
+    setActivePage(workspaceMode);
+  };
   const openArchivedSeries = (seriesId) => {
     onStudioStateChange({ ...studioState, seriesId });
     openStudio();
@@ -1839,12 +2093,12 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   }, []);
 
   return jsxs("div", {
-    className: `os-shell theme-${theme} background-${background}`,
+    className: `os-shell theme-${theme} background-${background} ${windows.cart === "open" ? "is-cart-open" : ""}`,
     children: [
       jsx(SiteHeader, {
         copy,
         activePage,
-        cartCount: cartItems.length,
+        cartCount,
         menuOpen,
         onMenuToggle: () => setMenuOpen((value) => !value),
         onMenuClose: () => setMenuOpen(false),
@@ -1852,6 +2106,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         onOpenShop: openShop,
         onOpenArchive: openArchive,
         onOpenAbout: openAbout,
+        onOpenCart: openCart,
         onHome: openHome,
       }),
       jsxs("main", {
@@ -1860,6 +2115,24 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         children: [
           jsx("div", { className: "desktop-watermark", "aria-hidden": "true", children: "H/01" }),
           jsx("p", { className: "desktop-coordinate", children: "34.0522° N / 118.2437° W" }),
+          windows.cart === "open" && jsx("button", {
+            type: "button",
+            className: "cart-scrim",
+            onClick: closeCart,
+            "aria-label": "Close shopping cart",
+          }),
+          jsx(CartWindow, {
+            items: cartItems,
+            status: windows.cart,
+            active: active === "cart",
+            controls: copy.controls,
+            onFocus: () => setActive("cart"),
+            onMinimize: () => setWindowStatus("cart", "minimized"),
+            onClose: closeCart,
+            onQuantityChange: changeCartQuantity,
+            onRemove: removeCartItem,
+            onContinueShopping: openShop,
+          }),
           jsx(ArchiveWindow, {
             copy,
             onOpenSeries: openArchivedSeries,
@@ -1940,7 +2213,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
               onFocus: setActive,
               onMinimize: (id) => setWindowStatus(id, "minimized"),
               onClose: (id) => setWindowStatus(id, "closed"),
-              onAddToCart: (item) => setCartItems((current) => [...current, item]),
+              onAddToCart: addCartItem,
             }),
         ],
       }),
