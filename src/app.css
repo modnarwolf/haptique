@@ -91,7 +91,7 @@ a:focus-visible {
   min-width: 250px;
   padding: 0 22px;
   border-right: 1px solid rgba(244, 241, 236, 0.22);
-  font: 800 19px/1 var(--font-sans);
+  font: 800 24px/1 var(--font-sans);
   letter-spacing: -0.04em;
 }
 
@@ -99,7 +99,7 @@ a:focus-visible {
   align-self: flex-start;
   margin-top: 14px;
   margin-left: -6px;
-  font: 7px/1 var(--font-mono);
+  font: 10px/1 var(--font-mono);
   letter-spacing: 0;
 }
 
@@ -117,7 +117,7 @@ a:focus-visible {
   margin: 0;
   padding: 0 20px;
   color: #a7a29c;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.04em;
   text-transform: lowercase;
 }
@@ -133,7 +133,7 @@ a:focus-visible {
   min-width: 82px;
   padding: 0 16px;
   border-left: 1px solid rgba(244, 241, 236, 0.18);
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.04em;
 }
 
@@ -152,7 +152,7 @@ a:focus-visible {
   min-width: 88px;
   border-left: 1px solid rgba(244, 241, 236, 0.18);
   background: var(--blue);
-  font-size: 10px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -219,7 +219,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--yellow);
   border: var(--border);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .os-window {
@@ -362,7 +362,7 @@ a:focus-visible {
   align-items: center;
   gap: 8px;
   padding-left: 10px;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
@@ -389,7 +389,7 @@ a:focus-visible {
   color: var(--paper-bright);
   background: transparent;
   border-left: 1px solid rgba(244, 241, 236, 0.3);
-  font: 16px/1 var(--font-sans);
+  font: 20px/1 var(--font-sans);
   cursor: pointer;
 }
 
@@ -419,7 +419,7 @@ a:focus-visible {
 .eyebrow {
   margin: 0 0 20px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 
@@ -445,7 +445,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--green);
   border: var(--border);
-  font: normal 18px/1 var(--font-mono);
+  font: normal 23px/1 var(--font-mono);
   transform: rotate(8deg);
 }
 
@@ -456,7 +456,7 @@ a:focus-visible {
   margin: auto 0 24px;
   padding: 0;
   list-style: none;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.3;
 }
 
@@ -475,7 +475,7 @@ a:focus-visible {
   background: var(--yellow);
   border: var(--border);
   box-shadow: 3px 3px 0 var(--ink);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   transition: transform 100ms ease, box-shadow 100ms ease;
 }
@@ -488,7 +488,7 @@ a:focus-visible {
 }
 
 .primary-button span {
-  font-size: 18px;
+  font-size: 23px;
 }
 
 .preview-window {
@@ -525,7 +525,7 @@ a:focus-visible {
 .preview-statusbar {
   display: flex;
   align-items: center;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.07em;
 }
 
@@ -588,7 +588,7 @@ a:focus-visible {
   color: var(--ink);
   background: transparent;
   border-right: 1px solid rgba(14, 14, 14, 0.32);
-  font-size: 7px;
+  font-size: 10px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -663,20 +663,20 @@ a:focus-visible {
   color: var(--paper-bright);
   background: var(--blue);
   border-right: var(--border);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .studio-preview-badge b,
 .studio-preview-badge i {
   padding: 5px 8px 3px;
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
 }
 
 .studio-preview-badge i {
   padding-top: 1px;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .preview-cloth-actions {
@@ -697,7 +697,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--paper);
   border-right: var(--border);
-  font-size: 7px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -800,7 +800,7 @@ a:focus-visible {
   gap: 4px;
   padding: 9px 14px;
   border-right: var(--border);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .order-info-specs span,
@@ -811,7 +811,7 @@ a:focus-visible {
 }
 
 .order-info-specs b {
-  font-size: 7px;
+  font-size: 10px;
   font-weight: 500;
 }
 
@@ -832,14 +832,14 @@ a:focus-visible {
 }
 
 .order-price span {
-  font-size: 7px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .order-price strong {
   margin-top: 2px;
-  font-size: 18px;
+  font-size: 23px;
   line-height: 1;
   letter-spacing: -0.04em;
 }
@@ -856,7 +856,7 @@ a:focus-visible {
   border: 0;
   border-left: var(--border);
   font: inherit;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   transition: background 100ms ease, color 100ms ease;
@@ -943,14 +943,14 @@ a:focus-visible {
   min-height: 28px;
   margin-bottom: 8px;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.08em;
 }
 
 .curated-heading b,
 .irl-heading b {
   color: var(--ink);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .curated-status {
@@ -959,7 +959,7 @@ a:focus-visible {
   place-items: center;
   color: var(--muted);
   border: 1px dashed rgba(14, 14, 14, 0.4);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .curated-grid {
@@ -1013,7 +1013,7 @@ a:focus-visible {
 
 .curated-card-media i {
   color: var(--muted);
-  font-size: 7px;
+  font-size: 10px;
   font-style: normal;
   letter-spacing: 0.08em;
 }
@@ -1023,7 +1023,7 @@ a:focus-visible {
   grid-template-columns: 25px minmax(0, 1fr);
   align-items: center;
   border-top: 1px solid rgba(14, 14, 14, 0.45);
-  font-size: 7px;
+  font-size: 10px;
 }
 
 .curated-card-meta b {
@@ -1069,7 +1069,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--yellow);
   border: var(--border);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -1161,7 +1161,7 @@ a:focus-visible {
 
 .irl-empty {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
 
@@ -1170,7 +1170,7 @@ a:focus-visible {
   grid-template-columns: 1fr auto;
   gap: 3px 8px;
   padding: 10px 0;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .irl-selection span {
@@ -1184,7 +1184,7 @@ a:focus-visible {
 .irl-selection i {
   grid-column: 1 / -1;
   color: var(--muted);
-  font-size: 7px;
+  font-size: 10px;
   font-style: normal;
 }
 
@@ -1198,7 +1198,7 @@ a:focus-visible {
   color: var(--paper-bright);
   background: var(--ink);
   border: var(--border);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -1236,7 +1236,7 @@ a:focus-visible {
 .panel-index {
   margin: 0 0 11px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 
@@ -1256,7 +1256,7 @@ a:focus-visible {
 .saved-seeds > span,
 .share-design > span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
 
@@ -1269,7 +1269,7 @@ a:focus-visible {
   background: var(--paper);
   border: var(--border);
   border-radius: 0;
-  font: 10px/1 var(--font-mono);
+  font: 13px/1 var(--font-mono);
 }
 
 .series-readout {
@@ -1285,7 +1285,7 @@ a:focus-visible {
 
 .series-readout > strong {
   color: var(--green);
-  font-size: 13px;
+  font-size: 17px;
 }
 
 .series-readout > span {
@@ -1295,14 +1295,14 @@ a:focus-visible {
   gap: 3px;
   overflow: hidden;
   color: #aaa49e;
-  font-size: 9px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .series-readout b {
   color: var(--paper-bright);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .series-ticks {
@@ -1318,7 +1318,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--paper);
   border-right: var(--border);
-  font-size: 8px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -1338,7 +1338,7 @@ a:focus-visible {
 
 .seed-panel input[type="number"] {
   height: 40px;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 700;
 }
 
@@ -1359,7 +1359,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--paper);
   border-right: var(--border);
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -1390,7 +1390,7 @@ a:focus-visible {
   color: var(--ink);
   background: transparent;
   border: 1px solid rgba(14, 14, 14, 0.32);
-  font-size: 8px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -1415,12 +1415,12 @@ a:focus-visible {
 }
 
 .saved-design b {
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .saved-design > span {
   color: var(--muted);
-  font-size: 7px;
+  font-size: 10px;
 }
 
 .saved-design-colors {
@@ -1463,7 +1463,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--paper);
   border-right: var(--border);
-  font-size: 8px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -1491,7 +1491,7 @@ a:focus-visible {
   border: 0;
   border-right: var(--border);
   border-radius: 0;
-  font: 8px/1 var(--font-mono);
+  font: 10px/1 var(--font-mono);
 }
 
 .share-qr {
@@ -1513,7 +1513,7 @@ a:focus-visible {
 .share-qr span,
 .share-status {
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.06em;
 }
 
@@ -1630,7 +1630,7 @@ a:focus-visible {
   padding: 0 18px;
   color: var(--ink);
   background: var(--green);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -1647,7 +1647,7 @@ a:focus-visible {
   place-items: center;
   color: var(--ink);
   background: transparent;
-  font-size: 13px;
+  font-size: 17px;
 }
 
 .taskbar-divider {
@@ -1676,7 +1676,7 @@ a:focus-visible {
   color: var(--paper-bright);
   background: #252525;
   border: 1px solid #494949;
-  font-size: 9px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
@@ -1714,7 +1714,7 @@ a:focus-visible {
   color: var(--paper-bright);
   background: transparent;
   border-right: 1px solid rgba(244, 241, 236, 0.18);
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -1740,13 +1740,13 @@ a:focus-visible {
 }
 
 .clock strong {
-  font-size: 11px;
+  font-size: 14px;
 }
 
 .clock span {
   margin-top: 2px;
   color: #99938d;
-  font-size: 7px;
+  font-size: 10px;
 }
 
 .start-menu {
@@ -1770,7 +1770,7 @@ a:focus-visible {
   color: var(--paper-bright);
   background: var(--blue);
   border-right: var(--border);
-  font: 700 10px/1 var(--font-mono);
+  font: 700 13px/1 var(--font-mono);
   letter-spacing: 0.08em;
   text-orientation: mixed;
   writing-mode: vertical-rl;
@@ -1786,7 +1786,7 @@ a:focus-visible {
 .start-menu-content > p {
   margin: 0 0 9px;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.11em;
 }
 
@@ -1796,7 +1796,7 @@ a:focus-visible {
   align-items: center;
   min-height: 38px;
   border-top: 1px solid rgba(14, 14, 14, 0.18);
-  font-size: 10px;
+  font-size: 13px;
 }
 
 .start-app:hover {
@@ -1829,7 +1829,7 @@ a:focus-visible {
   padding: 8px 0;
   text-align: left;
   background: transparent;
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -1932,7 +1932,7 @@ a:focus-visible {
     min-width: 0;
     padding: 0;
     border: 0;
-    font-size: 16px;
+    font-size: 20px;
   }
 
   .brand-mark,
@@ -1948,7 +1948,7 @@ a:focus-visible {
     padding: 0;
     color: var(--ink);
     background: transparent;
-    font: 24px/1 var(--font-mono);
+    font: 30px/1 var(--font-mono);
     cursor: pointer;
   }
 
@@ -2170,7 +2170,7 @@ a:focus-visible {
 
   .feature-list {
     margin-top: 38px;
-    font-size: 9px;
+    font-size: 11px;
   }
 
   .primary-button {
@@ -2230,7 +2230,7 @@ a:focus-visible {
     justify-content: center;
     gap: 5px;
     border-right: 1px solid rgba(244, 241, 236, 0.22);
-    font-size: 8px;
+    font-size: 10px;
   }
 
   .mobile-dock a:last-child {
@@ -2244,7 +2244,7 @@ a:focus-visible {
   }
 
   .mobile-dock span {
-    font-size: 14px;
+    font-size: 18px;
   }
 }
 
@@ -2307,7 +2307,7 @@ a:focus-visible {
 
 .archive-heading p {
   margin: 0 0 25px;
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.12em;
 }
 
@@ -2319,7 +2319,7 @@ a:focus-visible {
 
 .archive-heading span {
   color: #403b35;
-  font: 10px/1.6 var(--font-mono);
+  font: 13px/1.6 var(--font-mono);
 }
 
 .archive-series-list {
@@ -2349,26 +2349,26 @@ a:focus-visible {
 
 .archive-series-list button > span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .archive-series-list b {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font: 800 15px/1 var(--font-sans);
+  font: 800 19px/1 var(--font-sans);
 }
 
 .archive-series-list small {
   color: var(--blue);
-  font: 8px/1 var(--font-mono);
+  font: 10px/1 var(--font-mono);
 }
 
 .archive-series-list i {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 7px;
+  font-size: 10px;
   font-style: normal;
 }
 
@@ -2393,7 +2393,7 @@ a:focus-visible {
 .about-kicker {
   margin: 0 0 22px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 
@@ -2410,7 +2410,7 @@ a:focus-visible {
   max-width: 390px;
   margin-top: 30px;
   color: #373431;
-  font: 11px/1.65 var(--font-mono);
+  font: 14px/1.65 var(--font-mono);
 }
 
 .about-copy p {
@@ -2432,7 +2432,7 @@ a:focus-visible {
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .about-signoff i {
@@ -2450,7 +2450,7 @@ a:focus-visible {
   padding: 10px 12px;
   color: var(--paper-bright);
   background: var(--ink);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -2497,14 +2497,14 @@ a:focus-visible {
 }
 
 .settings-heading b {
-  font: 800 17px/1 var(--font-sans);
+  font: 800 22px/1 var(--font-sans);
   letter-spacing: -0.02em;
 }
 
 .settings-heading p {
   margin: 5px 0 0;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.09em;
 }
 
@@ -2514,7 +2514,7 @@ a:focus-visible {
 
 .settings-label {
   margin-bottom: 8px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
 }
@@ -2539,7 +2539,7 @@ a:focus-visible {
   background: var(--paper);
   border: var(--border);
   border-right: 0;
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
   transition: background 90ms ease, color 90ms ease;
 }
@@ -2566,7 +2566,7 @@ a:focus-visible {
 .settings-detected {
   margin: 7px 0 0;
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .background-options {
@@ -2590,7 +2590,7 @@ a:focus-visible {
 .background-options b {
   display: block;
   padding: 7px 2px 3px;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .background-swatch {
@@ -2848,7 +2848,7 @@ a:focus-visible {
   }
 
   .archive-heading h2 {
-    font-size: 36px;
+    font-size: 45px;
   }
 
   .about-content {
@@ -2913,7 +2913,7 @@ a:focus-visible {
     color: var(--paper-bright);
     background: transparent;
     border-right: 1px solid rgba(244, 241, 236, 0.22);
-    font-size: 8px;
+    font-size: 10px;
     text-overflow: ellipsis;
     white-space: nowrap;
     cursor: pointer;
@@ -2992,7 +2992,7 @@ a:focus-visible {
 .cart-summary-index,
 .cart-empty-code {
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.11em;
 }
 
@@ -3006,7 +3006,7 @@ a:focus-visible {
   padding: 6px 8px;
   color: var(--paper-bright);
   background: var(--blue);
-  font-size: 8px;
+  font-size: 10px;
   white-space: nowrap;
 }
 
@@ -3043,7 +3043,7 @@ a:focus-visible {
     var(--paper);
   background-size: 12px 12px;
   border: var(--border);
-  font-size: 7px;
+  font-size: 10px;
 }
 
 .cart-line-media img {
@@ -3068,19 +3068,19 @@ a:focus-visible {
 
 .cart-line-title span {
   color: var(--muted);
-  font-size: 8px;
+  font-size: 10px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
 .cart-line-title h3 {
   margin: 4px 0 0;
-  font: 800 17px/1 var(--font-sans);
+  font: 800 22px/1 var(--font-sans);
   letter-spacing: -0.035em;
 }
 
 .cart-line-title > b {
-  font-size: 10px;
+  font-size: 13px;
   white-space: nowrap;
 }
 
@@ -3089,7 +3089,7 @@ a:focus-visible {
   grid-template-columns: auto 1fr;
   gap: 4px 9px;
   margin: 13px 0;
-  font-size: 7px;
+  font-size: 10px;
 }
 
 .cart-line-specs dt {
@@ -3150,7 +3150,7 @@ a:focus-visible {
 }
 
 .quantity-control output {
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .cart-remove,
@@ -3159,7 +3159,7 @@ a:focus-visible {
   color: var(--muted);
   background: transparent;
   border-bottom: 1px solid currentColor;
-  font-size: 7px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -3193,29 +3193,29 @@ a:focus-visible {
 .cart-summary-row {
   padding: 10px 0;
   border-bottom: 1px solid rgba(244, 241, 236, 0.2);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .cart-summary-row b {
-  font-size: 8px;
+  font-size: 10px;
   text-align: right;
 }
 
 .cart-summary-total {
   margin-top: 25px;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .cart-summary-total strong {
   color: var(--yellow);
-  font: 800 23px/1 var(--font-sans);
+  font: 800 29px/1 var(--font-sans);
   letter-spacing: -0.05em;
 }
 
 .cart-summary-note {
   margin: 15px 0 20px;
   color: #aaa39c;
-  font-size: 8px;
+  font-size: 10px;
   line-height: 1.55;
 }
 
@@ -3228,7 +3228,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--green);
   border: 1px solid var(--paper-bright);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -3242,7 +3242,7 @@ a:focus-visible {
   padding: 8px;
   color: var(--ink);
   background: var(--yellow);
-  font-size: 7px;
+  font-size: 10px;
   line-height: 1.4;
 }
 
@@ -3253,7 +3253,7 @@ a:focus-visible {
   padding: 0 12px;
   color: var(--paper-bright);
   border: 1px solid rgba(244, 241, 236, 0.55);
-  font-size: 9px;
+  font-size: 11px;
   text-decoration: none;
 }
 
@@ -3267,7 +3267,7 @@ a:focus-visible {
   margin-top: auto;
   padding-top: 18px;
   color: #77716c;
-  font-size: 6px;
+  font-size: 10px;
   line-height: 1.6;
   letter-spacing: 0.08em;
 }
@@ -3309,7 +3309,7 @@ a:focus-visible {
 .cart-empty p {
   margin: 0 0 22px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .cart-empty > button {
@@ -3322,7 +3322,7 @@ a:focus-visible {
   color: var(--paper-bright);
   background: var(--ink);
   border: var(--border);
-  font-size: 9px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -3348,7 +3348,7 @@ a:focus-visible {
     color: var(--paper-bright);
     background: var(--blue);
     border: 1px solid var(--ink);
-    font-size: 7px;
+    font-size: 10px;
   }
 
   .cart-scrim {
@@ -3407,7 +3407,7 @@ a:focus-visible {
   }
 
   .cart-heading h2 {
-    font-size: 31px;
+    font-size: 39px;
   }
 
   .cart-line-list {
@@ -3528,7 +3528,7 @@ a:focus-visible {
   color: var(--paper-bright);
   background: var(--ink);
   border-bottom: var(--border);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -3545,7 +3545,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--green);
   border: var(--border);
-  font: 700 20px/1 var(--font-mono);
+  font: 700 25px/1 var(--font-mono);
   transform: rotate(-4deg);
 }
 
@@ -3560,7 +3560,7 @@ a:focus-visible {
   max-width: 340px;
   margin: 0 0 24px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.55;
 }
 
@@ -3574,7 +3574,7 @@ a:focus-visible {
   color: var(--ink);
   background: var(--yellow);
   border: var(--border);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
