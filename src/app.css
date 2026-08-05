@@ -723,7 +723,7 @@ a:focus-visible {
   right: auto;
   left: 22.5%;
   width: 54%;
-  height: 72%;
+  height: 79%;
 }
 
 .studio-tool-window {
@@ -773,7 +773,7 @@ a:focus-visible {
   bottom: 3%;
   left: 22.5%;
   width: 54%;
-  height: 20%;
+  height: 13%;
 }
 
 .order-info-window .window-title .lucide {
@@ -784,7 +784,7 @@ a:focus-visible {
   display: grid;
   flex: 1;
   min-height: 0;
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.78fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   background:
     linear-gradient(rgba(14, 14, 14, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(14, 14, 14, 0.035) 1px, transparent 1px),
@@ -793,95 +793,70 @@ a:focus-visible {
 }
 
 .order-info-specs {
-  display: grid;
+  display: flex;
   min-width: 0;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(200px, 1.2fr);
-  align-items: center;
-  gap: clamp(14px, 2vw, 32px);
-  padding: clamp(10px, 1.4vw, 18px);
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 9px 14px;
   border-right: var(--border);
+  font-size: 8px;
 }
 
-.order-product-field {
-  min-width: 0;
-  margin: 0;
-}
-
-.order-product-field select {
-  width: 100%;
-  min-width: 0;
-  background: var(--paper);
-}
-
-.order-info-readout {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 8px 14px;
-  margin: 0;
-  font-size: 9px;
-}
-
-.order-info-readout dt {
-  color: var(--muted);
-  font-size: 7px;
-  letter-spacing: 0.08em;
-}
-
-.order-info-readout dd {
+.order-info-specs span,
+.order-info-specs b {
   overflow: hidden;
-  margin: 0;
-  font-weight: 700;
-  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.order-info-specs b {
+  font-size: 7px;
+  font-weight: 500;
 }
 
 .order-info-purchase {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(110px, 0.8fr) minmax(150px, 1.2fr);
+  grid-template-columns: auto auto;
   align-items: stretch;
 }
 
 .order-price {
   display: flex;
-  min-width: 0;
+  min-width: 104px;
   flex-direction: column;
   justify-content: center;
-  padding: 10px clamp(12px, 1.4vw, 20px);
+  align-items: flex-end;
+  padding: 8px 13px;
 }
 
-.order-price span,
-.order-price small {
-  overflow: hidden;
-  color: var(--muted);
+.order-price span {
   font-size: 7px;
+  font-weight: 700;
   letter-spacing: 0.08em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .order-price strong {
-  margin: 2px 0;
-  font-size: clamp(23px, 2.15vw, 36px);
+  margin-top: 2px;
+  font-size: 18px;
   line-height: 1;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.04em;
 }
 
 .order-add-cart {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  width: 142px;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  padding: 0 clamp(12px, 1.4vw, 20px);
+  padding: 0 12px;
   color: var(--ink);
   background: var(--yellow);
   border: 0;
   border-left: var(--border);
   font: inherit;
-  font-size: clamp(9px, 0.8vw, 12px);
+  font-size: 9px;
   font-weight: 700;
   cursor: pointer;
   transition: background 100ms ease, color 100ms ease;
@@ -2104,21 +2079,20 @@ a:focus-visible {
 
   .is-studio .order-info-window {
     order: 2;
-    min-height: 280px;
+    min-height: 160px;
   }
 
   .order-info-panel {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .order-info-specs {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    border-right: 0;
-    border-bottom: var(--border);
+    border-right: var(--border);
+    border-bottom: 0;
   }
 
   .order-info-purchase {
-    min-height: 110px;
+    min-height: 0;
   }
 
   .is-shop .preview-window {
@@ -2276,22 +2250,27 @@ a:focus-visible {
 
 @media (max-width: 420px) {
   .is-studio .order-info-window {
-    min-height: 390px;
+    min-height: 250px;
   }
 
-  .order-info-specs,
-  .order-info-purchase {
+  .order-info-panel {
     grid-template-columns: 1fr;
   }
 
-  .order-info-readout dd {
-    white-space: normal;
+  .order-info-specs {
+    min-height: 88px;
+    border-right: 0;
+    border-bottom: var(--border);
+  }
+
+  .order-info-purchase {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .order-add-cart {
-    min-height: 68px;
-    border-top: var(--border);
-    border-left: 0;
+    min-height: 64px;
+    border-top: 0;
+    border-left: var(--border);
   }
 
   .feature-list {

@@ -1221,6 +1221,16 @@ function StudioWorkspace({
           children: [
             jsx("p", { className: "panel-index", children: "01 / GENERATOR FAMILY" }),
             jsx(StudioField, {
+              label: "PRODUCT TYPE",
+              children: jsx("select", {
+                value: productId,
+                onChange: (event) => setProductId(event.target.value),
+                children: products.map((product) =>
+                  jsx("option", { value: product.id, children: product.displayName }, product.id),
+                ),
+              }),
+            }),
+            jsx(StudioField, {
               label: "ACTIVE SERIES",
               children: jsx("select", {
                 value: state.seriesId,
@@ -1440,26 +1450,9 @@ function StudioWorkspace({
             jsxs("div", {
               className: "order-info-specs",
               children: [
-                jsx(StudioField, {
-                  label: "PRODUCT TYPE",
-                  className: "order-product-field",
-                  children: jsx("select", {
-                    value: productId,
-                    onChange: (event) => setProductId(event.target.value),
-                    children: products.map((product) =>
-                      jsx("option", { value: product.id, children: product.displayName }, product.id),
-                    ),
-                  }),
-                }),
-                jsxs("dl", {
-                  className: "order-info-readout",
-                  children: [
-                    jsx("dt", { children: "DIMENSIONS" }),
-                    jsx("dd", { children: currentProduct?.option || "50 × 60 IN" }),
-                    jsx("dt", { children: "SERIES / SEED" }),
-                    jsx("dd", { children: `${state.seriesId.toUpperCase()} / ${String(state.seed).padStart(6, "0")}` }),
-                  ],
-                }),
+                jsx("span", { children: currentProduct?.displayName || "PRODUCT" }),
+                jsx("span", { children: currentProduct?.option || "50 × 60 IN" }),
+                jsx("b", { children: `${state.seriesId.toUpperCase()} / SEED ${String(state.seed).padStart(6, "0")}` }),
               ],
             }),
             jsxs("div", {
@@ -1468,9 +1461,8 @@ function StudioWorkspace({
                 jsxs("div", {
                   className: "order-price",
                   children: [
-                    jsx("span", { children: "MADE TO ORDER" }),
+                    jsx("span", { children: "PRICE" }),
                     jsx("strong", { children: formatMoney(currentProduct?.priceCents || 0, currentProduct?.currency || "USD") }),
-                    jsx("small", { children: `CUSTOM ${series.name.toUpperCase()}` }),
                   ],
                 }),
                 jsxs("button", {
@@ -1478,9 +1470,8 @@ function StudioWorkspace({
                   className: "order-add-cart",
                   onClick: addCurrentDesignToCart,
                   children: [
-                    jsx(ShoppingCart, { size: 16, strokeWidth: 1.9, "aria-hidden": "true" }),
+                    jsx(ShoppingCart, { size: 14, strokeWidth: 1.9, "aria-hidden": "true" }),
                     jsx("span", { children: "ADD TO CART" }),
-                    jsx(ArrowRight, { size: 16, strokeWidth: 1.9, "aria-hidden": "true" }),
                   ],
                 }),
               ],
