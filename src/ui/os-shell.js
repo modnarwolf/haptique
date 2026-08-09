@@ -1046,31 +1046,29 @@ function PreviewWindow({ copy, preview, previewZoom, workspaceMode, studioState,
           className: "cloth-viewport",
           children: [
             preview,
-            workspaceMode !== "home" &&
-              jsxs("div", {
-                className: "studio-preview-badge",
-                children: [
-                  jsx("span", { children: studioState.seriesId.toUpperCase() }),
-                  jsx("b", { children: SERIES_BY_ID[studioState.seriesId].name }),
-                  jsx("i", { children: `SEED ${String(studioState.seed).padStart(6, "0")}` }),
-                  workspaceMode !== "home" &&
-                    jsxs("div", {
-                      className: "preview-cloth-actions",
-                      children: [
-                        jsxs("button", {
-                          type: "button",
-                          onClick: () => actionsRef.current?.resetCloth(),
-                          children: [jsx(RotateCcw, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "RESET CLOTH"],
-                        }),
-                        jsxs("button", {
-                          type: "button",
-                          onClick: () => actionsRef.current?.resetFlatCloth(),
-                          children: [jsx(Minimize2, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "FLAT CLOTH"],
-                        }),
-                      ],
+            jsxs("div", {
+              className: "studio-preview-badge",
+              children: [
+                jsx("span", { children: studioState.seriesId.toUpperCase() }),
+                jsx("b", { children: SERIES_BY_ID[studioState.seriesId].name }),
+                jsx("i", { children: `SEED ${String(studioState.seed).padStart(6, "0")}` }),
+                jsxs("div", {
+                  className: "preview-cloth-actions",
+                  children: [
+                    jsxs("button", {
+                      type: "button",
+                      onClick: () => actionsRef.current?.resetCloth(),
+                      children: [jsx(RotateCcw, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "RESET CLOTH"],
                     }),
-                ],
-              }),
+                    jsxs("button", {
+                      type: "button",
+                      onClick: () => actionsRef.current?.resetFlatCloth(),
+                      children: [jsx(Minimize2, { size: 10, strokeWidth: 1.8, "aria-hidden": "true" }), "FLAT CLOTH"],
+                    }),
+                  ],
+                }),
+              ],
+            }),
             workspaceMode === "shop" && jsx("div", {
               id: "shop-preview-controls-root",
               className: "shop-preview-controls-host",
@@ -1696,6 +1694,52 @@ function CartAddedPopup({ message, onClose, onViewCart }) {
   });
 }
 
+function WindowClosedNotice({ windowTitle, onDismiss, onReopen }) {
+  React.useEffect(() => {
+    const dismissTimer = window.setTimeout(onDismiss, 6500);
+    const dismissOnEscape = (event) => {
+      if (event.key === "Escape") onDismiss();
+    };
+    window.addEventListener("keydown", dismissOnEscape);
+    return () => {
+      window.clearTimeout(dismissTimer);
+      window.removeEventListener("keydown", dismissOnEscape);
+    };
+  }, [onDismiss, windowTitle]);
+
+  return jsxs("aside", {
+    className: "window-closed-notice",
+    role: "status",
+    "aria-live": "polite",
+    children: [
+      jsxs("div", {
+        className: "window-closed-notice-title",
+        children: [
+          jsxs("span", {
+            children: [jsx(Info, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" }), "WINDOW CLOSED"],
+          }),
+          jsx("button", {
+            type: "button",
+            onClick: onDismiss,
+            "aria-label": "Dismiss window closed notice",
+            children: jsx(X, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" }),
+          }),
+        ],
+      }),
+      jsxs("p", {
+        children: [jsx("b", { children: windowTitle }), " was closed. Nothing was deleted."],
+      }),
+      jsx("small", { children: "Reopen it anytime from the desktop, Start menu, or its app." }),
+      jsxs("button", {
+        type: "button",
+        className: "window-closed-reopen",
+        onClick: onReopen,
+        children: [jsx(FolderOpen, { size: 13, strokeWidth: 1.8, "aria-hidden": "true" }), "REOPEN WINDOW"],
+      }),
+    ],
+  });
+}
+
 function ShopWorkspace({
   copy,
   state,
@@ -2148,6 +2192,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
   const [activePage, setActivePage] = React.useState("home");
   const [cartItems, setCartItems] = React.useState(getStoredCart);
   const [cartCelebration, setCartCelebration] = React.useState(null);
+  const [closedNotice, setClosedNotice] = React.useState(null);
   const cartCelebrationIndexRef = React.useRef(-1);
   const cartReturnFocusRef = React.useRef(null);
   const [startOpen, setStartOpen] = React.useState(false);
@@ -2217,6 +2262,28 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
       if (nextActive) setActive(nextActive);
     }
     setStartOpen(false);
+  };
+  const dismissClosedNotice = React.useCallback(() => setClosedNotice(null), []);
+  const closeWindowWithNotice = (id) => {
+    setWindowStatus(id, "closed");
+    if (id === "cart") setActivePage(workspaceMode);
+    if (!window.matchMedia("(max-width: 760px)").matches) {
+      setClosedNotice({
+        id,
+        title: copy.windows[id] || id.toUpperCase(),
+        closedAt: Date.now(),
+      });
+    }
+  };
+  const reopenClosedWindow = () => {
+    if (!closedNotice) return;
+    const { id } = closedNotice;
+    setClosedNotice(null);
+    if (id === "cart") {
+      openCart();
+      return;
+    }
+    setWindowStatus(id, "open");
   };
   const toggleTaskbarWindow = (id) => {
     if (windows[id] === "minimized") {
@@ -2406,7 +2473,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             controls: copy.controls,
             onFocus: () => setActive("cart"),
             onMinimize: () => setWindowStatus("cart", "minimized"),
-            onClose: closeCart,
+            onClose: () => closeWindowWithNotice("cart"),
             onQuantityChange: changeCartQuantity,
             onRemove: removeCartItem,
             onContinueShopping: openShop,
@@ -2418,7 +2485,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             active: active === "archive",
             onFocus: () => setActive("archive"),
             onMinimize: () => setWindowStatus("archive", "minimized"),
-            onClose: () => setWindowStatus("archive", "closed"),
+            onClose: () => closeWindowWithNotice("archive"),
           }),
           jsx(AestheticWindow, {
             aestheticId,
@@ -2428,7 +2495,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             controls: copy.controls,
             onFocus: () => setActive("aesthetic"),
             onMinimize: () => setWindowStatus("aesthetic", "minimized"),
-            onClose: () => setWindowStatus("aesthetic", "closed"),
+            onClose: () => closeWindowWithNotice("aesthetic"),
           }),
           jsx(AboutWindow, {
             copy,
@@ -2437,7 +2504,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             active: active === "about",
             onFocus: () => setActive("about"),
             onMinimize: () => setWindowStatus("about", "minimized"),
-            onClose: () => setWindowStatus("about", "closed"),
+            onClose: () => closeWindowWithNotice("about"),
           }),
           jsx(SettingsWindow, {
             copy,
@@ -2452,7 +2519,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             active: active === "settings",
             onFocus: () => setActive("settings"),
             onMinimize: () => setWindowStatus("settings", "minimized"),
-            onClose: () => setWindowStatus("settings", "closed"),
+            onClose: () => closeWindowWithNotice("settings"),
           }),
           jsx(WelcomeWindow, {
             copy,
@@ -2461,7 +2528,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             active: active === "welcome",
             onFocus: () => setActive("welcome"),
             onMinimize: () => setWindowStatus("welcome", "minimized"),
-            onClose: () => setWindowStatus("welcome", "closed"),
+            onClose: () => closeWindowWithNotice("welcome"),
           }),
           jsx(PreviewWindow, {
             copy,
@@ -2476,7 +2543,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
             maximized,
             onFocus: () => setActive("preview"),
             onMinimize: () => setWindowStatus("preview", "minimized"),
-            onClose: () => setWindowStatus("preview", "closed"),
+            onClose: () => closeWindowWithNotice("preview"),
             onMaximize: () => setMaximized((value) => !value),
           }),
           workspaceMode === "studio" &&
@@ -2489,7 +2556,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
               active,
               onFocus: setActive,
               onMinimize: (id) => setWindowStatus(id, "minimized"),
-              onClose: (id) => setWindowStatus(id, "closed"),
+              onClose: closeWindowWithNotice,
             }),
           workspaceMode === "shop" &&
             jsx(ShopWorkspace, {
@@ -2500,7 +2567,7 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
               active,
               onFocus: setActive,
               onMinimize: (id) => setWindowStatus(id, "minimized"),
-              onClose: (id) => setWindowStatus(id, "closed"),
+              onClose: closeWindowWithNotice,
               onAddToCart: addCartItem,
             }),
         ],
@@ -2522,6 +2589,12 @@ export function OSShell({ preview, previewZoom, studioState, onStudioStateChange
         onOpenShop: openShop,
         onOpenArchive: openArchive,
         onOpenAbout: openAbout,
+      }),
+      closedNotice && jsx(WindowClosedNotice, {
+        key: closedNotice.closedAt,
+        windowTitle: closedNotice.title,
+        onDismiss: dismissClosedNotice,
+        onReopen: reopenClosedWindow,
       }),
       cartCelebration && jsx(CartAddedPopup, {
         message: cartCelebration,
