@@ -46,6 +46,8 @@ out
 dist
 .output
 
+#chatGPT stuffs
+.openai
 
 # assets
 assets
