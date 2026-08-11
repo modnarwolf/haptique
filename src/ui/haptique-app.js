@@ -183,7 +183,7 @@ function readFileAsImage(n, t) {
 // default_bump.jpg with progress reporting, then reveals the scene. Asset
 // failure is caught so the scene still appears, just without those maps.
 // --------------------------------------------------------------------------
-function ClothExperience({ patternState, studioActionsRef, onZoomChange }) {
+export function ClothExperience({ patternState, studioActionsRef, onZoomChange }) {
   const n = React.useRef(null),
     t = React.useRef(null),
     patternEngineRef = React.useRef(null),

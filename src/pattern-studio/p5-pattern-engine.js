@@ -59,18 +59,21 @@ export class P5PatternEngine {
     this.onTextureUpdate?.(this.canvas, state.width, state.height, state);
   }
 
-  async exportFlatPattern() {
+  async exportFlatPattern({ maxEdge = Infinity, label = "pattern" } = {}) {
     await this.ready;
     const state = this.state ?? this.pendingState;
     if (!state) return;
-    const graphics = this.p5.createGraphics(state.width, state.height);
+    const scale = Math.min(1, maxEdge / Math.max(state.width, state.height));
+    const outputWidth = Math.max(1, Math.round(state.width * scale));
+    const outputHeight = Math.max(1, Math.round(state.height * scale));
+    const graphics = this.p5.createGraphics(outputWidth, outputHeight);
     graphics.pixelDensity(1);
     try {
-      this.painter.paint(graphics, state, state.width, state.height, 1);
+      this.painter.paint(graphics, state, state.width, state.height, scale);
       const blob = await canvasToBlob(graphics.canvas);
       downloadBlob(
         blob,
-        `haptique-pattern-${state.seriesId}-${String(state.seed).padStart(6, "0")}-${state.width}x${state.height}.png`,
+        `haptique-${label}-${state.seriesId}-${String(state.seed).padStart(6, "0")}-${outputWidth}x${outputHeight}.png`,
       );
     } finally {
       graphics.remove();

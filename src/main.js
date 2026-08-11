@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
-import { jsx } from "react/jsx-runtime";
+import { createElement } from "react";
 import "dialkit/styles.css";
-import "./app.css";
-import { HaptiqueApp } from "./ui/haptique-app.js";
+import "./new-app.css";
+import { HaptiqueApp } from "./ui/new-app.jsx";
 
-createRoot(document.getElementById("root")).render(jsx(HaptiqueApp, {}));
+createRoot(document.getElementById("root")).render(createElement(HaptiqueApp));
