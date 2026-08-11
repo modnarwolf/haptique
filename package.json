@@ -8,7 +8,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "generate:curated": "node scripts/generate-curated-hashes.mjs",
-    "verify:environments": "node scripts/verify-environments.mjs"
+    "verify:environments": "node scripts/verify-environments.mjs",
+    "verify:printify": "node --env-file=.env scripts/verify-printify.mjs",
+    "verify:pricing": "node scripts/audit-printify-pricing.mjs",
+    "test:printify": "node --test tests/printify-client.test.mjs",
+    "test:payments": "node --test tests/checkout-service.test.mjs",
+    "test:stripe-session": "node --env-file=.env scripts/create-stripe-test-session.mjs"
   },
   "dependencies": {
     "dialkit": "^1.4.3",
