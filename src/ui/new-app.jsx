@@ -78,13 +78,10 @@ function CuratedSeedPreview({ item }) {
   return <PatternCanvas state={previewState} className="curated-thumbnail" />;
 }
 
-function ShopPage({ onOpenStudio, onOpenSeries, onAdd }) {
+function ShopPage({ onOpenStudio, onOpenSeries }) {
   const [seriesIndex, setSeriesIndex] = React.useState(() => Math.floor(Math.random() * CAMPAIGN_SERIES.length));
   const [cycleKey, setCycleKey] = React.useState(0);
-  const [product, setProduct] = React.useState(PRODUCT_TYPES[0]);
-  const [size, setSize] = React.useState(PRODUCT_TYPES[0].sizes[1]);
   const active = CAMPAIGN_SERIES[seriesIndex];
-  const format = getProductFormat(product.id, size);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -94,30 +91,9 @@ function ShopPage({ onOpenStudio, onOpenSeries, onAdd }) {
     return () => window.clearTimeout(timer);
   }, [seriesIndex, cycleKey]);
 
-  React.useEffect(() => setSize(product.sizes[Math.min(1, product.sizes.length - 1)]), [product]);
-
   const chooseSeries = (index) => {
     setSeriesIndex(index);
     setCycleKey((key) => key + 1);
-  };
-
-  const add = () => {
-    const designState = { ...createDefaultPatternState(), seriesId: active.id, seed: 1042, width: format.width, height: format.height };
-    onAdd({
-      lineId: crypto.randomUUID(),
-      seriesId: active.id,
-      seriesName: active.name,
-      seed: 1042,
-      designHash: encodePatternShare(createPatternSnapshot(designState)),
-      productId: product.id,
-      productName: product.name,
-      size,
-      price: productPrice(product.id, size),
-      quantity: 1,
-      image: active.images[0],
-      aspectRatio: format.aspectRatio,
-      printSpec: format,
-    });
   };
 
   return (
@@ -132,19 +108,15 @@ function ShopPage({ onOpenStudio, onOpenSeries, onAdd }) {
             <button className="secondary-text-link" onClick={() => onOpenSeries(active.id)}>View the series</button>
           </div>
         </div>
-        <figure className="hero-image"><img src={active.images[0]} alt={`${active.name} series campaign`} loading="eager" fetchPriority="high" decoding="async" /></figure>
+        <button className="hero-image" onClick={() => onOpenSeries(active.id)} aria-label={`View the ${active.name} series`}><img src={active.images[0]} alt={`${active.name} series campaign`} loading="eager" fetchPriority="high" decoding="async" /></button>
         <div className="series-switcher">
           {CAMPAIGN_SERIES.map((series, index) => (
             <button key={series.id} className={index === seriesIndex ? "is-active" : ""} onClick={() => chooseSeries(index)}>
-              <span>{series.number}</span>{series.name}
+              <span>{series.number}</span><strong>{series.name}</strong>
               {index === seriesIndex && <i className="series-progress" key={`${series.id}-${cycleKey}`} />}
             </button>
           ))}
         </div>
-      </section>
-
-      <section className="process-strip" aria-label="How Haptique works">
-        <span><b>1/</b> Choose a series</span><ArrowDown size={20} /><span><b>2/</b> Discover art you love</span><ArrowDown size={20} /><span><b>3/</b> Make it real</span>
       </section>
 
       <section className="collection-section">
@@ -162,20 +134,31 @@ function ShopPage({ onOpenStudio, onOpenSeries, onAdd }) {
         </div>
       </section>
 
-      <section className="configure-section">
-        <div className="configure-visual">
+      <section className="studio-invitation" style={{ "--series-accent": active.accent }}>
+        <div className="studio-invitation-visual">
           <img src={active.images[1]} alt={`${active.name} series alternate campaign`} />
-          <span className="image-caption">{active.name.toUpperCase()} / SEED 001042</span>
+          <span>{active.name.toUpperCase()} / SEED 001042</span>
         </div>
-        <div className="configure-panel">
-          <p className="index-label">MAKE THIS PATTERN PHYSICAL</p>
-          <h2>{active.name} / 001042</h2>
-          <div className="option-group"><label>Object</label><div className="chip-row">{PRODUCT_TYPES.map((item) => <button key={item.id} className={product.id === item.id ? "is-active" : ""} onClick={() => setProduct(item)}>{item.short}</button>)}</div></div>
-          <div className="option-group"><label>Size</label><div className="chip-row">{product.sizes.map((item) => <button key={item} className={size === item ? "is-active" : ""} onClick={() => setSize(item)}>{item}</button>)}</div></div>
-          <div className="product-note"><span>{product.description}</span><span>{format.width} × {format.height} px / {format.dpi} DPI</span></div>
-          <button className="add-button" onClick={add}><span>Add to cart</span><strong>{money.format(productPrice(product.id, size))}</strong></button>
-          <p className="fine-print">Preview imagery represents the series. Final mockups and exact production specifications will be synced from the selected Printify provider before checkout goes live.</p>
+        <div className="studio-invitation-copy">
+          <p className="index-label">THE PATTERN STUDIO / LIVE</p>
+          <div>
+            <h2>Don’t just<br />choose one.<br /><em>Find yours.</em></h2>
+            <p>Use {active.name} as your starting point, then change the seed, palette, and structure. The Studio remembers every coordinate.</p>
+          </div>
+          <button className="primary-text-link" onClick={() => onOpenStudio(active.id)}>Open {active.name} in Studio <ArrowUpRight size={18} /></button>
         </div>
+      </section>
+
+      <section className="process-section" aria-labelledby="process-title">
+        <header>
+          <p className="index-label">HOW HAPTIQUE WORKS / THREE MOVES</p>
+          <h2 id="process-title">From an idea<br />to an object.</h2>
+        </header>
+        <ol>
+          <li><span>01</span><div><h3>Choose a series</h3><p>Start with a visual system and its own set of rules.</p></div></li>
+          <li><span>02</span><div><h3>Discover art you love</h3><p>Move through seeds, colors, and structures until one feels yours.</p></div></li>
+          <li><span>03</span><div><h3>Make it real</h3><p>Carry the exact design from the browser onto a physical object.</p></div></li>
+        </ol>
       </section>
     </main>
   );
@@ -396,7 +379,22 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
   return <><button className={open ? "cart-scrim is-open" : "cart-scrim"} onClick={onClose} aria-label="Close cart" /><aside className={open ? "cart-drawer is-open" : "cart-drawer"} aria-hidden={!open}><header><p>YOUR CART / {String(items.length).padStart(2, "0")}</p><button onClick={onClose} aria-label="Close cart"><X /></button></header>{items.length ? <><div className="cart-items">{items.map((item) => <article className="cart-line" key={item.lineId}><div className="cart-thumb" style={{ aspectRatio: item.aspectRatio || 1 }}>{item.image && <img src={item.image} alt="" />}</div><div><h3>{item.seriesName} / {String(item.seed).padStart(6, "0")}</h3><p>{item.productName}<br />{item.size}<br />{item.printSpec?.width} × {item.printSpec?.height} px</p><div className="quantity"><button onClick={() => onChange(item.lineId, -1)}><Minus size={13} /></button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)}><Plus size={13} /></button></div><button className="remove" onClick={() => onRemove(item.lineId)}>Remove</button></div><strong>{money.format(item.price * item.quantity)}</strong></article>)}</div><footer><div><span>Subtotal</span><strong>{money.format(total)}</strong></div><p>Shipping and taxes calculated at checkout.</p><button className="checkout-button" onClick={checkout}>Checkout <ArrowUpRight size={17} /></button>{message && <output>{message}</output>}</footer></> : <div className="empty-cart"><ShoppingBag size={30} strokeWidth={1.2} /><p>Your future object<br />is still a number.</p><button onClick={onClose}>Keep looking</button></div>}</aside></>;
 }
 
-function Footer({ onNavigate }) { return <footer className="site-footer"><img src="/logoB.svg" alt="Haptique" /><div><p>Creative software<br />for real things.</p><nav><button onClick={() => onNavigate("shop")}>Shop</button><button onClick={() => onNavigate("studio")}>Studio</button><button onClick={() => onNavigate("about")}>About</button></nav></div><p className="footer-meta">LOS ANGELES / EST. 2026<br />MADE ON DEMAND</p></footer>; }
+function Footer() {
+  return (
+    <footer className="site-footer">
+      <div className="footer-brand">
+        <img src="/logoB.svg" alt="Haptique" />
+        <p>Creative software<br />for real things.</p>
+      </div>
+      <div className="footer-details">
+        <section><p>CONTACT</p><a href="mailto:hello@haptique.studio">hello@haptique.studio</a></section>
+        <section><p>FOLLOW</p><a href="https://www.instagram.com/haptique.studio/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="https://www.are.na/haptique" target="_blank" rel="noreferrer">Are.na ↗</a></section>
+        <section><p>MADE</p><span>On demand in small runs.<br />Designed in Los Angeles.</span></section>
+      </div>
+      <div className="footer-bottom"><span>HAPTIQUE © 2026</span><span>SEED BY SEED / OBJECT BY OBJECT</span></div>
+    </footer>
+  );
+}
 
 export function HaptiqueApp() {
   const hasSharedDesign = typeof window !== "undefined" && window.location.hash.startsWith("#design=");
@@ -425,5 +423,5 @@ export function HaptiqueApp() {
     navigate("series");
   };
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-  return <div className="haptique-site"><Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} onAdd={add} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onAdd={add} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer onNavigate={navigate} /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} /></div>;
+  return <div className="haptique-site"><Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onAdd={add} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} /></div>;
 }
