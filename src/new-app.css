@@ -10,7 +10,9 @@ button,select,input { font:inherit; color:inherit; }
 button { cursor:pointer; }
 img { display:block; max-width:100%; }
 button:focus-visible,select:focus-visible,input:focus-visible { outline:2px solid #315cff; outline-offset:2px; }
-.haptique-site { min-height:100vh; overflow:clip; }
+.haptique-site { min-height:100vh; overflow:clip; transform-origin:50% 18vh; transition:filter 180ms cubic-bezier(.22,.75,.25,1),opacity 180ms ease,transform 180ms cubic-bezier(.22,.75,.25,1); }
+.haptique-site.is-leaving { filter:blur(13px); opacity:0; transform:scale(.992); pointer-events:none; }
+.haptique-site.is-entering { filter:blur(13px); opacity:0; transform:scale(1.008); pointer-events:none; }
 .checkout-notice { position:fixed; z-index:1200; top:18px; left:50%; display:flex; align-items:center; gap:18px; width:min(620px,calc(100vw - 32px)); padding:13px 15px; transform:translateX(-50%); border:1px solid rgba(255,255,255,.2); background:rgba(15,15,14,.94); color:#f5f2e8; font:400 12px/1.4 var(--mono); letter-spacing:.04em; backdrop-filter:blur(14px); }
 .checkout-notice span { flex:1; }
 .checkout-notice button { padding:3px; border:0; background:transparent; color:inherit; }
@@ -149,14 +151,16 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
 .curated-thumbnail { grid-column:1/-1; width:100%; height:auto; max-width:none; aspect-ratio:3/4!important; background:#c9c7bf; }
 .curated-thumbnail canvas { width:100%!important; height:100%!important; object-fit:cover; }
 .about-page { padding:18px 24px 0; }
-.about-intro { height:clamp(130px,18vh,175px); display:grid; grid-template-columns:1.45fr .65fr; column-gap:50px; align-items:end; margin-bottom:18px; }
+.about-intro { min-height:calc(100svh - 102px); display:grid; grid-template-columns:minmax(0,1.45fr) minmax(260px,.55fr); grid-template-rows:auto 1fr auto; column-gap:clamp(40px,8vw,130px); padding-bottom:clamp(28px,5vw,72px); }
 .about-intro .index-label { grid-column:1/-1; }
-.about-intro h1 { margin:0; font-size:clamp(42px,min(4.4vw,7vh),72px); }
-.about-lede { margin:0 0 8px; font-size:clamp(16px,1.7vw,22px); line-height:1.3; letter-spacing:-.025em; }
-.about-image { height:calc(100svh - 120px - clamp(130px,18vh,175px)); min-height:0; overflow:hidden; background:#a871df; border:1px solid var(--line); }
-.about-image img { width:100%; height:100%; object-fit:cover; }
-.about-manifesto { padding:clamp(70px,10vw,150px) 0; display:grid; grid-template-columns:1fr 1fr; gap:12vw; font-size:clamp(20px,2.5vw,38px); line-height:1.2; letter-spacing:-.04em; }
-.about-manifesto p { margin:0; }
+.about-intro h1 { grid-column:1/-1; align-self:center; margin:0; font-size:clamp(64px,9.2vw,148px); line-height:.82; letter-spacing:-.075em; }
+.about-lede { grid-column:2; align-self:end; margin:0; font-size:clamp(17px,1.65vw,24px); line-height:1.32; letter-spacing:-.025em; }
+.about-manifesto { margin:0 -24px; border-top:1px solid var(--line); display:grid; grid-template-columns:1fr 1fr; }
+.about-manifesto p { min-height:min(58vw,720px); margin:0; padding:clamp(110px,15vw,220px) 24px clamp(34px,5vw,74px); display:flex; align-items:flex-end; position:relative; font-size:clamp(27px,3.35vw,54px); line-height:1.08; letter-spacing:-.045em; }
+.about-manifesto p+ p { border-left:1px solid var(--line); }
+.about-manifesto p::before { position:absolute; top:clamp(34px,5vw,74px); left:24px; font:400 10px/1.3 var(--mono); letter-spacing:.055em; text-transform:uppercase; }
+.about-manifesto p:first-child::before { content:"01 / THE SYSTEM"; }
+.about-manifesto p:last-child::before { content:"02 / THE OBJECT"; }
 .cloth-invitation { margin:0 -24px; padding:clamp(50px,8vw,100px) 24px; display:grid; grid-template-columns:1fr auto; align-items:end; gap:30px; background:#1a1a18; color:#f2f0ea; }
 .cloth-invitation button { border:1px solid #f2f0ea; background:transparent; color:inherit; padding:16px; display:flex; gap:12px; align-items:center; font:400 11px/1 var(--mono); text-transform:uppercase; }
 .cloth-modal { position:fixed; inset:0; z-index:100; background:#0d0d0d; color:#fff; }
@@ -335,13 +339,14 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
   .next-series-copy h2 { font-size:clamp(58px,18vw,88px); }
   .next-series-preview { min-height:100vw; padding:28px 16px; border-left:0; border-top:1px solid var(--line); }
   .next-series-preview .pattern-canvas { width:auto; height:min(115vw,620px); }
-  .about-intro { height:clamp(160px,24svh,200px); grid-template-columns:1fr; gap:8px; margin-bottom:12px; }
+  .about-intro { min-height:calc(100svh - 84px); grid-template-columns:1fr; grid-template-rows:auto 1fr auto; gap:20px; padding-bottom:32px; }
   .about-intro .index-label { grid-column:auto; }
-  .about-intro h1 { font-size:clamp(36px,10vw,48px); }
-  .about-lede { margin:0; font-size:12px; line-height:1.35; }
-  .about-image { height:calc(100svh - 96px - clamp(160px,24svh,200px)); }
-  .about-image img { height:100%; }
-  .about-manifesto { grid-template-columns:1fr; gap:45px; }
+  .about-intro h1 { grid-column:auto; font-size:clamp(52px,16.5vw,78px); }
+  .about-lede { grid-column:auto; font-size:15px; line-height:1.4; }
+  .about-manifesto { grid-template-columns:1fr; }
+  .about-manifesto p { min-height:72svh; padding:120px 16px 32px; font-size:clamp(28px,9vw,42px); }
+  .about-manifesto p+ p { border-left:0; border-top:1px solid var(--line); }
+  .about-manifesto p::before { top:32px; left:16px; }
   .cloth-invitation { margin:0 -16px; padding:50px 16px; grid-template-columns:1fr; }
   .cloth-invitation h2 { font-size:40px; }
   .site-footer { min-height:600px; padding:38px 16px 20px; gap:42px; }
@@ -357,7 +362,6 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
 }
 @media (max-width:680px) and (max-height:650px) {
   .hero-intro,.studio-title>p:last-child { display:none; }
-  .about-intro { height:clamp(145px,24svh,160px); }
-  .about-image { height:calc(100svh - 96px - clamp(145px,24svh,160px)); }
+  .about-intro { min-height:calc(100svh - 72px); }
 }
-@media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition-duration:.01ms!important; } }
+@media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition-duration:.01ms!important; } .haptique-site { filter:none!important; opacity:1!important; transform:none!important; } }

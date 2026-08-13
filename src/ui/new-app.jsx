@@ -11,7 +11,74 @@ const LazyClothExperience = React.lazy(() =>
 
 const LOGOS = ["/logoA.svg", "/logoB.svg", "/logoC.svg"];
 const HERO_DURATION = 6500;
+const PAGE_TRANSITION_MS = 180;
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+
+function useMomentumScroll() {
+  React.useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const coarsePointer = window.matchMedia("(pointer: coarse)");
+    if (reducedMotion.matches || coarsePointer.matches) return undefined;
+
+    let frame = 0;
+    let current = window.scrollY;
+    let target = current;
+
+    const scrollLimit = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const canScrollInside = (origin, delta) => {
+      let element = origin instanceof Element ? origin : null;
+      while (element && element !== document.body) {
+        const style = window.getComputedStyle(element);
+        const scrollable = /(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight + 1;
+        if (scrollable) {
+          const canMoveDown = delta > 0 && element.scrollTop + element.clientHeight < element.scrollHeight - 1;
+          const canMoveUp = delta < 0 && element.scrollTop > 1;
+          if (canMoveDown || canMoveUp) return true;
+        }
+        element = element.parentElement;
+      }
+      return false;
+    };
+    const settle = () => {
+      current += (target - current) * 0.16;
+      if (Math.abs(target - current) < 0.45) {
+        current = target;
+        window.scrollTo(0, current);
+        frame = 0;
+        return;
+      }
+      window.scrollTo(0, current);
+      frame = window.requestAnimationFrame(settle);
+    };
+    const stop = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = 0;
+      current = window.scrollY;
+      target = current;
+    };
+    const onWheel = (event) => {
+      if (event.defaultPrevented || event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY) || canScrollInside(event.target, event.deltaY)) return;
+      event.preventDefault();
+      if (!frame) current = target = window.scrollY;
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+      const delta = Math.max(-140, Math.min(140, event.deltaY * unit));
+      target = Math.max(0, Math.min(scrollLimit(), target + delta));
+      if (!frame) frame = window.requestAnimationFrame(settle);
+    };
+
+    document.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("keydown", stop);
+    window.addEventListener("resize", stop);
+    window.addEventListener("haptique:scroll-reset", stop);
+    return () => {
+      document.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", stop);
+      window.removeEventListener("resize", stop);
+      window.removeEventListener("haptique:scroll-reset", stop);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+}
 
 function FluidLogo({ onNavigate }) {
   const [index, setIndex] = React.useState(() => Math.floor(Math.random() * LOGOS.length));
@@ -32,7 +99,7 @@ function FluidLogo({ onNavigate }) {
 
 function Header({ page, onNavigate, cartCount, onCart }) {
   const [open, setOpen] = React.useState(false);
-  const go = (target) => { onNavigate(target); setOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const go = (target) => { onNavigate(target); setOpen(false); };
   return (
     <header className="site-header">
       <FluidLogo onNavigate={go} />
@@ -364,7 +431,6 @@ function AboutPage({ patternState }) {
   return (
     <main className="about-page">
       <section className="about-intro"><p className="index-label">ABOUT / HAPTIQUE</p><h1>Digital patterns<br />want to be touched.</h1><p className="about-lede">Haptique is a generative design studio and made-to-order shop. We build visual systems in code, give you the controls, then translate your chosen result into an object for everyday life.</p></section>
-      <section className="about-image"><img src="/model_mock_previews/swatch_preview_A.png" alt="Swatch tote in an interior" /></section>
       <section className="about-manifesto"><p>Each series is a small world with its own rules. A seed is not a limited edition number or a random label—it is the precise coordinate that lets the artwork exist again.</p><p>Making only after an order means fewer speculative objects and more personal ones. Posters, stretched canvases, totes, and woven blankets are our first material vocabulary.</p></section>
       <section className="cloth-invitation"><div><p className="index-label">A SMALL EASTER EGG</p><h2>Before the objects,<br />there was the cloth.</h2></div><button onClick={() => setShowCloth(true)}>Touch the original experiment <ArrowUpRight size={17} /></button></section>
       {showCloth && <div className="cloth-modal" role="dialog" aria-modal="true" aria-label="Interactive 3D cloth"><button className="cloth-close" onClick={() => setShowCloth(false)}><X size={20} /> Close</button><div className="cloth-scene"><React.Suspense fallback={<div className="cloth-loading">Loading the original cloth…</div>}><LazyClothExperience patternState={patternState} studioActionsRef={actions} onZoomChange={() => {}} /></React.Suspense></div><p className="cloth-hint">Drag the fabric. Scroll to move closer.</p></div>}
@@ -427,8 +493,11 @@ function Footer() {
 }
 
 export function HaptiqueApp() {
+  useMomentumScroll();
   const hasSharedDesign = typeof window !== "undefined" && window.location.hash.startsWith("#design=");
   const [page, setPage] = React.useState(() => hasSharedDesign ? "studio" : "shop");
+  const [pageTransition, setPageTransition] = React.useState("idle");
+  const transitionTimer = React.useRef(null);
   const [patternState, setPatternState] = React.useState(() => {
     const initialState = createDefaultPatternState();
     if (!hasSharedDesign) return initialState;
@@ -441,9 +510,31 @@ export function HaptiqueApp() {
   const [selectedSeries, setSelectedSeries] = React.useState(CAMPAIGN_SERIES[0]);
   const [cart, setCart] = React.useState([]);
   const [cartOpen, setCartOpen] = React.useState(false);
+  React.useEffect(() => () => window.clearTimeout(transitionTimer.current), []);
   const add = (item) => { setCart((items) => [...items, item]); setCartOpen(true); };
   const quantity = (lineId, amount) => setCart((items) => items.map((item) => item.lineId === lineId ? { ...item, quantity: Math.max(1, item.quantity + amount) } : item));
-  const navigate = (target) => { setPage(target); setCartOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const navigate = (target) => {
+    setCartOpen(false);
+    if (target === page) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (pageTransition !== "idle") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.dispatchEvent(new Event("haptique:scroll-reset"));
+      setPage(target);
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
+    setPageTransition("leaving");
+    transitionTimer.current = window.setTimeout(() => {
+      window.dispatchEvent(new Event("haptique:scroll-reset"));
+      setPage(target);
+      window.scrollTo({ top: 0, behavior: "auto" });
+      setPageTransition("entering");
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => setPageTransition("idle")));
+    }, PAGE_TRANSITION_MS);
+  };
   const openStudio = (seriesId) => {
     setPatternState((current) => ({ ...current, seriesId }));
     navigate("studio");
@@ -458,5 +549,5 @@ export function HaptiqueApp() {
     window.history.replaceState({}, "", window.location.pathname);
     window.location.reload();
   };
-  return <div className="haptique-site">{checkoutResult && <div className={`checkout-notice is-${checkoutResult}`} role="status"><span>{checkoutResult === "success" ? "Stripe test payment completed. Printify production remains paused." : "Stripe checkout canceled. No order was created."}</span><button onClick={dismissCheckoutResult} aria-label="Dismiss checkout message"><X size={15} /></button></div>}<Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onAdd={add} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} /></div>;
+  return <div className={`haptique-site is-${pageTransition}`} aria-busy={pageTransition !== "idle"}>{checkoutResult && <div className={`checkout-notice is-${checkoutResult}`} role="status"><span>{checkoutResult === "success" ? "Stripe test payment completed. Printify production remains paused." : "Stripe checkout canceled. No order was created."}</span><button onClick={dismissCheckoutResult} aria-label="Dismiss checkout message"><X size={15} /></button></div>}<Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onAdd={add} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} /></div>;
 }
