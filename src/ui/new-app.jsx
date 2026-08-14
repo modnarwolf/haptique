@@ -11,74 +11,8 @@ const LazyClothExperience = React.lazy(() =>
 
 const LOGOS = ["/logoA.svg", "/logoB.svg", "/logoC.svg"];
 const HERO_DURATION = 6500;
-const PAGE_TRANSITION_MS = 180;
+const PAGE_TRANSITION_MS = 600;
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
-
-function useMomentumScroll() {
-  React.useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const coarsePointer = window.matchMedia("(pointer: coarse)");
-    if (reducedMotion.matches || coarsePointer.matches) return undefined;
-
-    let frame = 0;
-    let current = window.scrollY;
-    let target = current;
-
-    const scrollLimit = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-    const canScrollInside = (origin, delta) => {
-      let element = origin instanceof Element ? origin : null;
-      while (element && element !== document.body) {
-        const style = window.getComputedStyle(element);
-        const scrollable = /(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight + 1;
-        if (scrollable) {
-          const canMoveDown = delta > 0 && element.scrollTop + element.clientHeight < element.scrollHeight - 1;
-          const canMoveUp = delta < 0 && element.scrollTop > 1;
-          if (canMoveDown || canMoveUp) return true;
-        }
-        element = element.parentElement;
-      }
-      return false;
-    };
-    const settle = () => {
-      current += (target - current) * 0.16;
-      if (Math.abs(target - current) < 0.45) {
-        current = target;
-        window.scrollTo(0, current);
-        frame = 0;
-        return;
-      }
-      window.scrollTo(0, current);
-      frame = window.requestAnimationFrame(settle);
-    };
-    const stop = () => {
-      if (frame) window.cancelAnimationFrame(frame);
-      frame = 0;
-      current = window.scrollY;
-      target = current;
-    };
-    const onWheel = (event) => {
-      if (event.defaultPrevented || event.ctrlKey || Math.abs(event.deltaX) > Math.abs(event.deltaY) || canScrollInside(event.target, event.deltaY)) return;
-      event.preventDefault();
-      if (!frame) current = target = window.scrollY;
-      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
-      const delta = Math.max(-140, Math.min(140, event.deltaY * unit));
-      target = Math.max(0, Math.min(scrollLimit(), target + delta));
-      if (!frame) frame = window.requestAnimationFrame(settle);
-    };
-
-    document.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("keydown", stop);
-    window.addEventListener("resize", stop);
-    window.addEventListener("haptique:scroll-reset", stop);
-    return () => {
-      document.removeEventListener("wheel", onWheel);
-      window.removeEventListener("keydown", stop);
-      window.removeEventListener("resize", stop);
-      window.removeEventListener("haptique:scroll-reset", stop);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, []);
-}
 
 function FluidLogo({ onNavigate }) {
   const [index, setIndex] = React.useState(() => Math.floor(Math.random() * LOGOS.length));
@@ -493,7 +427,6 @@ function Footer() {
 }
 
 export function HaptiqueApp() {
-  useMomentumScroll();
   const hasSharedDesign = typeof window !== "undefined" && window.location.hash.startsWith("#design=");
   const [page, setPage] = React.useState(() => hasSharedDesign ? "studio" : "shop");
   const [pageTransition, setPageTransition] = React.useState("idle");
@@ -516,19 +449,17 @@ export function HaptiqueApp() {
   const navigate = (target) => {
     setCartOpen(false);
     if (target === page) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "auto" });
       return;
     }
     if (pageTransition !== "idle") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      window.dispatchEvent(new Event("haptique:scroll-reset"));
       setPage(target);
       window.scrollTo({ top: 0, behavior: "auto" });
       return;
     }
     setPageTransition("leaving");
     transitionTimer.current = window.setTimeout(() => {
-      window.dispatchEvent(new Event("haptique:scroll-reset"));
       setPage(target);
       window.scrollTo({ top: 0, behavior: "auto" });
       setPageTransition("entering");
