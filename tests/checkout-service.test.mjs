@@ -20,6 +20,42 @@ test("checkout derives authoritative price and Printify variant server-side", ()
   assert.equal(line.quantity, 1);
 });
 
+test("checkout resolves the persisted Stripe Price for the exact product size", () => {
+  const [line] = validateCheckoutItems([validItem], {
+    stripeCatalog: {
+      currency: "usd",
+      prices: {
+        "poster:12 × 16 in": {
+          productId: "prod_poster",
+          priceId: "price_poster",
+          unitAmount: 3200,
+        },
+      },
+    },
+  });
+
+  assert.equal(line.stripeProductId, "prod_poster");
+  assert.equal(line.priceId, "price_poster");
+});
+
+test("checkout rejects a stale Stripe catalog price", () => {
+  assert.throws(
+    () => validateCheckoutItems([validItem], {
+      stripeCatalog: {
+        currency: "usd",
+        prices: {
+          "poster:12 × 16 in": {
+            productId: "prod_poster",
+            priceId: "price_poster",
+            unitAmount: 1,
+          },
+        },
+      },
+    }),
+    CheckoutValidationError,
+  );
+});
+
 test("checkout rejects unknown sizes", () => {
   assert.throws(
     () => validateCheckoutItems([{ ...validItem, size: "99 × 99 in" }]),
@@ -31,4 +67,3 @@ test("checkout rejects invalid quantities and missing design hashes", () => {
   assert.throws(() => validateCheckoutItems([{ ...validItem, quantity: 11 }]), CheckoutValidationError);
   assert.throws(() => validateCheckoutItems([{ ...validItem, designHash: "" }]), CheckoutValidationError);
 });
-

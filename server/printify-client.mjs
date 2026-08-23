@@ -79,6 +79,50 @@ export function createPrintifyClient({
       });
     },
 
+    retrieveProduct(productId, { signal } = {}) {
+      const id = encodeURIComponent(required(productId, "Printify product ID"));
+      return request(`/shops/${encodeURIComponent(configuredShopId)}/products/${id}.json`, {
+        signal,
+      });
+    },
+
+    uploadImage({ fileName, contents, url }, { signal } = {}) {
+      const body = { file_name: required(fileName, "Printify image file name") };
+      if (url) body.url = required(url, "Printify image URL");
+      else body.contents = required(contents, "Printify image contents");
+      return request("/uploads/images.json", { method: "POST", body, signal });
+    },
+
+    createProduct(product, { signal } = {}) {
+      return request(`/shops/${encodeURIComponent(configuredShopId)}/products.json`, {
+        method: "POST",
+        body: product,
+        signal,
+      });
+    },
+
+    listOrders({ page = 1, limit = 10, status, signal } = {}) {
+      const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (status) query.set("status", status);
+      return request(`/shops/${encodeURIComponent(configuredShopId)}/orders.json?${query}`, {
+        signal,
+      });
+    },
+
+    async createOrder(order, { approvalConfirmed = false, signal } = {}) {
+      if (approvalConfirmed !== true) {
+        throw new PrintifyApiError(
+          "Printify order creation is locked until the shop order approval setting is confirmed Manual",
+          { status: 409 },
+        );
+      }
+      return request(`/shops/${encodeURIComponent(configuredShopId)}/orders.json`, {
+        method: "POST",
+        body: order,
+        signal,
+      });
+    },
+
     listBlueprints({ signal } = {}) {
       return request("/catalog/blueprints.json", { signal });
     },
@@ -108,10 +152,10 @@ export function createPrintifyClient({
         );
       }
 
-      const products = await this.listProducts({ page: 1, limit: 1, signal });
+      const products = await this.listProducts({ page: 1, limit: 50, signal });
       return {
         shop,
-        productCount: Number(products.total ?? products.data?.length ?? 0),
+        productCount: Math.max(Number(products.total ?? 0), products.data?.length ?? 0),
       };
     },
   });

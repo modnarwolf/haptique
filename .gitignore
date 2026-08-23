@@ -58,6 +58,9 @@ assets/*
 
 # temp directory
 .temp
+.data/
+server/data/stripe-products.json
+server/data/printify-products.json
 
 # Vite files
 vite.config.js.timestamp-*

@@ -237,6 +237,24 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
 .empty-cart svg { margin:0 auto 18px; }
 .empty-cart p { font-size:25px; line-height:1.05; letter-spacing:-.04em; }
 .empty-cart button { border:0; border-bottom:1px solid; background:transparent; padding:3px 0; font:400 11px/1 var(--mono); text-transform:uppercase; }
+.confirmation-modal-scrim { position:fixed; inset:0; z-index:1300; padding:24px; display:grid; place-items:center; background:rgba(23,23,20,.48); backdrop-filter:blur(8px); }
+.confirmation-modal { width:min(680px,100%); padding:0 28px 28px; border:1px solid var(--ink); background:var(--paper); box-shadow:12px 12px 0 rgba(23,23,20,.24); }
+.confirmation-modal>header { min-height:58px; margin:0 -28px 28px; padding:0 18px 0 28px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
+.confirmation-modal>header p { margin:0; font:500 10px/1 var(--mono); letter-spacing:.06em; }
+.confirmation-modal>header button { padding:7px; border:0; background:transparent; }
+.confirmation-modal-mark { width:64px; height:64px; display:grid; place-items:center; border:1px solid var(--ink); border-radius:50%; font:500 15px/1 var(--mono); letter-spacing:.1em; }
+.confirmation-modal-mark.is-paid { background:var(--ink); color:var(--paper); }
+.confirmation-modal h2 { max-width:560px; margin:32px 0 18px; font-size:clamp(38px,6vw,64px); line-height:.92; letter-spacing:-.055em; font-weight:500; }
+.confirmation-modal-copy { max-width:570px; margin:0; font-size:15px; line-height:1.48; }
+.confirmation-modal-meta { margin-top:28px; padding:15px 0; display:grid; grid-template-columns:1fr auto auto; gap:22px; align-items:center; border-top:1px solid var(--line); border-bottom:1px solid var(--line); font:400 10px/1.3 var(--mono); }
+.confirmation-modal-meta span { display:flex; gap:8px; }
+.confirmation-modal-meta b { font-weight:500; }
+.confirmation-modal-meta strong { font-size:13px; }
+.confirmation-modal-sandbox { margin:14px 0 0; font:500 9px/1.3 var(--mono); letter-spacing:.05em; }
+.confirmation-modal-actions { margin-top:28px; display:flex; gap:10px; }
+.confirmation-modal-return { min-height:48px; padding:14px 16px; text-transform:uppercase; font:500 10px/1 var(--mono); }
+.confirmation-modal-return { flex:1; display:flex; align-items:center; justify-content:space-between; border:1px solid var(--ink); background:var(--ink); color:var(--paper); }
+.confirmation-modal-return:hover { background:#315cff; border-color:#315cff; }
 @media (max-width:960px) {
   .site-header { grid-template-columns:180px 1fr auto; height:72px; padding:14px 16px; }
   .fluid-logo { width:180px; height:38px; }
@@ -363,6 +381,15 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
   .footer-bottom { flex-direction:column; }
   .cart-line { grid-template-columns:82px 1fr auto; padding:15px 14px; }
   .cart-thumb { width:82px; }
+  .confirmation-modal-scrim { padding:14px; }
+  .confirmation-modal { padding:0 20px 20px; box-shadow:7px 7px 0 rgba(23,23,20,.24); }
+  .confirmation-modal>header { min-height:52px; margin:0 -20px 22px; padding:0 12px 0 20px; }
+  .confirmation-modal-mark { width:54px; height:54px; }
+  .confirmation-modal h2 { margin:24px 0 14px; font-size:clamp(36px,11vw,52px); }
+  .confirmation-modal-copy { font-size:13px; }
+  .confirmation-modal-meta { grid-template-columns:1fr auto; gap:12px; }
+  .confirmation-modal-meta strong { grid-column:1/-1; }
+  .confirmation-modal-actions { flex-direction:column; }
 }
 @media (max-width:680px) and (max-height:650px) {
   .hero-intro,.studio-title>p:last-child { display:none; }

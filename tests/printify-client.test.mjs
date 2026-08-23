@@ -34,6 +34,7 @@ test("verifyConnection validates the configured shop and reads product count", a
   assert.equal(requests.length, 2);
   assert.equal(requests[0].options.headers.Authorization, "Bearer test-token");
   assert.match(requests[1].url, /shops\/22838500\/products\.json/);
+  assert.match(requests[1].url, /limit=50/);
 });
 
 test("verifyConnection rejects a shop the token cannot access", async () => {
@@ -82,4 +83,50 @@ test("catalog methods address the selected blueprint and provider", async () => 
     requestedUrl,
     "https://api.printify.com/v1/catalog/blueprints/937/print_providers/99/variants.json",
   );
+});
+
+test("product creation and image upload stay scoped to the configured account", async () => {
+  const requests = [];
+  const client = createPrintifyClient({
+    token: "test-token",
+    shopId: "22838500",
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options });
+      return jsonResponse({ id: "printify-resource" });
+    },
+  });
+
+  await client.uploadImage({ fileName: "haptique.png", contents: "base64-data" });
+  await client.createProduct({ title: "Haptique — Art poster" });
+
+  assert.equal(requests[0].url, "https://api.printify.com/v1/uploads/images.json");
+  assert.equal(JSON.parse(requests[0].options.body).file_name, "haptique.png");
+  assert.equal(
+    requests[1].url,
+    "https://api.printify.com/v1/shops/22838500/products.json",
+  );
+});
+
+test("order creation is locked until manual approval is explicitly confirmed", async () => {
+  let calls = 0;
+  const client = createPrintifyClient({
+    token: "test-token",
+    shopId: "22838500",
+    fetchImpl: async () => {
+      calls += 1;
+      return jsonResponse({ id: "order-test" });
+    },
+  });
+
+  await assert.rejects(
+    () => client.createOrder({ external_id: "checkout-test" }),
+    (error) => error instanceof PrintifyApiError && error.status === 409,
+  );
+  assert.equal(calls, 0);
+
+  await client.createOrder(
+    { external_id: "checkout-test" },
+    { approvalConfirmed: true },
+  );
+  assert.equal(calls, 1);
 });

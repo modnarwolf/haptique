@@ -42,7 +42,15 @@ Other commands:
 npm run build
 npm run preview
 npm run verify:environments
+npm run test:payments
 ```
+
+### Stripe sandbox Checkout
+
+Haptique's four launch products use Stripe-hosted one-time Checkout with
+server-owned product/size prices and a signed, idempotent completion webhook.
+Setup and production boundaries are documented in
+[`docs/stripe-integration.md`](docs/stripe-integration.md).
 
 ### Adding a Pattern Studio series
 
@@ -74,11 +82,12 @@ src/
   shaders/          Holographic, depth-of-field, and grain GLSL
   simulation/       Cloth and experimental liquid physics
   ui/               React shell and DialKit controls
+server/              Sandbox checkout, signed webhook, order state, API clients
 public/
   textures/         Default cloth, bump, and pattern textures
   vendor/           Browser-loaded p5.js build
 ```
 
-Haptique is currently an early-stage, client-side project. Uploaded assets and
-working state remain in the browser; there is no backend or project-file format
-yet.
+Haptique is currently an early-stage project. Uploaded assets and working design
+state remain in the browser; the Vite server provides sandbox-only Stripe and
+Printify integration helpers, not a production backend or project-file format.

@@ -378,7 +378,7 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
   const [checkingOut, setCheckingOut] = React.useState(false);
   const checkout = async () => {
     setCheckingOut(true);
-    setMessage("Opening secure Stripe test checkout…");
+    setMessage("Opening secure Stripe checkout…");
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -406,7 +406,7 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
       setCheckingOut(false);
     }
   };
-  return <><button className={open ? "cart-scrim is-open" : "cart-scrim"} onClick={onClose} aria-label="Close cart" /><aside className={open ? "cart-drawer is-open" : "cart-drawer"} aria-hidden={!open}><header><p>YOUR CART / {String(items.length).padStart(2, "0")}</p><button onClick={onClose} aria-label="Close cart"><X /></button></header>{items.length ? <><div className="cart-items">{items.map((item) => <article className="cart-line" key={item.lineId}><div className="cart-thumb" style={{ aspectRatio: item.aspectRatio || 1 }}>{item.image && <img src={item.image} alt="" />}</div><div><h3>{item.seriesName} / {String(item.seed).padStart(6, "0")}</h3><p>{item.productName}<br />{item.size}<br />{item.printSpec?.width} × {item.printSpec?.height} px</p><div className="quantity"><button onClick={() => onChange(item.lineId, -1)}><Minus size={13} /></button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)}><Plus size={13} /></button></div><button className="remove" onClick={() => onRemove(item.lineId)}>Remove</button></div><strong>{money.format(item.price * item.quantity)}</strong></article>)}</div><footer><div><span>Subtotal</span><strong>{money.format(total)}</strong></div><p>Shipping and taxes calculated at checkout.</p><button className="checkout-button" onClick={checkout} disabled={checkingOut}>{checkingOut ? "Opening Stripe…" : "Checkout"} <ArrowUpRight size={17} /></button>{message && <output>{message}</output>}</footer></> : <div className="empty-cart"><ShoppingBag size={30} strokeWidth={1.2} /><p>Your future object<br />is still a number.</p><button onClick={onClose}>Keep looking</button></div>}</aside></>;
+  return <><button className={open ? "cart-scrim is-open" : "cart-scrim"} onClick={onClose} aria-label="Close cart" /><aside className={open ? "cart-drawer is-open" : "cart-drawer"} aria-hidden={!open}><header><p>YOUR CART / {String(items.length).padStart(2, "0")}</p><button onClick={onClose} aria-label="Close cart"><X /></button></header>{items.length ? <><div className="cart-items">{items.map((item) => <article className="cart-line" key={item.lineId}><div className="cart-thumb" style={{ aspectRatio: item.aspectRatio || 1 }}>{item.image && <img src={item.image} alt="" />}</div><div><h3>{item.seriesName} / {String(item.seed).padStart(6, "0")}</h3><p>{item.productName}<br />{item.size}<br />{item.printSpec?.width} × {item.printSpec?.height} px</p><div className="quantity"><button onClick={() => onChange(item.lineId, -1)}><Minus size={13} /></button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)}><Plus size={13} /></button></div><button className="remove" onClick={() => onRemove(item.lineId)}>Remove</button></div><strong>{money.format(item.price * item.quantity)}</strong></article>)}</div><footer><div><span>Subtotal</span><strong>{money.format(total)}</strong></div><p>US delivery details are collected in secure checkout.</p><button className="checkout-button" onClick={checkout} disabled={checkingOut}>{checkingOut ? "Opening Stripe…" : "Checkout"} <ArrowUpRight size={17} /></button>{message && <output>{message}</output>}</footer></> : <div className="empty-cart"><ShoppingBag size={30} strokeWidth={1.2} /><p>Your future object<br />is still a number.</p><button onClick={onClose}>Keep looking</button></div>}</aside></>;
 }
 
 function Footer() {
@@ -426,7 +426,101 @@ function Footer() {
   );
 }
 
+function CheckoutConfirmationModal({ sessionId, onClose }) {
+  const [result, setResult] = React.useState({ phase: "loading", order: null, testMode: true });
+
+  React.useEffect(() => {
+    let canceled = false;
+    let timer;
+    let attempts = 0;
+
+    const checkStatus = async () => {
+      attempts += 1;
+      try {
+        const response = await fetch(
+          `/api/stripe/checkout/status?session_id=${encodeURIComponent(sessionId)}`,
+          { headers: { Accept: "application/json" } },
+        );
+        const payload = await response.json();
+        if (canceled) return;
+        if (response.ok) {
+          const paid = payload.paymentStatus === "paid";
+          setResult({
+            phase: paid ? "paid" : "processing",
+            order: payload.order,
+            testMode: payload.testMode,
+          });
+          if (paid) return;
+        }
+      } catch {
+        if (!canceled) setResult((current) => ({ ...current, phase: "processing" }));
+      }
+
+      if (!canceled) {
+        if (attempts >= 8) {
+          setResult((current) => ({ ...current, phase: "delayed" }));
+        }
+        const delay = attempts < 8 ? 1250 : Math.min(10000, 2500 + (attempts - 8) * 750);
+        timer = window.setTimeout(checkStatus, delay);
+      }
+    };
+
+    checkStatus();
+    return () => {
+      canceled = true;
+      window.clearTimeout(timer);
+    };
+  }, [sessionId]);
+
+  React.useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  const paid = result.phase === "paid";
+  const order = result.order;
+  const reference = order?.reference?.slice(0, 8).toUpperCase();
+  const itemCount = order?.items.reduce((total, item) => total + item.quantity, 0) ?? 0;
+
+  return (
+    <div className="confirmation-modal-scrim">
+      <section className="confirmation-modal" role="dialog" aria-modal="true" aria-labelledby="confirmation-title">
+        <header>
+          <p>ORDER CONFIRMATION / {reference || "PENDING"}</p>
+          <button onClick={onClose} aria-label="Close confirmation"><X size={18} /></button>
+        </header>
+        <div className={paid ? "confirmation-modal-mark is-paid" : "confirmation-modal-mark"}>
+          {paid ? <Check size={32} strokeWidth={1.5} /> : <span aria-hidden="true">•••</span>}
+        </div>
+        <h2 id="confirmation-title">{paid ? "Your order is in motion." : "We’re confirming your payment."}</h2>
+        <p className="confirmation-modal-copy">
+          {paid
+            ? "Payment confirmed. We’ll validate your artwork, prepare the production file, and move your piece into made-to-order production."
+            : "Your checkout returned successfully. We’re waiting for Stripe’s signed confirmation before releasing the order."}
+        </p>
+        {order && (
+          <div className="confirmation-modal-meta">
+            <span>REFERENCE <b>#{reference}</b></span>
+            <span>{itemCount} ITEM{itemCount === 1 ? "" : "S"}</span>
+            <strong>{money.format(order.amountSubtotal / 100)}</strong>
+          </div>
+        )}
+        {result.testMode && <p className="confirmation-modal-sandbox">TEST ORDER — NO PHYSICAL ITEM WILL BE PRODUCED</p>}
+        <div className="confirmation-modal-actions">
+          <button className="confirmation-modal-return" onClick={onClose} autoFocus>Back to Haptique <ArrowUpRight size={17} /></button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function HaptiqueApp() {
+  const initialCheckoutParams = new URLSearchParams(window.location.search);
+  const checkoutResult = initialCheckoutParams.get("checkout");
+  const checkoutSessionId = initialCheckoutParams.get("session_id");
   const hasSharedDesign = typeof window !== "undefined" && window.location.hash.startsWith("#design=");
   const [page, setPage] = React.useState(() => hasSharedDesign ? "studio" : "shop");
   const [pageTransition, setPageTransition] = React.useState("idle");
@@ -443,6 +537,9 @@ export function HaptiqueApp() {
   const [selectedSeries, setSelectedSeries] = React.useState(CAMPAIGN_SERIES[0]);
   const [cart, setCart] = React.useState([]);
   const [cartOpen, setCartOpen] = React.useState(false);
+  const [confirmationOpen, setConfirmationOpen] = React.useState(
+    checkoutResult === "success" && Boolean(checkoutSessionId),
+  );
   React.useEffect(() => () => window.clearTimeout(transitionTimer.current), []);
   const add = (item) => { setCart((items) => [...items, item]); setCartOpen(true); };
   const quantity = (lineId, amount) => setCart((items) => items.map((item) => item.lineId === lineId ? { ...item, quantity: Math.max(1, item.quantity + amount) } : item));
@@ -475,10 +572,9 @@ export function HaptiqueApp() {
     navigate("series");
   };
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const checkoutResult = new URLSearchParams(window.location.search).get("checkout");
   const dismissCheckoutResult = () => {
     window.history.replaceState({}, "", window.location.pathname);
-    window.location.reload();
+    setConfirmationOpen(false);
   };
-  return <div className={`haptique-site is-${pageTransition}`} aria-busy={pageTransition !== "idle"}>{checkoutResult && <div className={`checkout-notice is-${checkoutResult}`} role="status"><span>{checkoutResult === "success" ? "Stripe test payment completed. Printify production remains paused." : "Stripe checkout canceled. No order was created."}</span><button onClick={dismissCheckoutResult} aria-label="Dismiss checkout message"><X size={15} /></button></div>}<Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onAdd={add} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} /></div>;
+  return <div className={`haptique-site is-${pageTransition}`} aria-busy={pageTransition !== "idle"}>{checkoutResult === "canceled" && <div className="checkout-notice is-canceled" role="status"><span>Stripe checkout canceled. No payment was confirmed.</span><button onClick={dismissCheckoutResult} aria-label="Dismiss checkout message"><X size={15} /></button></div>}<Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onAdd={add} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} />{confirmationOpen && checkoutSessionId && <CheckoutConfirmationModal sessionId={checkoutSessionId} onClose={dismissCheckoutResult} />}</div>;
 }

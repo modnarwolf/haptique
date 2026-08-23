@@ -1,20 +1,28 @@
 # Printify integration plan
 
-Haptique currently stages the storefront, design identifiers, product choices,
-sizes, and cart payload locally. Live checkout is intentionally disabled until
-merchant credentials and exact production partners are selected.
+Haptique stages the storefront, design identifiers, product choices, sizes, and
+cart payload locally. Stripe sandbox Checkout is enabled, and four reusable
+Printify fulfillment templates now mirror the storefront catalog. Live
+fulfillment remains intentionally disabled until merchant operations and
+production artwork validation are ready.
 
 ## Connection status
 
 - Printify shop: `haptique`
 - Shop ID: `22838500`
 - Sales channel: `custom_integration`
-- Existing products: none as of August 10, 2026
+- Existing Haptique products: four as of August 22, 2026
 
 The reusable API client lives in `server/printify-client.mjs`. It is intentionally
 outside `src/` so it cannot be imported into the browser bundle. After placing a
 fresh token in an ignored local `.env`, run `npm run verify:printify` to verify
 the token, configured shop, and product count without printing the token.
+
+Run `npm run setup:printify-products` to idempotently create or reuse the four
+templates. Their IDs are stored in the ignored
+`server/data/printify-products.json` file. The templates use an existing
+Haptique pattern as preview artwork; order-specific print files must replace it
+before any real production run.
 
 ## Initial catalog mapping
 
@@ -85,8 +93,9 @@ token in Vite variables, browser storage, client JavaScript, or source control.
 2. The server validates price and Printify variant IDs from its own catalog.
 3. Stripe creates Checkout. Its idempotent order ID becomes the external order
    reference.
-4. After Stripe confirms payment, the server uploads or reuses the print-ready
-   PNG and submits the matching pre-created Printify product variant.
+4. After Stripe confirms payment through a signed webhook, the server can stage
+   the matching pre-created Printify product variant using the customer email
+   and shipping address collected by Checkout.
 5. Keep Printify order approval manual during testing. Send the order to
    production only after payment and artwork validation succeed.
 6. Signed Printify webhooks update production, shipment, tracking, and delivery
@@ -101,15 +110,37 @@ hash.
 
 The local Vite server exposes `POST /api/stripe/checkout`. It validates product,
 size, quantity, and price from the server-owned catalog before creating a Stripe
-hosted Checkout Session. The integration intentionally accepts only `sk_test_`
-keys and explicitly disables Stripe Managed Payments because Haptique sells
-physical goods and must collect a shipping address.
+hosted Checkout Session with reusable Price IDs. The integration intentionally
+accepts only test-mode restricted or secret keys and explicitly disables Stripe
+Managed Payments because Haptique sells physical goods and must collect a
+shipping address.
+
+Run `npm run setup:stripe-products` once per Stripe test account to create four
+Products with size-specific Prices. The returned identifiers are persisted in
+an ignored catalog file. See `docs/stripe-integration.md` for webhook setup,
+order-state behavior, and the production boundary.
 
 Run `npm run test:stripe-session` to create a reusable $32 poster smoke-test
-session. This does not create or approve a Printify order. The next payment
-milestone is a signed, idempotent Stripe webhook handler; only after that should
-the handler create a Printify draft order, initially with production approval
-kept manual.
+session. A signed, idempotent Stripe webhook records paid orders. Mock Printify
+handoff is disabled by default. Before enabling it, set the Printify shop's
+order approval to **Manual**, then set
+`PRINTIFY_ORDER_APPROVAL_CONFIRMED=true` and
+`PRINTIFY_FULFILLMENT_MODE=mock_draft`. A verified paid Checkout then creates an
+on-hold Printify order with shipping notifications disabled. Haptique never
+calls Printify's send-to-production endpoint in mock mode.
+
+Printify warns that new shops can default to automatic approval after 24 hours,
+so do not enable mock handoff until the Dashboard setting is visibly Manual.
+
+## Customer confirmation emails
+
+Stripe can send a payment receipt when **Successful payments** is enabled under
+Customer emails. Stripe sandbox payments generally do not send receipts to
+arbitrary addresses. Printify's order API can optionally send a shipping
+notification, but Haptique deliberately disables that for mock orders. For a
+production-grade customer experience, Haptique should send its own branded
+order confirmation after the signed paid webhook and use signed Printify
+webhooks to send production and tracking updates.
 
 ## Intended launch sizes
 
