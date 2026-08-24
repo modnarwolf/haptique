@@ -1,5 +1,6 @@
 import * as React from "react";
 import { ArrowUpRight, Check, Copy, Download, FolderOpen, Link2, Menu, Minus, Plus, RotateCcw, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
+import { loadStoredCart, storeCart } from "../cart/cart-storage.js";
 import { PRODUCT_TYPES, getProductFormat, productPrice } from "../data/product-catalog.js";
 import { CAMPAIGN_SERIES, CAMPAIGN_SERIES_BY_ID, SITE_CONTENT } from "../data/site-content.js";
 import { createDefaultPatternState, getPalette, SERIES } from "../pattern-studio/pattern-data.js";
@@ -374,6 +375,26 @@ function AboutPage({ patternState }) {
   );
 }
 
+function CartArtwork({ item, active }) {
+  const restoredState = React.useMemo(() => {
+    if (item.image || !active) return null;
+    try {
+      const aspectRatio = item.aspectRatio || 1;
+      return {
+        ...applyPatternSnapshot(createDefaultPatternState(), decodePatternShare(item.designHash)),
+        width: 240,
+        height: Math.max(1, Math.round(240 / aspectRatio)),
+      };
+    } catch {
+      return null;
+    }
+  }, [active, item.aspectRatio, item.designHash, item.image]);
+
+  if (item.image) return <img src={item.image} alt={`${item.seriesName} recipe ${item.seed}`} />;
+  if (restoredState) return <PatternCanvas state={restoredState} className="cart-pattern-preview" />;
+  return null;
+}
+
 function CartDrawer({ items, open, onClose, onChange, onRemove }) {
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const [message, setMessage] = React.useState("");
@@ -408,7 +429,7 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
       setCheckingOut(false);
     }
   };
-  return <><button className={open ? "cart-scrim is-open" : "cart-scrim"} onClick={onClose} aria-label="Close cart" /><aside className={open ? "cart-drawer is-open" : "cart-drawer"} aria-hidden={!open}><header><p>YOUR CART / {String(items.length).padStart(2, "0")}</p><button onClick={onClose} aria-label="Close cart"><X /></button></header>{items.length ? <><div className="cart-items">{items.map((item) => <article className="cart-line" key={item.lineId}><div className="cart-thumb" style={{ aspectRatio: item.aspectRatio || 1 }}>{item.image && <img src={item.image} alt="" />}</div><div><h3>{item.seriesName} / Recipe {String(item.seed).padStart(6, "0")}</h3><p>{item.productName}<br />{item.size}<br />{item.printSpec?.width} × {item.printSpec?.height} px</p><div className="quantity"><button onClick={() => onChange(item.lineId, -1)}><Minus size={13} /></button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)}><Plus size={13} /></button></div><button className="remove" onClick={() => onRemove(item.lineId)}>Remove</button></div><strong>{money.format(item.price * item.quantity)}</strong></article>)}</div><footer><div><span>Subtotal</span><strong>{money.format(total)}</strong></div><p>US delivery details are collected in secure checkout.</p><button className="checkout-button" onClick={checkout} disabled={checkingOut}>{checkingOut ? "Opening Stripe…" : "Checkout"} <ArrowUpRight size={17} /></button>{message && <output>{message}</output>}</footer></> : <div className="empty-cart"><ShoppingBag size={30} strokeWidth={1.2} /><p>Your future object<br />is still a recipe.</p><button onClick={onClose}>Keep looking</button></div>}</aside></>;
+  return <><button className={open ? "cart-scrim is-open" : "cart-scrim"} onClick={onClose} aria-label="Close cart" /><aside className={open ? "cart-drawer is-open" : "cart-drawer"} aria-hidden={!open}><header><p>YOUR CART / {String(items.length).padStart(2, "0")}</p><button onClick={onClose} aria-label="Close cart"><X /></button></header>{items.length ? <><div className="cart-items">{items.map((item) => <article className="cart-line" key={item.lineId}><div className="cart-thumb" style={{ aspectRatio: item.aspectRatio || 1 }}><CartArtwork item={item} active={open} /></div><div><h3>{item.seriesName} / Recipe {String(item.seed).padStart(6, "0")}</h3><p>{item.productName}<br />{item.size}<br />{item.printSpec?.width} × {item.printSpec?.height} px</p><div className="quantity"><button onClick={() => onChange(item.lineId, -1)}><Minus size={13} /></button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)}><Plus size={13} /></button></div><button className="remove" onClick={() => onRemove(item.lineId)}>Remove</button></div><strong>{money.format(item.price * item.quantity)}</strong></article>)}</div><footer><div><span>Subtotal</span><strong>{money.format(total)}</strong></div><p>US delivery details are collected in secure checkout.</p><button className="checkout-button" onClick={checkout} disabled={checkingOut}>{checkingOut ? "Opening Stripe…" : "Checkout"} <ArrowUpRight size={17} /></button>{message && <output>{message}</output>}</footer></> : <div className="empty-cart"><ShoppingBag size={30} strokeWidth={1.2} /><p>Your future object<br />is still a recipe.</p><button onClick={onClose}>Keep looking</button></div>}</aside></>;
 }
 
 function Footer() {
@@ -551,8 +572,10 @@ export function HaptiqueApp() {
       return initialState;
     }
   });
-  const [cart, setCart] = React.useState([]);
-  const [cartOpen, setCartOpen] = React.useState(false);
+  const [cart, setCart] = React.useState(loadStoredCart);
+  const [cartOpen, setCartOpen] = React.useState(
+    initialCheckoutResult === "canceled" && cart.length > 0,
+  );
   const [confirmationOpen, setConfirmationOpen] = React.useState(
     initialCheckoutResult === "success" && Boolean(checkoutSessionId),
   );
@@ -572,6 +595,10 @@ export function HaptiqueApp() {
   React.useEffect(() => {
     document.title = titleForRoute(route);
   }, [route]);
+
+  React.useEffect(() => {
+    storeCart(cart);
+  }, [cart]);
 
   React.useEffect(() => {
     const restoreLocation = () => {
