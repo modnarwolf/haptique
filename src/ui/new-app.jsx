@@ -1,33 +1,34 @@
 import * as React from "react";
 import { ArrowUpRight, Check, Copy, Download, FolderOpen, Link2, Menu, Minus, Plus, RotateCcw, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
-import { PRODUCT_TYPES, CAMPAIGN_SERIES, SERIES_PLACEHOLDER_COLORS, getProductFormat, productPrice } from "../data/product-catalog.js";
+import { PRODUCT_TYPES, getProductFormat, productPrice } from "../data/product-catalog.js";
+import { CAMPAIGN_SERIES, CAMPAIGN_SERIES_BY_ID, SITE_CONTENT } from "../data/site-content.js";
 import { createDefaultPatternState, getPalette, SERIES } from "../pattern-studio/pattern-data.js";
 import { P5PatternEngine } from "../pattern-studio/p5-pattern-engine.js";
 import { applyPatternSnapshot, createPatternShareUrl, createPatternSnapshot, decodePatternShare, encodePatternShare } from "../pattern-studio/pattern-share.js";
+import { hasDesignHash, pathForRoute, routeForPage, routeFromLocation, titleForRoute } from "../routing/app-routes.js";
 
 const LazyClothExperience = React.lazy(() =>
   import("./haptique-app.js").then((module) => ({ default: module.ClothExperience })),
 );
 
-const LOGOS = ["/logoA.svg", "/logoB.svg", "/logoC.svg"];
 const HERO_DURATION = 6500;
 const PAGE_TRANSITION_MS = 600;
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 function FluidLogo({ onNavigate }) {
-  const [index, setIndex] = React.useState(() => Math.floor(Math.random() * LOGOS.length));
+  const [index, setIndex] = React.useState(() => Math.floor(Math.random() * SITE_CONTENT.brand.logos.length));
   const timer = React.useRef(null);
   const stop = () => window.clearInterval(timer.current);
   const start = () => {
     stop();
-    setIndex((value) => (value + 1) % LOGOS.length);
-    timer.current = window.setInterval(() => setIndex((value) => (value + 1) % LOGOS.length), 170);
+    setIndex((value) => (value + 1) % SITE_CONTENT.brand.logos.length);
+    timer.current = window.setInterval(() => setIndex((value) => (value + 1) % SITE_CONTENT.brand.logos.length), 170);
   };
   React.useEffect(() => stop, []);
   return (
-    <button className="fluid-logo" onClick={() => onNavigate("shop")} onPointerEnter={start} onPointerLeave={stop} aria-label="Haptique — go to shop">
-      <img src={LOGOS[index]} alt="Haptique" />
-    </button>
+    <a className="fluid-logo" href="/" onClick={(event) => { event.preventDefault(); onNavigate("shop"); }} onPointerEnter={start} onPointerLeave={stop} aria-label={`${SITE_CONTENT.brand.name} — go to shop`}>
+      <img src={SITE_CONTENT.brand.logos[index]} alt={SITE_CONTENT.brand.name} />
+    </a>
   );
 }
 
@@ -37,10 +38,10 @@ function Header({ page, onNavigate, cartCount, onCart }) {
   return (
     <header className="site-header">
       <FluidLogo onNavigate={go} />
-      <p className="header-note">CREATIVE SOFTWARE<br />FOR REAL THINGS</p>
+      <p className="header-note">{SITE_CONTENT.brand.tagline[0]}<br />{SITE_CONTENT.brand.tagline[1]}</p>
       <nav className={open ? "main-nav is-open" : "main-nav"} aria-label="Primary navigation">
-        {["shop", "studio", "about"].map((item) => (
-          <button key={item} className={page === item || (page === "series" && item === "shop") ? "is-active" : ""} onClick={() => go(item)}>{item}</button>
+        {SITE_CONTENT.navigation.map((item) => (
+          <a key={item.page} href={pathForRoute(routeForPage(item.page))} className={page === item.page || (page === "series" && item.page === "shop") ? "is-active" : ""} onClick={(event) => { event.preventDefault(); go(item.page); }}>{item.label}</a>
         ))}
       </nav>
       <button className="cart-trigger" onClick={onCart} aria-label={`Open cart with ${cartCount} items`}>
@@ -80,6 +81,7 @@ function CuratedRecipePreview({ item }) {
 }
 
 function ShopPage({ onOpenStudio, onOpenSeries }) {
+  const copy = SITE_CONTENT.shop;
   const [seriesIndex, setSeriesIndex] = React.useState(() => Math.floor(Math.random() * CAMPAIGN_SERIES.length));
   const [cycleKey, setCycleKey] = React.useState(0);
   const active = CAMPAIGN_SERIES[seriesIndex];
@@ -101,12 +103,12 @@ function ShopPage({ onOpenStudio, onOpenSeries }) {
     <main>
       <section className="shop-hero" style={{ "--series-accent": active.accent }}>
         <div className="hero-copy">
-          <p className="index-label">HAPTIQUE / SERIES {active.number}</p>
-          <h1>One number.<br />One pattern.<br /><em>A real thing.</em></h1>
-          <p className="hero-intro">{active.intro} Every piece begins in the browser, then gets made for you.</p>
+          <p className="index-label">{copy.heroEyebrow} {active.number}</p>
+          <h1>{copy.heroTitle[0]}<br />{copy.heroTitle[1]}<br /><em>{copy.heroTitle[2]}</em></h1>
+          <p className="hero-intro">{active.intro} {copy.heroSuffix}</p>
           <div className="hero-actions">
-            <button className="primary-text-link" onClick={() => onOpenStudio(active.id)}>Make your own <ArrowUpRight size={18} /></button>
-            <button className="secondary-text-link" onClick={() => onOpenSeries(active.id)}>View the series</button>
+            <button className="primary-text-link" onClick={() => onOpenStudio(active.id)}>{copy.makeCta} <ArrowUpRight size={18} /></button>
+            <button className="secondary-text-link" onClick={() => onOpenSeries(active.id)}>{copy.seriesCta}</button>
           </div>
         </div>
         <button className="hero-image" onClick={() => onOpenSeries(active.id)} aria-label={`View the ${active.name} series`}><img src={active.images[0]} alt={`${active.name} series campaign`} loading="eager" fetchPriority="high" decoding="async" /></button>
@@ -122,8 +124,8 @@ function ShopPage({ onOpenStudio, onOpenSeries }) {
 
       <section className="collection-section">
         <header className="section-heading">
-          <div><p className="index-label">AVAILABLE NOW / 03 SERIES</p><h2>Patterns with a physical life.</h2></div>
-          <p>Each recipe is deterministic: return to the same number and the same composition returns with it.</p>
+          <div><p className="index-label">{copy.collectionEyebrow} / {String(CAMPAIGN_SERIES.length).padStart(2, "0")} SERIES</p><h2>{copy.collectionTitle}</h2></div>
+          <p>{copy.collectionBody}</p>
         </header>
         <div className="campaign-grid">
           {CAMPAIGN_SERIES.map((series) => (
@@ -141,24 +143,22 @@ function ShopPage({ onOpenStudio, onOpenSeries }) {
           <span>{active.name.toUpperCase()} / RECIPE 001042</span>
         </div>
         <div className="studio-invitation-copy">
-          <p className="index-label">THE PATTERN STUDIO / LIVE</p>
+          <p className="index-label">{copy.studioEyebrow}</p>
           <div>
-            <h2>Don’t just<br />choose one.<br /><em>Find yours.</em></h2>
-            <p>Use {active.name} as your starting point, then change the recipe, palette, and structure. The Studio remembers every coordinate.</p>
+            <h2>{copy.studioTitle[0]}<br />{copy.studioTitle[1]}<br /><em>{copy.studioTitle[2]}</em></h2>
+            <p>{copy.studioBody(active.name)}</p>
           </div>
-          <button className="primary-text-link" onClick={() => onOpenStudio(active.id)}>Open {active.name} in Studio <ArrowUpRight size={18} /></button>
+          <button className="primary-text-link" onClick={() => onOpenStudio(active.id)}>{copy.studioCta(active.name)} <ArrowUpRight size={18} /></button>
         </div>
       </section>
 
       <section className="process-section" aria-labelledby="process-title">
         <header>
-          <p className="index-label">HOW HAPTIQUE WORKS / THREE MOVES</p>
-          <h2 id="process-title">From an idea<br />to an object.</h2>
+          <p className="index-label">{copy.processEyebrow}</p>
+          <h2 id="process-title">{copy.processTitle[0]}<br />{copy.processTitle[1]}</h2>
         </header>
         <ol>
-          <li><span>01</span><div><h3>Choose a series</h3><p>Start with a visual system and its own set of rules.</p></div></li>
-          <li><span>02</span><div><h3>Discover art you love</h3><p>Move through recipes, colors, and structures until one feels yours.</p></div></li>
-          <li><span>03</span><div><h3>Make it real</h3><p>Carry the exact design from the browser onto a physical object.</p></div></li>
+          {copy.process.map((step, index) => <li key={step.title}><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{step.title}</h3><p>{step.body}</p></div></li>)}
         </ol>
       </section>
     </main>
@@ -166,7 +166,8 @@ function ShopPage({ onOpenStudio, onOpenSeries }) {
 }
 
 function SeriesPage({ series, onOpenStudio }) {
-  const colors = SERIES_PLACEHOLDER_COLORS[series.id] ?? ["#aaa", "#bbb", "#999", "#ccc"];
+  const copy = SITE_CONTENT.seriesPage;
+  const colors = series.productColors ?? ["#aaa", "#bbb", "#999", "#ccc"];
   const suggestedSeries = React.useMemo(() => {
     const choices = SERIES.filter((item) => item.id !== series.id);
     return choices[Math.floor(Math.random() * choices.length)] ?? SERIES[0];
@@ -186,20 +187,20 @@ function SeriesPage({ series, onOpenStudio }) {
           <p className="index-label">SERIES {series.number} / {series.id.toUpperCase()}</p>
           <div className="series-copy-content">
             <h1>{series.name}</h1>
-            <p>{series.intro} Every variation is recoverable from its recipe.</p>
-            <button className="primary-text-link" onClick={() => onOpenStudio(series.id)}>Open in Studio <ArrowUpRight size={18} /></button>
+            <p>{series.intro} {copy.introSuffix}</p>
+            <button className="primary-text-link" onClick={() => onOpenStudio(series.id)}>{copy.studioCta} <ArrowUpRight size={18} /></button>
           </div>
         </div>
         <img src={series.images[0]} alt={`${series.name} campaign`} loading="eager" fetchPriority="high" decoding="async" />
       </section>
       <section className="series-gallery">{series.images.slice(1).map((image, index) => <img src={image} alt={`${series.name} campaign view ${index + 2}`} loading="lazy" decoding="async" key={image} />)}</section>
       <section className="series-products">
-        <header><p className="index-label">THE SERIES / FOUR OBJECTS</p><h2>One system,<br />different surfaces.</h2></header>
+        <header><p className="index-label">{copy.productsEyebrow}</p><h2>{copy.productsTitle[0]}<br />{copy.productsTitle[1]}</h2></header>
         <div className="series-product-grid">
           {PRODUCT_TYPES.map((product, index) => (
             <article key={product.id}>
               <div className="series-product-image" style={{ background: colors[index] }}>
-                {product.id === "tote" ? <img src={series.images[0]} alt={`${series.name} ${product.name}`} /> : <span>PRODUCT IMAGE<br />COMING SOON</span>}
+                {product.id === "tote" ? <img src={series.images[0]} alt={`${series.name} ${product.name}`} /> : <span>{copy.productPlaceholder[0]}<br />{copy.productPlaceholder[1]}</span>}
               </div>
               <div><h3>{product.name}</h3><span>{product.sizes.length} {product.sizes.length === 1 ? "size" : "sizes"}</span></div>
             </article>
@@ -208,12 +209,12 @@ function SeriesPage({ series, onOpenStudio }) {
       </section>
       <section className="next-series" aria-label="Suggested series">
         <div className="next-series-copy">
-          <p className="index-label">UP NEXT / SERIES {suggestedNumber}</p>
+          <p className="index-label">{copy.nextEyebrow} {suggestedNumber}</p>
           <div>
             <h2>{suggestedSeries.name}</h2>
             <p>{suggestedSeries.note}</p>
           </div>
-          <button className="primary-text-link" onClick={() => onOpenStudio(suggestedSeries.id)}>Explore in Studio <ArrowUpRight size={18} /></button>
+          <button className="primary-text-link" onClick={() => onOpenStudio(suggestedSeries.id)}>{copy.nextCta} <ArrowUpRight size={18} /></button>
         </div>
         <button className="next-series-preview" onClick={() => onOpenStudio(suggestedSeries.id)} aria-label={`Explore ${suggestedSeries.name} in the Pattern Studio`}>
           <PatternCanvas state={suggestedState} />
@@ -223,7 +224,8 @@ function SeriesPage({ series, onOpenStudio }) {
   );
 }
 
-function StudioPage({ state, setState, onAdd }) {
+function StudioPage({ state, setState, onAdd, onSeriesChange }) {
+  const copy = SITE_CONTENT.studio;
   const engine = React.useRef(null);
   const [patternImage, setPatternImage] = React.useState("");
   const [product, setProduct] = React.useState(PRODUCT_TYPES[0]);
@@ -251,7 +253,10 @@ function StudioPage({ state, setState, onAdd }) {
       : { ...current, width: format.width, height: format.height, printPreset: `${product.id}:${format.size}` });
   }, [format.width, format.height, format.size, product.id, setState]);
 
-  const updateSeries = (seriesId) => setState((current) => ({ ...current, seriesId }));
+  const updateSeries = (seriesId) => {
+    setState((current) => ({ ...current, seriesId }));
+    onSeriesChange(seriesId);
+  };
   const updatePalette = (index) => setState((current) => ({ ...current, paletteIndexesBySeriesId: { ...current.paletteIndexesBySeriesId, [current.seriesId]: index }, paletteValuesBySeriesId: { ...current.paletteValuesBySeriesId, [current.seriesId]: { bg: definition.palettes[index].bg, colors: [...definition.palettes[index].colors] } } }));
   const updatePaletteColor = (kind, index, value) => setState((current) => {
     const currentPalette = current.paletteValuesBySeriesId[current.seriesId];
@@ -296,6 +301,7 @@ function StudioPage({ state, setState, onAdd }) {
     try {
       const snapshot = decodePatternShare(shareInput);
       setState((current) => applyPatternSnapshot(current, snapshot));
+      if (snapshot.seriesId) onSeriesChange(snapshot.seriesId);
       setShareStatus("Recipe opened");
     } catch (error) {
       setShareStatus(error.message || "That recipe could not be opened");
@@ -319,7 +325,7 @@ function StudioPage({ state, setState, onAdd }) {
 
   return (
     <main className="studio-page">
-      <div className="studio-title"><p className="index-label">PATTERN STUDIO / LIVE</p><h1>Find a pattern<br />only you could find.</h1><p>Every recipe is a coordinate in the series. Change the number, palette, or structure. The same inputs always lead back to the same work.</p></div>
+      <div className="studio-title"><p className="index-label">{copy.eyebrow}</p><h1>{copy.title[0]}<br />{copy.title[1]}</h1><p>{copy.intro}</p></div>
       <div className="studio-workspace">
         <aside className="studio-controls">
           <div className="control-block"><label>01 / Series</label><select value={state.seriesId} onChange={(event) => updateSeries(event.target.value)}>{SERIES.map((item) => <option value={item.id} key={item.id}>{item.id.toUpperCase()} — {item.name}</option>)}</select><p>{definition.note}</p></div>
@@ -347,7 +353,7 @@ function StudioPage({ state, setState, onAdd }) {
           <button className="add-button mobile-add-button" onClick={add}><span>Add {product.short} to cart</span><strong>{money.format(productPrice(product.id, size))}</strong></button>
         </div>
       </div>
-      <section className="curated-section"><div><p className="index-label">CURATED RECIPES</p><h2>Recipes worth returning to.</h2></div><div className="curated-row">{curated.slice(0, 12).map((item) => <button key={item.id} onClick={() => selectCurated(item)} className={decodeSafeSeed(item.hash) === state.seed ? "is-active" : ""}><CuratedRecipePreview item={item} /><span>{item.name.replace("Edition ", "")}</span><strong>{String(decodeSafeSeed(item.hash)).padStart(6, "0")}</strong></button>)}</div></section>
+      <section className="curated-section"><div><p className="index-label">{copy.curatedEyebrow}</p><h2>{copy.curatedTitle}</h2></div><div className="curated-row">{curated.slice(0, 12).map((item) => <button key={item.id} onClick={() => selectCurated(item)} className={decodeSafeSeed(item.hash) === state.seed ? "is-active" : ""}><CuratedRecipePreview item={item} /><span>{item.name.replace("Edition ", "")}</span><strong>{String(decodeSafeSeed(item.hash)).padStart(6, "0")}</strong></button>)}</div></section>
     </main>
   );
 }
@@ -355,13 +361,14 @@ function StudioPage({ state, setState, onAdd }) {
 function decodeSafeSeed(hash) { try { return decodePatternShare(hash).seed; } catch { return 0; } }
 
 function AboutPage({ patternState }) {
+  const copy = SITE_CONTENT.about;
   const [showCloth, setShowCloth] = React.useState(false);
   const actions = React.useRef(null);
   return (
     <main className="about-page">
-      <section className="about-intro"><p className="index-label">ABOUT / HAPTIQUE</p><h1>Digital patterns<br />want to be touched.</h1><p className="about-lede">Haptique is a generative design studio and made-to-order shop. We build visual systems in code, give you the controls, then translate your chosen result into an object for everyday life.</p></section>
-      <section className="about-manifesto"><p>Each series is a small world with its own rules. A recipe is not a limited edition number or a random label—it is the precise combination that lets the artwork exist again.</p><p>Making only after an order means fewer speculative objects and more personal ones. Posters, stretched canvases, totes, and woven blankets are our first material vocabulary.</p></section>
-      <section className="cloth-invitation"><div><p className="index-label">A SMALL EASTER EGG</p><h2>Before the objects,<br />there was the cloth.</h2></div><button onClick={() => setShowCloth(true)}>Touch the original experiment <ArrowUpRight size={17} /></button></section>
+      <section className="about-intro"><p className="index-label">{copy.eyebrow}</p><h1>{copy.title[0]}<br />{copy.title[1]}</h1><p className="about-lede">{copy.lede}</p></section>
+      <section className="about-manifesto">{copy.manifesto.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</section>
+      <section className="cloth-invitation"><div><p className="index-label">{copy.clothEyebrow}</p><h2>{copy.clothTitle[0]}<br />{copy.clothTitle[1]}</h2></div><button onClick={() => setShowCloth(true)}>{copy.clothCta} <ArrowUpRight size={17} /></button></section>
       {showCloth && <div className="cloth-modal" role="dialog" aria-modal="true" aria-label="Interactive 3D cloth"><button className="cloth-close" onClick={() => setShowCloth(false)}><X size={20} /> Close</button><div className="cloth-scene"><React.Suspense fallback={<div className="cloth-loading">Loading the original cloth…</div>}><LazyClothExperience patternState={patternState} studioActionsRef={actions} onZoomChange={() => {}} /></React.Suspense></div><p className="cloth-hint">Drag the fabric. Scroll to move closer.</p></div>}
     </main>
   );
@@ -405,18 +412,19 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
 }
 
 function Footer() {
+  const copy = SITE_CONTENT.footer;
   return (
     <footer className="site-footer">
       <div className="footer-brand">
         <img src="/logoB.svg" alt="Haptique" />
-        <p>Creative software<br />for real things.</p>
+        <p>{copy.tagline[0]}<br />{copy.tagline[1]}</p>
       </div>
       <div className="footer-details">
-        <section><p>CONTACT</p><a href="mailto:hello@haptique.studio">hello@haptique.studio</a></section>
-        <section><p>FOLLOW</p><a href="https://www.instagram.com/haptique.studio/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="https://www.are.na/haptique" target="_blank" rel="noreferrer">Are.na ↗</a></section>
-        <section><p>MADE</p><span>On demand in small runs.<br />Designed in Los Angeles.</span></section>
+        <section><p>CONTACT</p><a href={`mailto:${copy.contactEmail}`}>{copy.contactEmail}</a></section>
+        <section><p>FOLLOW</p>{copy.socialLinks.map((link) => <a href={link.href} target="_blank" rel="noreferrer" key={link.href}>{link.label}</a>)}</section>
+        <section><p>MADE</p><span>{copy.made[0]}<br />{copy.made[1]}</span></section>
       </div>
-      <div className="footer-bottom"><span>HAPTIQUE © 2026</span><span>RECIPE BY RECIPE / OBJECT BY OBJECT</span></div>
+      <div className="footer-bottom"><span>{copy.copyright}</span><span>{copy.signoff}</span></div>
     </footer>
   );
 }
@@ -514,62 +522,126 @@ function CheckoutConfirmationModal({ sessionId, onClose }) {
 
 export function HaptiqueApp() {
   const initialCheckoutParams = new URLSearchParams(window.location.search);
-  const checkoutResult = initialCheckoutParams.get("checkout");
+  const initialCheckoutResult = initialCheckoutParams.get("checkout");
   const checkoutSessionId = initialCheckoutParams.get("session_id");
-  const hasSharedDesign = typeof window !== "undefined" && window.location.hash.startsWith("#design=");
-  const [page, setPage] = React.useState(() => hasSharedDesign ? "studio" : "shop");
+  const [checkoutResult, setCheckoutResult] = React.useState(initialCheckoutResult);
+  const [route, setRoute] = React.useState(() => {
+    const initialRoute = routeFromLocation(window.location);
+    if (!hasDesignHash(window.location.hash)) return initialRoute;
+    try {
+      const snapshot = decodePatternShare(window.location.href);
+      return { page: "studio", seriesId: snapshot.seriesId || null };
+    } catch {
+      return initialRoute;
+    }
+  });
   const [pageTransition, setPageTransition] = React.useState("idle");
   const transitionTimer = React.useRef(null);
   const [patternState, setPatternState] = React.useState(() => {
     const initialState = createDefaultPatternState();
-    if (!hasSharedDesign) return initialState;
+    const initialRoute = routeFromLocation(window.location);
+    if (!hasDesignHash(window.location.hash)) {
+      return initialRoute.page === "studio" && initialRoute.seriesId
+        ? { ...initialState, seriesId: initialRoute.seriesId }
+        : initialState;
+    }
     try {
       return applyPatternSnapshot(initialState, decodePatternShare(window.location.href));
     } catch {
       return initialState;
     }
   });
-  const [selectedSeries, setSelectedSeries] = React.useState(CAMPAIGN_SERIES[0]);
   const [cart, setCart] = React.useState([]);
   const [cartOpen, setCartOpen] = React.useState(false);
   const [confirmationOpen, setConfirmationOpen] = React.useState(
-    checkoutResult === "success" && Boolean(checkoutSessionId),
+    initialCheckoutResult === "success" && Boolean(checkoutSessionId),
   );
-  React.useEffect(() => () => window.clearTimeout(transitionTimer.current), []);
+  const page = route.page;
+  const selectedSeries = CAMPAIGN_SERIES_BY_ID[route.seriesId] ?? CAMPAIGN_SERIES[0];
+
+  React.useEffect(() => {
+    const canonicalRoute = route.page === "studio"
+      ? { ...route, seriesId: route.seriesId || patternState.seriesId }
+      : route;
+    const canonicalPath = pathForRoute(canonicalRoute);
+    if (window.location.pathname !== canonicalPath) {
+      window.history.replaceState({}, "", `${canonicalPath}${window.location.search}${window.location.hash}`);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    document.title = titleForRoute(route);
+  }, [route]);
+
+  React.useEffect(() => {
+    const restoreLocation = () => {
+      window.clearTimeout(transitionTimer.current);
+      setPageTransition("idle");
+      let nextRoute = routeFromLocation(window.location);
+      if (hasDesignHash(window.location.hash)) {
+        try {
+          const snapshot = decodePatternShare(window.location.href);
+          setPatternState((current) => applyPatternSnapshot(current, snapshot));
+          nextRoute = { page: "studio", seriesId: snapshot.seriesId || null };
+        } catch {
+          nextRoute = { page: "studio", seriesId: null };
+        }
+      } else if (nextRoute.page === "studio" && nextRoute.seriesId) {
+        setPatternState((current) => ({ ...current, seriesId: nextRoute.seriesId }));
+      }
+      setRoute(nextRoute);
+      setCartOpen(false);
+      window.scrollTo({ top: 0, behavior: "auto" });
+    };
+    window.addEventListener("popstate", restoreLocation);
+    window.addEventListener("hashchange", restoreLocation);
+    return () => {
+      window.clearTimeout(transitionTimer.current);
+      window.removeEventListener("popstate", restoreLocation);
+      window.removeEventListener("hashchange", restoreLocation);
+    };
+  }, []);
+
   const add = (item) => { setCart((items) => [...items, item]); setCartOpen(true); };
   const quantity = (lineId, amount) => setCart((items) => items.map((item) => item.lineId === lineId ? { ...item, quantity: Math.max(1, item.quantity + amount) } : item));
-  const navigate = (target) => {
+  const navigate = (target, seriesId = null, { scroll = true } = {}) => {
     setCartOpen(false);
+    const nextRoute = routeForPage(target, seriesId);
+    const nextPath = pathForRoute(nextRoute);
+    if (target !== page && pageTransition !== "idle") return;
+    if (window.location.pathname !== nextPath || window.location.search || window.location.hash) {
+      window.history.pushState({}, "", nextPath);
+    }
     if (target === page) {
-      window.scrollTo({ top: 0, behavior: "auto" });
+      setRoute(nextRoute);
+      if (scroll) window.scrollTo({ top: 0, behavior: "auto" });
       return;
     }
-    if (pageTransition !== "idle") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPage(target);
-      window.scrollTo({ top: 0, behavior: "auto" });
+      setRoute(nextRoute);
+      if (scroll) window.scrollTo({ top: 0, behavior: "auto" });
       return;
     }
     setPageTransition("leaving");
     transitionTimer.current = window.setTimeout(() => {
-      setPage(target);
-      window.scrollTo({ top: 0, behavior: "auto" });
+      setRoute(nextRoute);
+      if (scroll) window.scrollTo({ top: 0, behavior: "auto" });
       setPageTransition("entering");
       window.requestAnimationFrame(() => window.requestAnimationFrame(() => setPageTransition("idle")));
     }, PAGE_TRANSITION_MS);
   };
   const openStudio = (seriesId) => {
     setPatternState((current) => ({ ...current, seriesId }));
-    navigate("studio");
+    navigate("studio", seriesId);
   };
   const openSeries = (seriesId) => {
-    setSelectedSeries(CAMPAIGN_SERIES.find((series) => series.id === seriesId) ?? CAMPAIGN_SERIES[0]);
-    navigate("series");
+    navigate("series", seriesId);
   };
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const dismissCheckoutResult = () => {
     window.history.replaceState({}, "", window.location.pathname);
+    setCheckoutResult(null);
     setConfirmationOpen(false);
   };
-  return <div className={`haptique-site is-${pageTransition}`} aria-busy={pageTransition !== "idle"}>{checkoutResult === "canceled" && <div className="checkout-notice is-canceled" role="status"><span>Stripe checkout canceled. No payment was confirmed.</span><button onClick={dismissCheckoutResult} aria-label="Dismiss checkout message"><X size={15} /></button></div>}<Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onAdd={add} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} />{confirmationOpen && checkoutSessionId && <CheckoutConfirmationModal sessionId={checkoutSessionId} onClose={dismissCheckoutResult} />}</div>;
+  return <div className={`haptique-site is-${pageTransition}`} aria-busy={pageTransition !== "idle"}>{checkoutResult === "canceled" && <div className="checkout-notice is-canceled" role="status"><span>Stripe checkout canceled. No payment was confirmed.</span><button onClick={dismissCheckoutResult} aria-label="Dismiss checkout message"><X size={15} /></button></div>}<Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onAdd={add} onSeriesChange={(seriesId) => navigate("studio", seriesId, { scroll: false })} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} />{confirmationOpen && checkoutSessionId && <CheckoutConfirmationModal sessionId={checkoutSessionId} onClose={dismissCheckoutResult} />}</div>;
 }

@@ -71,48 +71,6 @@ export const PRODUCT_TYPES = [
   },
 ];
 
-export const CAMPAIGN_SERIES = [
-  {
-    id: "sr0040",
-    slug: "loom",
-    name: "Loom",
-    number: "04",
-    intro: "Ordered bands meet improvised weave structures.",
-    accent: "#dc5b31",
-    images: [
-      "/model_mock_previews/loom_model_A.png",
-      "/model_mock_previews/loom_model_B.png",
-      "/model_mock_previews/loom_preview_A.png",
-    ],
-  },
-  {
-    id: "sr0070",
-    slug: "moire",
-    name: "Moiré",
-    number: "07",
-    intro: "Optical currents drawn from one repeatable number.",
-    accent: "#e9e6dc",
-    images: [
-      "/model_mock_previews/moire_model_A.png",
-      "/model_mock_previews/moire_model_B.png",
-      "/model_mock_previews/moire_preview_A.png",
-    ],
-  },
-  {
-    id: "sr0020",
-    slug: "swatch",
-    name: "Swatch",
-    number: "02",
-    intro: "Tiny color relationships, arranged into a field.",
-    accent: "#a871df",
-    images: [
-      "/model_mock_previews/swatch_model_A.png",
-      "/model_mock_previews/swatch_model_B.png",
-      "/model_mock_previews/swatch_preview_A.png",
-    ],
-  },
-];
-
 export function productPrice(productId, size) {
   const product = PRODUCT_TYPES.find((item) => item.id === productId) ?? PRODUCT_TYPES[0];
   const index = Math.max(0, product.sizes.indexOf(size));
@@ -138,9 +96,3 @@ export function getProductFormat(productId, size) {
     aspectRatio: widthIn / heightIn,
   };
 }
-
-export const SERIES_PLACEHOLDER_COLORS = Object.freeze({
-  sr0020: ["#c7b7d9", "#d5c5b6", "#9daea2", "#b6a7a2"],
-  sr0040: ["#c88566", "#b9a58c", "#7e9185", "#aa785f"],
-  sr0070: ["#b8b6ad", "#d2cec3", "#8f9ba0", "#b5a59b"],
-});

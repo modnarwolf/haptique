@@ -21,10 +21,10 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
 .header-note,.index-label,.fine-print,.footer-meta { font:400 10px/1.3 var(--mono); letter-spacing:.055em; text-transform:uppercase; }
 .header-note { margin:0; }
 .main-nav { display:flex; align-items:center; gap:5px; }
-.main-nav button,.cart-trigger { border:0; background:none; padding:8px 11px; font:400 12px/1 var(--mono); text-transform:uppercase; }
-.main-nav button::before { content:"○"; margin-right:7px; }
-.main-nav button.is-active::before { content:"●"; }
-.main-nav button:hover,.cart-trigger:hover { background:#dedbd2; }
+.main-nav a,.cart-trigger { border:0; background:none; padding:8px 11px; color:inherit; font:400 12px/1 var(--mono); text-decoration:none; text-transform:uppercase; }
+.main-nav a::before { content:"○"; margin-right:7px; }
+.main-nav a.is-active::before { content:"●"; }
+.main-nav a:hover,.cart-trigger:hover { background:#dedbd2; }
 .cart-trigger { display:flex; align-items:center; gap:8px; white-space:nowrap; }
 .menu-trigger { display:none; border:0; background:transparent; padding:4px; }
 .shop-hero { height:calc(100svh - 84px); min-height:0; display:grid; grid-template-columns:minmax(320px,39%) 1fr; grid-template-rows:minmax(0,1fr) auto; border-bottom:1px solid var(--line); background:var(--series-accent); transition:background-color .35s ease; }
@@ -289,7 +289,7 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
   .menu-trigger { grid-column:1; grid-row:1; justify-self:start; display:block; }
   .main-nav { display:none; position:absolute; left:0; right:0; top:71px; background:var(--paper); padding:12px 16px 20px; border-bottom:1px solid var(--line); flex-direction:column; align-items:stretch; }
   .main-nav.is-open { display:flex; }
-  .main-nav button { padding:15px 4px; text-align:left; border-bottom:1px solid var(--line); }
+  .main-nav a { padding:15px 4px; text-align:left; border-bottom:1px solid var(--line); }
   .hero-copy { min-height:0; padding:16px; }
   .hero-copy .index-label { margin-bottom:8px; }
   .hero-copy h1 { margin:0 0 12px; font-size:clamp(36px,11vw,52px); }

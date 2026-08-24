@@ -43,7 +43,23 @@ npm run build
 npm run preview
 npm run verify:environments
 npm run test:payments
+npm run test:routing
 ```
+
+## Pages, URLs, and site content
+
+Public navigation uses browser-history routes, so links can be shared and the
+Back and Forward buttons work as expected:
+
+- `/` — shop
+- `/studio` and `/studio/:series` — Pattern Studio
+- `/about` — about page
+- `/series/:series` — campaign series detail page
+
+Edit marketing copy, logo choices, social links, campaign series slugs, and
+campaign image paths in `src/data/site-content.js`. Product prices, sizes, and
+production identifiers remain in `src/data/product-catalog.js`, while each
+procedural pattern implementation remains in `src/pattern-studio/series/`.
 
 ### Stripe sandbox Checkout
 

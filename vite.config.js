@@ -4,7 +4,9 @@ import { haptiqueCheckoutPlugin } from "./server/vite-checkout-plugin.mjs";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
   return {
-    base: "./",
+    // Root-relative assets keep working when index.html is served as the SPA
+    // fallback for direct links such as /series/moire and /studio/loom.
+    base: "/",
     plugins: [
       haptiqueCheckoutPlugin({
         stripeSecretKey: env.STRIPE_SECRET_KEY,

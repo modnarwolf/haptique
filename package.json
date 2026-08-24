@@ -14,6 +14,7 @@
     "verify:pricing": "node scripts/audit-printify-pricing.mjs",
     "test:printify": "node --test tests/printify-client.test.mjs tests/printify-fulfillment.test.mjs",
     "test:payments": "node --test tests/checkout-service.test.mjs tests/stripe-integration.test.mjs",
+    "test:routing": "node --test tests/app-routes.test.mjs",
     "test:stripe-session": "node --env-file=.env scripts/create-stripe-test-session.mjs",
     "setup:stripe-products": "node --env-file=.env scripts/setup-stripe-products.mjs"
   },
