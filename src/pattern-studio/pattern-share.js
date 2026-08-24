@@ -75,7 +75,7 @@ export function encodePatternShare(snapshot) {
 
 export function decodePatternShare(input) {
   let value = String(input || "").trim();
-  if (!value) throw new Error("Paste a Haptique design hash or share link.");
+  if (!value) throw new Error("Paste a Haptique recipe or share link.");
 
   try {
     const url = new URL(value);
@@ -90,16 +90,16 @@ export function decodePatternShare(input) {
   if (/^\d{1,6}$/.test(value)) {
     return { version: 0, seed: Number(value) };
   }
-  if (!value.startsWith(SHARE_PREFIX)) throw new Error("That is not a Haptique design hash.");
+  if (!value.startsWith(SHARE_PREFIX)) throw new Error("That is not a Haptique recipe.");
 
   let compact;
   try {
     compact = JSON.parse(new TextDecoder().decode(base64UrlToBytes(value.slice(SHARE_PREFIX.length))));
   } catch {
-    throw new Error("That design hash is damaged or incomplete.");
+    throw new Error("That recipe is damaged or incomplete.");
   }
   if (compact.v !== 1 || !SERIES_BY_ID[compact.s] || !Array.isArray(compact.p) || !compact.a) {
-    throw new Error("That design hash is not supported.");
+    throw new Error("That recipe is not supported.");
   }
 
   return {

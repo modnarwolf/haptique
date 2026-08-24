@@ -6,7 +6,7 @@
       "id": "blankets",
       "name": "Blanket",
       "displayName": "Woven Blanket",
-      "manifestPath": "./textures/curated/blankets/curated_list.json",
+      "manifestPath": "./textures/curated/curated_list.json",
       "priceCents": 24800,
       "currency": "USD",
       "option": "50 × 60 IN",

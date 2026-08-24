@@ -33,12 +33,12 @@ export function validateCheckoutItems(items, { stripeCatalog } = {}) {
 
     const designHash = String(item.designHash ?? "").trim();
     if (!designHash || designHash.length > 500) {
-      throw new CheckoutValidationError("A valid Haptique design hash is required");
+      throw new CheckoutValidationError("A valid Haptique recipe is required");
     }
 
     const seed = Number(item.seed);
     if (!Number.isInteger(seed) || seed < 0 || seed > 999999) {
-      throw new CheckoutValidationError("A valid Haptique seed is required");
+      throw new CheckoutValidationError("A valid Haptique recipe number is required");
     }
 
     const printifyVariantId = product.printify.variantIds[size];
@@ -58,7 +58,7 @@ export function validateCheckoutItems(items, { stripeCatalog } = {}) {
       productId: product.id,
       size,
       name: `${product.name} — ${size}`,
-      description: `${String(item.seriesName ?? item.seriesId ?? "Haptique").slice(0, 80)} / Seed ${String(seed).padStart(6, "0")}`,
+      description: `${String(item.seriesName ?? item.seriesId ?? "Haptique").slice(0, 80)} / Recipe ${String(seed).padStart(6, "0")}`,
       quantity,
       unitAmount,
       priceId: stripePrice?.priceId,

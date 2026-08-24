@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowDown, ArrowUpRight, Check, Copy, Download, FolderOpen, Link2, Menu, Minus, Plus, RotateCcw, ShoppingBag, X } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Download, FolderOpen, Link2, Menu, Minus, Plus, RotateCcw, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
 import { PRODUCT_TYPES, CAMPAIGN_SERIES, SERIES_PLACEHOLDER_COLORS, getProductFormat, productPrice } from "../data/product-catalog.js";
 import { createDefaultPatternState, getPalette, SERIES } from "../pattern-studio/pattern-data.js";
 import { P5PatternEngine } from "../pattern-studio/p5-pattern-engine.js";
@@ -68,12 +68,12 @@ function PatternCanvas({ state, onEngine, onImage, className = "" }) {
   return <div className={`pattern-canvas ${className}`} ref={host} style={{ aspectRatio: `${state.width} / ${state.height}` }} aria-label="Generated pattern preview" />;
 }
 
-function CuratedSeedPreview({ item }) {
+function CuratedRecipePreview({ item }) {
   const previewState = React.useMemo(() => {
     try {
-      return { ...applyPatternSnapshot(createDefaultPatternState(), decodePatternShare(item.hash)), width: 240, height: 320 };
+      return { ...applyPatternSnapshot(createDefaultPatternState(), decodePatternShare(item.hash)), width: 480, height: 640 };
     } catch {
-      return { ...createDefaultPatternState(), width: 240, height: 320 };
+      return { ...createDefaultPatternState(), width: 480, height: 640 };
     }
   }, [item.hash]);
   return <PatternCanvas state={previewState} className="curated-thumbnail" />;
@@ -123,7 +123,7 @@ function ShopPage({ onOpenStudio, onOpenSeries }) {
       <section className="collection-section">
         <header className="section-heading">
           <div><p className="index-label">AVAILABLE NOW / 03 SERIES</p><h2>Patterns with a physical life.</h2></div>
-          <p>Each seed is deterministic: return to the same number and the same composition returns with it.</p>
+          <p>Each recipe is deterministic: return to the same number and the same composition returns with it.</p>
         </header>
         <div className="campaign-grid">
           {CAMPAIGN_SERIES.map((series) => (
@@ -138,13 +138,13 @@ function ShopPage({ onOpenStudio, onOpenSeries }) {
       <section className="studio-invitation" style={{ "--series-accent": active.accent }}>
         <div className="studio-invitation-visual">
           <img src={active.images[1]} alt={`${active.name} series alternate campaign`} />
-          <span>{active.name.toUpperCase()} / SEED 001042</span>
+          <span>{active.name.toUpperCase()} / RECIPE 001042</span>
         </div>
         <div className="studio-invitation-copy">
           <p className="index-label">THE PATTERN STUDIO / LIVE</p>
           <div>
             <h2>Don’t just<br />choose one.<br /><em>Find yours.</em></h2>
-            <p>Use {active.name} as your starting point, then change the seed, palette, and structure. The Studio remembers every coordinate.</p>
+            <p>Use {active.name} as your starting point, then change the recipe, palette, and structure. The Studio remembers every coordinate.</p>
           </div>
           <button className="primary-text-link" onClick={() => onOpenStudio(active.id)}>Open {active.name} in Studio <ArrowUpRight size={18} /></button>
         </div>
@@ -157,7 +157,7 @@ function ShopPage({ onOpenStudio, onOpenSeries }) {
         </header>
         <ol>
           <li><span>01</span><div><h3>Choose a series</h3><p>Start with a visual system and its own set of rules.</p></div></li>
-          <li><span>02</span><div><h3>Discover art you love</h3><p>Move through seeds, colors, and structures until one feels yours.</p></div></li>
+          <li><span>02</span><div><h3>Discover art you love</h3><p>Move through recipes, colors, and structures until one feels yours.</p></div></li>
           <li><span>03</span><div><h3>Make it real</h3><p>Carry the exact design from the browser onto a physical object.</p></div></li>
         </ol>
       </section>
@@ -186,7 +186,7 @@ function SeriesPage({ series, onOpenStudio }) {
           <p className="index-label">SERIES {series.number} / {series.id.toUpperCase()}</p>
           <div className="series-copy-content">
             <h1>{series.name}</h1>
-            <p>{series.intro} Every variation is recoverable from its seed.</p>
+            <p>{series.intro} Every variation is recoverable from its recipe.</p>
             <button className="primary-text-link" onClick={() => onOpenStudio(series.id)}>Open in Studio <ArrowUpRight size={18} /></button>
           </div>
         </div>
@@ -231,7 +231,7 @@ function StudioPage({ state, setState, onAdd }) {
   const [curated, setCurated] = React.useState([]);
   const [shareInput, setShareInput] = React.useState("");
   const [shareStatus, setShareStatus] = React.useState("");
-  const [mobileIntroOpen, setMobileIntroOpen] = React.useState(true);
+  const [advancedOpen, setAdvancedOpen] = React.useState(false);
   const definition = SERIES.find((item) => item.id === state.seriesId);
   const paletteIndex = state.paletteIndexesBySeriesId[state.seriesId] ?? 0;
   const palette = getPalette(state);
@@ -240,7 +240,7 @@ function StudioPage({ state, setState, onAdd }) {
   const shareUrl = typeof window === "undefined" ? "" : createPatternShareUrl(shareCode);
 
   React.useEffect(() => {
-    fetch("/textures/curated/blankets/curated_list.json").then((response) => response.json()).then((data) => setCurated(data.series?.[state.seriesId] ?? [])).catch(() => setCurated([]));
+    fetch("/textures/curated/curated_list.json").then((response) => response.json()).then((data) => setCurated(data.series?.[state.seriesId] ?? [])).catch(() => setCurated([]));
   }, [state.seriesId]);
 
   React.useEffect(() => setSize(product.sizes[Math.min(1, product.sizes.length - 1)]), [product]);
@@ -261,7 +261,6 @@ function StudioPage({ state, setState, onAdd }) {
     return { ...current, paletteValuesBySeriesId: { ...current.paletteValuesBySeriesId, [current.seriesId]: nextPalette } };
   });
   const updateParameter = (key, value) => setState((current) => ({ ...current, parametersBySeriesId: { ...current.parametersBySeriesId, [current.seriesId]: { ...current.parametersBySeriesId[current.seriesId], [key]: value } } }));
-  const randomize = () => setState((current) => ({ ...current, seed: Math.floor(Math.random() * 1000000) }));
   const randomizeAll = () => setState((current) => {
     const currentDefinition = SERIES.find((item) => item.id === current.seriesId);
     if (!currentDefinition) return current;
@@ -297,9 +296,9 @@ function StudioPage({ state, setState, onAdd }) {
     try {
       const snapshot = decodePatternShare(shareInput);
       setState((current) => applyPatternSnapshot(current, snapshot));
-      setShareStatus("Shared design opened");
+      setShareStatus("Recipe opened");
     } catch (error) {
-      setShareStatus(error.message || "That shared design could not be opened");
+      setShareStatus(error.message || "That recipe could not be opened");
     }
   };
   const add = () => onAdd({
@@ -320,30 +319,26 @@ function StudioPage({ state, setState, onAdd }) {
 
   return (
     <main className="studio-page">
-      <div className={mobileIntroOpen ? "mobile-studio-intro is-open" : "mobile-studio-intro"} role="dialog" aria-modal="true" aria-hidden={!mobileIntroOpen} aria-label="Pattern Studio introduction">
-        <div>
-          <p className="index-label">PATTERN STUDIO / LIVE</p>
-          <h1>Find a pattern<br />only you could find.</h1>
-          <p>Choose a series, change its palette, and let a seed lead you somewhere new.</p>
-          <button className="primary-text-link" onClick={() => setMobileIntroOpen(false)}>Continue <ArrowDown size={17} /></button>
-        </div>
-      </div>
-      <div className="studio-title"><p className="index-label">PATTERN STUDIO / LIVE</p><h1>Find a pattern<br />only you could find.</h1><p>Every seed is a coordinate in the series. Change the number, palette, or structure. The same inputs always lead back to the same work.</p></div>
+      <div className="studio-title"><p className="index-label">PATTERN STUDIO / LIVE</p><h1>Find a pattern<br />only you could find.</h1><p>Every recipe is a coordinate in the series. Change the number, palette, or structure. The same inputs always lead back to the same work.</p></div>
       <div className="studio-workspace">
         <aside className="studio-controls">
           <div className="control-block"><label>01 / Series</label><select value={state.seriesId} onChange={(event) => updateSeries(event.target.value)}>{SERIES.map((item) => <option value={item.id} key={item.id}>{item.id.toUpperCase()} — {item.name}</option>)}</select><p>{definition.note}</p></div>
-          <div className="control-block"><label>02 / Seed</label><div className="seed-input"><input type="number" min="0" max="999999" value={state.seed} onChange={(event) => setState((current) => ({ ...current, seed: Math.max(0, Math.min(999999, Number(event.target.value))) }))} /><button onClick={randomize} aria-label="Random seed"><RotateCcw size={17} /></button></div></div>
-          <div className="control-block"><label>03 / Palette</label><div className="palette-list">{definition.palettes.map((item, index) => <button key={item.name} className={paletteIndex === index ? "is-active" : ""} onClick={() => updatePalette(index)}><i style={{ background: item.bg }} />{item.colors.slice(0, 5).map((color) => <i key={color} style={{ background: color }} />)}<span>{item.name}</span></button>)}</div><div className="color-editor"><label title="Background color"><input type="color" value={palette.bg} onChange={(event) => updatePaletteColor("bg", 0, event.target.value)} /><span>BG</span></label>{palette.colors.map((color, index) => <label key={`${index}-${color}`} title={`Custom color ${index + 1}`}><input type="color" value={color} onChange={(event) => updatePaletteColor("color", index, event.target.value)} /><span>{String(index + 1).padStart(2, "0")}</span></label>)}</div></div>
+          <div className="control-block"><label>02 / Recipe</label><div className="seed-input"><input type="number" min="0" max="999999" value={state.seed} aria-label="Recipe number" onChange={(event) => setState((current) => ({ ...current, seed: Math.max(0, Math.min(999999, Number(event.target.value))) }))} /><button onClick={randomizeAll} aria-label="Randomize recipe, palette, and structure"><RotateCcw size={17} /></button></div></div>
+          <div className="control-block"><label>03 / Palette</label><div className="palette-list">{definition.palettes.map((item, index) => <button key={item.name} className={paletteIndex === index ? "is-active" : ""} onClick={() => updatePalette(index)}><i style={{ background: item.bg }} />{item.colors.slice(0, 5).map((color) => <i key={color} style={{ background: color }} />)}<span>{item.name}</span></button>)}</div><div className="color-editor"><label title="Background color"><input type="color" value={palette.bg} onInput={(event) => updatePaletteColor("bg", 0, event.currentTarget.value)} /><span>BG</span></label>{palette.colors.map((color, index) => <label key={`color-${index}`} title={`Custom color ${index + 1}`}><input type="color" value={color} onInput={(event) => updatePaletteColor("color", index, event.currentTarget.value)} /><span>{String(index + 1).padStart(2, "0")}</span></label>)}</div></div>
           <div className="control-block parameter-list"><label>04 / Structure</label>{definition.parameters.map((item) => item.options ? <div className="range-control" key={item.key}><span>{item.label}</span><select value={state.parametersBySeriesId[state.seriesId][item.key]} onChange={(event) => updateParameter(item.key, event.target.value)}>{item.options.map((option) => <option key={option}>{option}</option>)}</select></div> : <div className="range-control" key={item.key}><span>{item.label}</span><output>{state.parametersBySeriesId[state.seriesId][item.key]}</output><input type="range" min={item.min} max={item.max} step={item.step} value={state.parametersBySeriesId[state.seriesId][item.key]} onChange={(event) => updateParameter(item.key, Number(event.target.value))} /></div>)}</div>
-          <div className="control-block share-design"><label>05 / Share or open</label><code title={shareCode}>{shareCode}</code><div className="share-buttons"><button onClick={() => copyShare(shareCode, "Hash")}><Copy size={13} /> Copy hash</button><button onClick={() => copyShare(shareUrl, "Link")}><Link2 size={13} /> Copy link</button></div><textarea value={shareInput} onChange={(event) => setShareInput(event.target.value)} placeholder="Paste a Haptique hash or shared link…" aria-label="Shared design hash or link" /><button className="open-share-button" onClick={openSharedDesign} disabled={!shareInput.trim()}><FolderOpen size={14} /> Open shared design</button>{shareStatus && <output><Check size={12} /> {shareStatus}</output>}</div>
+          <div className="control-block share-design"><label>05 / Share or open recipe</label><code title={shareCode}>{shareCode}</code><div className="share-buttons"><button onClick={() => copyShare(shareCode, "Recipe")}><Copy size={13} /> Copy recipe</button><button onClick={() => copyShare(shareUrl, "Link")}><Link2 size={13} /> Copy link</button></div><textarea value={shareInput} onChange={(event) => setShareInput(event.target.value)} placeholder="Paste a Haptique recipe or shared link…" aria-label="Shared recipe or link" /><button className="open-share-button" onClick={openSharedDesign} disabled={!shareInput.trim()}><FolderOpen size={14} /> Open recipe</button>{shareStatus && <output><Check size={12} /> {shareStatus}</output>}</div>
         </aside>
-        <section className="studio-preview"><PatternCanvas key={state.seriesId} state={state} onEngine={(value) => { engine.current = value; }} onImage={setPatternImage} /><div className="preview-meta"><span>{state.seriesId.toUpperCase()} / {String(state.seed).padStart(6, "0")} / {format.widthIn}:{format.heightIn}</span><button onClick={() => engine.current?.exportFlatPattern({ maxEdge: 2400, label: "proof" })}><Download size={15} /> Export proof</button></div></section>
-        <aside className="make-panel"><p className="index-label">MAKE IT PHYSICAL</p><h2>{definition.name}<br /><span>Seed {String(state.seed).padStart(6, "0")}</span></h2><div className="option-group"><label>Object</label><div className="stacked-options">{PRODUCT_TYPES.map((item) => <button key={item.id} className={product.id === item.id ? "is-active" : ""} onClick={() => setProduct(item)}><span>{item.name}</span><small>{item.description}</small></button>)}</div></div><div className="option-group"><label>Size</label><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></div><div className="print-spec"><span>Print target</span><strong>{format.width} × {format.height} px</strong><small>RGB / {format.dpi} DPI · browser preview capped at 1600 px</small></div><button className="add-button" onClick={add}><span>Add to cart</span><strong>{money.format(productPrice(product.id, size))}</strong></button><p className="fine-print">The cart stores the complete deterministic design hash and print target so production artwork can be regenerated server-side at full resolution.</p></aside>
+        <section className="studio-preview"><PatternCanvas key={state.seriesId} state={state} onEngine={(value) => { engine.current = value; }} onImage={setPatternImage} /><div className="preview-meta"><span>{state.seriesId.toUpperCase()} / RECIPE {String(state.seed).padStart(6, "0")} / {format.widthIn}:{format.heightIn}</span><button onClick={() => engine.current?.exportFlatPattern({ maxEdge: 2400, label: "proof" })}><Download size={15} /> Export proof</button></div></section>
+        <aside className="make-panel"><p className="index-label">MAKE IT PHYSICAL</p><h2>{definition.name}<br /><span>Recipe {String(state.seed).padStart(6, "0")}</span></h2><div className="option-group"><label>Object</label><div className="stacked-options">{PRODUCT_TYPES.map((item) => <button key={item.id} className={product.id === item.id ? "is-active" : ""} onClick={() => setProduct(item)}><span>{item.name}</span><small>{item.description}</small></button>)}</div></div><div className="option-group"><label>Size</label><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></div><div className="print-spec"><span>Print target</span><strong>{format.width} × {format.height} px</strong><small>RGB / {format.dpi} DPI · browser preview capped at 1600 px</small></div><button className="add-button" onClick={add}><span>Add to cart</span><strong>{money.format(productPrice(product.id, size))}</strong></button><p className="fine-print">The cart stores the complete deterministic recipe and print target so production artwork can be regenerated server-side at full resolution.</p></aside>
         <div className="mobile-studio-controls">
           <div className="mobile-control-row">
             <label><span>Series</span><select value={state.seriesId} onChange={(event) => updateSeries(event.target.value)}>{SERIES.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
             <button onClick={randomizeAll}><RotateCcw size={15} /><span>Randomize</span></button>
             <button onClick={cyclePalette}><span className="mobile-palette-dots" aria-hidden="true">{palette.colors.slice(0, 3).map((color) => <i key={color} style={{ background: color }} />)}</span><span>Palette</span></button>
+            <button className={advancedOpen ? "is-active" : ""} onClick={() => setAdvancedOpen((value) => !value)} aria-expanded={advancedOpen} aria-controls="mobile-advanced-controls"><SlidersHorizontal size={15} /><span>Advanced</span></button>
+          </div>
+          <div className={advancedOpen ? "mobile-advanced-panel is-open" : "mobile-advanced-panel"} id="mobile-advanced-controls" aria-hidden={!advancedOpen}>
+            {definition.parameters.filter((item) => !item.options).map((item) => <div className="range-control" key={item.key}><span>{item.label}</span><output>{state.parametersBySeriesId[state.seriesId][item.key]}</output><input type="range" min={item.min} max={item.max} step={item.step} value={state.parametersBySeriesId[state.seriesId][item.key]} onChange={(event) => updateParameter(item.key, Number(event.target.value))} /></div>)}
           </div>
           <div className="mobile-product-row">
             <label><span>Object</span><select value={product.id} onChange={(event) => setProduct(PRODUCT_TYPES.find((item) => item.id === event.target.value) ?? PRODUCT_TYPES[0])}>{PRODUCT_TYPES.map((item) => <option value={item.id} key={item.id}>{item.short}</option>)}</select></label>
@@ -352,7 +347,7 @@ function StudioPage({ state, setState, onAdd }) {
           <button className="add-button mobile-add-button" onClick={add}><span>Add {product.short} to cart</span><strong>{money.format(productPrice(product.id, size))}</strong></button>
         </div>
       </div>
-      <section className="curated-section"><div><p className="index-label">CURATED COORDINATES</p><h2>Seeds worth returning to.</h2></div><div className="curated-row">{curated.slice(0, 12).map((item) => <button key={item.id} onClick={() => selectCurated(item)} className={decodeSafeSeed(item.hash) === state.seed ? "is-active" : ""}><CuratedSeedPreview item={item} /><span>{item.name.replace("Edition ", "")}</span><strong>{String(decodeSafeSeed(item.hash)).padStart(6, "0")}</strong></button>)}</div></section>
+      <section className="curated-section"><div><p className="index-label">CURATED RECIPES</p><h2>Recipes worth returning to.</h2></div><div className="curated-row">{curated.slice(0, 12).map((item) => <button key={item.id} onClick={() => selectCurated(item)} className={decodeSafeSeed(item.hash) === state.seed ? "is-active" : ""}><CuratedRecipePreview item={item} /><span>{item.name.replace("Edition ", "")}</span><strong>{String(decodeSafeSeed(item.hash)).padStart(6, "0")}</strong></button>)}</div></section>
     </main>
   );
 }
@@ -365,7 +360,7 @@ function AboutPage({ patternState }) {
   return (
     <main className="about-page">
       <section className="about-intro"><p className="index-label">ABOUT / HAPTIQUE</p><h1>Digital patterns<br />want to be touched.</h1><p className="about-lede">Haptique is a generative design studio and made-to-order shop. We build visual systems in code, give you the controls, then translate your chosen result into an object for everyday life.</p></section>
-      <section className="about-manifesto"><p>Each series is a small world with its own rules. A seed is not a limited edition number or a random label—it is the precise coordinate that lets the artwork exist again.</p><p>Making only after an order means fewer speculative objects and more personal ones. Posters, stretched canvases, totes, and woven blankets are our first material vocabulary.</p></section>
+      <section className="about-manifesto"><p>Each series is a small world with its own rules. A recipe is not a limited edition number or a random label—it is the precise combination that lets the artwork exist again.</p><p>Making only after an order means fewer speculative objects and more personal ones. Posters, stretched canvases, totes, and woven blankets are our first material vocabulary.</p></section>
       <section className="cloth-invitation"><div><p className="index-label">A SMALL EASTER EGG</p><h2>Before the objects,<br />there was the cloth.</h2></div><button onClick={() => setShowCloth(true)}>Touch the original experiment <ArrowUpRight size={17} /></button></section>
       {showCloth && <div className="cloth-modal" role="dialog" aria-modal="true" aria-label="Interactive 3D cloth"><button className="cloth-close" onClick={() => setShowCloth(false)}><X size={20} /> Close</button><div className="cloth-scene"><React.Suspense fallback={<div className="cloth-loading">Loading the original cloth…</div>}><LazyClothExperience patternState={patternState} studioActionsRef={actions} onZoomChange={() => {}} /></React.Suspense></div><p className="cloth-hint">Drag the fabric. Scroll to move closer.</p></div>}
     </main>
@@ -406,7 +401,7 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
       setCheckingOut(false);
     }
   };
-  return <><button className={open ? "cart-scrim is-open" : "cart-scrim"} onClick={onClose} aria-label="Close cart" /><aside className={open ? "cart-drawer is-open" : "cart-drawer"} aria-hidden={!open}><header><p>YOUR CART / {String(items.length).padStart(2, "0")}</p><button onClick={onClose} aria-label="Close cart"><X /></button></header>{items.length ? <><div className="cart-items">{items.map((item) => <article className="cart-line" key={item.lineId}><div className="cart-thumb" style={{ aspectRatio: item.aspectRatio || 1 }}>{item.image && <img src={item.image} alt="" />}</div><div><h3>{item.seriesName} / {String(item.seed).padStart(6, "0")}</h3><p>{item.productName}<br />{item.size}<br />{item.printSpec?.width} × {item.printSpec?.height} px</p><div className="quantity"><button onClick={() => onChange(item.lineId, -1)}><Minus size={13} /></button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)}><Plus size={13} /></button></div><button className="remove" onClick={() => onRemove(item.lineId)}>Remove</button></div><strong>{money.format(item.price * item.quantity)}</strong></article>)}</div><footer><div><span>Subtotal</span><strong>{money.format(total)}</strong></div><p>US delivery details are collected in secure checkout.</p><button className="checkout-button" onClick={checkout} disabled={checkingOut}>{checkingOut ? "Opening Stripe…" : "Checkout"} <ArrowUpRight size={17} /></button>{message && <output>{message}</output>}</footer></> : <div className="empty-cart"><ShoppingBag size={30} strokeWidth={1.2} /><p>Your future object<br />is still a number.</p><button onClick={onClose}>Keep looking</button></div>}</aside></>;
+  return <><button className={open ? "cart-scrim is-open" : "cart-scrim"} onClick={onClose} aria-label="Close cart" /><aside className={open ? "cart-drawer is-open" : "cart-drawer"} aria-hidden={!open}><header><p>YOUR CART / {String(items.length).padStart(2, "0")}</p><button onClick={onClose} aria-label="Close cart"><X /></button></header>{items.length ? <><div className="cart-items">{items.map((item) => <article className="cart-line" key={item.lineId}><div className="cart-thumb" style={{ aspectRatio: item.aspectRatio || 1 }}>{item.image && <img src={item.image} alt="" />}</div><div><h3>{item.seriesName} / Recipe {String(item.seed).padStart(6, "0")}</h3><p>{item.productName}<br />{item.size}<br />{item.printSpec?.width} × {item.printSpec?.height} px</p><div className="quantity"><button onClick={() => onChange(item.lineId, -1)}><Minus size={13} /></button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)}><Plus size={13} /></button></div><button className="remove" onClick={() => onRemove(item.lineId)}>Remove</button></div><strong>{money.format(item.price * item.quantity)}</strong></article>)}</div><footer><div><span>Subtotal</span><strong>{money.format(total)}</strong></div><p>US delivery details are collected in secure checkout.</p><button className="checkout-button" onClick={checkout} disabled={checkingOut}>{checkingOut ? "Opening Stripe…" : "Checkout"} <ArrowUpRight size={17} /></button>{message && <output>{message}</output>}</footer></> : <div className="empty-cart"><ShoppingBag size={30} strokeWidth={1.2} /><p>Your future object<br />is still a recipe.</p><button onClick={onClose}>Keep looking</button></div>}</aside></>;
 }
 
 function Footer() {
@@ -421,7 +416,7 @@ function Footer() {
         <section><p>FOLLOW</p><a href="https://www.instagram.com/haptique.studio/" target="_blank" rel="noreferrer">Instagram ↗</a><a href="https://www.are.na/haptique" target="_blank" rel="noreferrer">Are.na ↗</a></section>
         <section><p>MADE</p><span>On demand in small runs.<br />Designed in Los Angeles.</span></section>
       </div>
-      <div className="footer-bottom"><span>HAPTIQUE © 2026</span><span>SEED BY SEED / OBJECT BY OBJECT</span></div>
+      <div className="footer-bottom"><span>HAPTIQUE © 2026</span><span>RECIPE BY RECIPE / OBJECT BY OBJECT</span></div>
     </footer>
   );
 }

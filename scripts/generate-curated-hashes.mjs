@@ -5,7 +5,7 @@ import { SERIES, createDefaultPatternState } from "../src/pattern-studio/pattern
 import { createPatternSnapshot, encodePatternShare } from "../src/pattern-studio/pattern-share.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const outputDirectory = resolve(root, "public", "textures", "curated", "blankets");
+const outputDirectory = resolve(root, "public", "textures", "curated");
 const outputFile = resolve(outputDirectory, "curated_list.json");
 const seeds = [1042, 7319, 18444, 28701, 39017, 46288, 53812, 61904, 70431, 81620, 90377, 99421];
 
