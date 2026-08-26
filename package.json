@@ -10,6 +10,7 @@
     "generate:curated": "node scripts/generate-curated-hashes.mjs",
     "verify:environments": "node scripts/verify-environments.mjs",
     "verify:printify": "node --env-file=.env scripts/verify-printify.mjs",
+    "verify:printify-personalization": "node --env-file=.env scripts/verify-printify-personalization.mjs",
     "setup:printify-products": "node --env-file=.env scripts/setup-printify-products.mjs",
     "verify:pricing": "node scripts/audit-printify-pricing.mjs",
     "test:printify": "node --test tests/printify-client.test.mjs tests/printify-fulfillment.test.mjs",

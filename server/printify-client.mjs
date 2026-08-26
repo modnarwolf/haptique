@@ -86,6 +86,39 @@ export function createPrintifyClient({
       });
     },
 
+    retrievePersonalizationOptions(productId, { signal } = {}) {
+      const id = encodeURIComponent(required(productId, "Printify product ID"));
+      return request(
+        `/shops/${encodeURIComponent(configuredShopId)}/products/${id}/personalization_options.json`,
+        { signal },
+      );
+    },
+
+    createPersonalization(productId, personalization, { signal } = {}) {
+      const id = encodeURIComponent(required(productId, "Printify product ID"));
+      return request(
+        `/shops/${encodeURIComponent(configuredShopId)}/products/${id}/personalization.json`,
+        { method: "POST", body: personalization, signal },
+      );
+    },
+
+    requestPersonalizationPreview(productId, preview, { signal } = {}) {
+      const id = encodeURIComponent(required(productId, "Printify product ID"));
+      return request(
+        `/shops/${encodeURIComponent(configuredShopId)}/products/${id}/personalization_previews.json`,
+        { method: "POST", body: preview, signal },
+      );
+    },
+
+    retrievePersonalizationPreview(productId, taskId, { signal } = {}) {
+      const product = encodeURIComponent(required(productId, "Printify product ID"));
+      const task = encodeURIComponent(required(taskId, "Printify personalization task ID"));
+      return request(
+        `/shops/${encodeURIComponent(configuredShopId)}/products/${product}/personalization_previews/tasks/${task}.json`,
+        { signal },
+      );
+    },
+
     uploadImage({ fileName, contents, url }, { signal } = {}) {
       const body = { file_name: required(fileName, "Printify image file name") };
       if (url) body.url = required(url, "Printify image URL");

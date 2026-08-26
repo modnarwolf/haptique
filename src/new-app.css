@@ -135,6 +135,12 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
 .stacked-options span { font-size:13px; }
 .stacked-options small { font-size:10px; opacity:.55; margin-top:3px; }
 .make-panel .add-button { width:100%; margin-top:28px; }
+.make-panel .add-button:disabled,.preview-add-button:disabled { opacity:.42; cursor:wait; }
+.selected-object { padding:13px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); display:grid; gap:4px; }
+.selected-object span,.fixed-size { font-size:13px; font-weight:500; }
+.selected-object small { font-size:10px; opacity:.55; }
+.fixed-size { display:block; padding:12px 0; border-bottom:1px solid var(--line); }
+.preview-status { display:block; margin-top:10px; font:400 9px/1.4 var(--mono); }
 .mobile-studio-controls,.mobile-advanced-panel { display:none; }
 .print-spec { margin-top:22px; padding:12px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); display:grid; gap:5px; }
 .print-spec span,.print-spec small { font:400 9px/1.3 var(--mono); text-transform:uppercase; }
@@ -149,6 +155,37 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
 .curated-row strong { font-size:12px; font-weight:400; }
 .curated-thumbnail { grid-column:1/-1; width:100%; height:auto; max-width:none; aspect-ratio:3/4!important; background:#c9c7bf; }
 .curated-thumbnail canvas { width:100%!important; height:100%!important; object-fit:cover; }
+.product-preview-page { min-height:calc(100svh - 84px); padding:24px; }
+.product-preview-page.is-missing { display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:24px; }
+.product-preview-page.is-missing h1 { margin:0; font-size:clamp(48px,7vw,94px); line-height:.9; letter-spacing:-.06em; }
+.product-preview-header { min-height:150px; padding-bottom:20px; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; }
+.product-preview-header h1 { margin:10px 0 0; font-size:clamp(52px,7vw,100px); line-height:.84; letter-spacing:-.07em; }
+.product-preview-header>button { border:0; border-bottom:1px solid; background:transparent; padding:0 0 5px; font:500 10px/1 var(--mono); text-transform:uppercase; }
+.product-preview-layout { min-height:calc(100svh - 280px); display:grid; grid-template-columns:minmax(0,1fr) minmax(290px,370px); border:1px solid var(--line); }
+.product-mockup-stage { min-height:620px; padding:20px; display:grid; grid-template-rows:minmax(0,1fr) auto; overflow:hidden; background:#d8d5cb; }
+.product-mockup-gallery { min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; gap:12px; }
+.product-mockup-gallery>img { width:100%; height:100%; min-height:0; object-fit:contain; }
+.product-mockup-thumbnails { display:flex; justify-content:center; gap:8px; overflow-x:auto; }
+.product-mockup-thumbnails button { width:68px; height:68px; padding:3px; border:1px solid transparent; background:rgba(255,255,255,.28); }
+.product-mockup-thumbnails button.is-active { border-color:var(--ink); }
+.product-mockup-thumbnails img { width:100%; height:100%; object-fit:cover; }
+.product-mockup-loading { display:grid; place-content:center; justify-items:center; gap:18px; text-align:center; font:400 10px/1.4 var(--mono); text-transform:uppercase; }
+.product-mockup-fallback { min-height:0; display:grid; place-items:center; }
+.product-mockup-fallback p { margin:0; text-align:center; font:400 9px/1.4 var(--mono); text-transform:uppercase; }
+.preview-spinner { width:42px; height:42px; border:1px solid rgba(23,23,20,.25); border-top-color:var(--ink); border-radius:50%; animation:preview-spin .9s linear infinite; }
+@keyframes preview-spin { to { transform:rotate(360deg); } }
+.product-mockup-caption { padding-top:12px; display:flex; justify-content:space-between; gap:20px; font:400 9px/1 var(--mono); }
+.product-preview-summary { padding:24px; border-left:1px solid var(--line); }
+.product-preview-summary h2 { margin:34px 0 44px; font-size:36px; line-height:.95; letter-spacing:-.04em; }
+.product-preview-summary h2 span { font:400 10px/1 var(--mono); letter-spacing:0; }
+.product-preview-details { margin-bottom:22px; padding:14px 0; display:grid; grid-template-columns:1fr auto; gap:10px 18px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); font:400 9px/1.25 var(--mono); text-transform:uppercase; }
+.product-preview-details strong { font-size:10px; text-align:right; }
+.preview-approved { margin:0 0 14px; padding:11px; display:flex; align-items:center; gap:9px; border:1px solid var(--ink); font:500 9px/1.2 var(--mono); text-transform:uppercase; }
+.preview-error { margin-bottom:16px; padding:13px; border:1px solid #a14232; color:#7d241a; }
+.preview-error strong { font:600 10px/1 var(--mono); text-transform:uppercase; }
+.preview-error p { margin:8px 0 12px; font-size:11px; line-height:1.4; }
+.preview-error button { border:0; border-bottom:1px solid; padding:0 0 3px; background:transparent; color:inherit; font:500 9px/1 var(--mono); text-transform:uppercase; }
+.preview-add-button { width:100%; }
 .about-page { height:calc(100svh - 84px); padding:18px 24px 0; display:grid; grid-template-rows:minmax(0,1.15fr) minmax(0,.85fr) auto; overflow:hidden; }
 .about-intro { min-height:0; display:grid; grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr); grid-template-rows:auto 1fr; column-gap:clamp(32px,7vw,110px); padding-bottom:18px; }
 .about-intro .index-label { grid-column:1/-1; }
@@ -339,6 +376,13 @@ button:focus-visible,select:focus-visible,input:focus-visible { outline:2px soli
   .curated-section h2 { font-size:38px; }
   .curated-row { grid-template-columns:repeat(2,1fr); }
   .curated-thumbnail { width:100%; height:auto; aspect-ratio:3/4!important; }
+  .product-preview-page { min-height:calc(100svh - 72px); padding:16px; }
+  .product-preview-header { min-height:120px; align-items:flex-end; }
+  .product-preview-header h1 { font-size:clamp(46px,14vw,66px); }
+  .product-preview-layout { grid-template-columns:1fr; }
+  .product-mockup-stage { min-height:72svh; padding:12px; }
+  .product-preview-summary { padding:24px 16px; border-left:0; border-top:1px solid var(--line); }
+  .product-preview-summary h2 { margin:28px 0 34px; }
   .about-page { height:calc(100svh - 72px); padding:10px 12px 0; grid-template-rows:minmax(0,.9fr) minmax(0,1.1fr) auto; }
   .series-intro { grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); }
   .series-copy { min-height:0; padding:18px 16px; }

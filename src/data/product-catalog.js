@@ -42,7 +42,7 @@ export const PRODUCT_TYPES = [
     description: "All-over print, long cotton handles.",
     sizes: ["16 × 16 in"],
     prices: [38],
-    dpi: 300,
+    dpi: 150,
     printify: {
       blueprintId: 1389,
       printProviderId: 10,
@@ -83,8 +83,9 @@ export function getProductFormat(productId, size) {
   const match = selectedSize.match(/([\d.]+)\s*[×x]\s*([\d.]+)/i);
   const widthIn = Number(match?.[1] ?? 12);
   const heightIn = Number(match?.[2] ?? 16);
-  const width = Math.round(widthIn * product.dpi);
-  const height = Math.round(heightIn * product.dpi);
+  const isTote = product.id === "tote";
+  const width = isTote ? 2625 : Math.round(widthIn * product.dpi);
+  const height = isTote ? 5250 : Math.round(heightIn * product.dpi);
   return {
     productId: product.id,
     size: selectedSize,
@@ -93,6 +94,8 @@ export function getProductFormat(productId, size) {
     width,
     height,
     dpi: product.dpi,
-    aspectRatio: widthIn / heightIn,
+    aspectRatio: isTote ? 1 : widthIn / heightIn,
+    artworkWidth: isTote ? 2400 : width,
+    artworkHeight: isTote ? 2280 : height,
   };
 }

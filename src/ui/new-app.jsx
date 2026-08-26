@@ -5,6 +5,7 @@ import { PRODUCT_TYPES, getProductFormat, productPrice } from "../data/product-c
 import { CAMPAIGN_SERIES, CAMPAIGN_SERIES_BY_ID, SITE_CONTENT } from "../data/site-content.js";
 import { createDefaultPatternState, getPalette, SERIES } from "../pattern-studio/pattern-data.js";
 import { P5PatternEngine } from "../pattern-studio/p5-pattern-engine.js";
+import { TOTE_AOP_MEDIUM_PRESET } from "../pattern-studio/print-layouts.js";
 import { applyPatternSnapshot, createPatternShareUrl, createPatternSnapshot, decodePatternShare, encodePatternShare } from "../pattern-studio/pattern-share.js";
 import { hasDesignHash, pathForRoute, routeForPage, routeFromLocation, titleForRoute } from "../routing/app-routes.js";
 
@@ -14,6 +15,7 @@ const LazyClothExperience = React.lazy(() =>
 
 const HERO_DURATION = 6500;
 const PAGE_TRANSITION_MS = 600;
+const MAX_PRODUCT_MOCKUPS = 3;
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 function FluidLogo({ onNavigate }) {
@@ -225,12 +227,13 @@ function SeriesPage({ series, onOpenStudio }) {
   );
 }
 
-function StudioPage({ state, setState, onAdd, onSeriesChange }) {
+function StudioPage({ state, setState, onPreview, onSeriesChange }) {
   const copy = SITE_CONTENT.studio;
   const engine = React.useRef(null);
-  const [patternImage, setPatternImage] = React.useState("");
-  const [product, setProduct] = React.useState(PRODUCT_TYPES[0]);
-  const [size, setSize] = React.useState(PRODUCT_TYPES[0].sizes[1]);
+  const [previewing, setPreviewing] = React.useState(false);
+  const [previewStatus, setPreviewStatus] = React.useState("");
+  const [product, setProduct] = React.useState(() => PRODUCT_TYPES.find((item) => item.id === "tote") ?? PRODUCT_TYPES[0]);
+  const [size, setSize] = React.useState(() => (PRODUCT_TYPES.find((item) => item.id === "tote") ?? PRODUCT_TYPES[0]).sizes[0]);
   const [curated, setCurated] = React.useState([]);
   const [shareInput, setShareInput] = React.useState("");
   const [shareStatus, setShareStatus] = React.useState("");
@@ -249,10 +252,12 @@ function StudioPage({ state, setState, onAdd, onSeriesChange }) {
   React.useEffect(() => setSize(product.sizes[Math.min(1, product.sizes.length - 1)]), [product]);
 
   React.useEffect(() => {
-    setState((current) => current.width === format.width && current.height === format.height
+    const studioWidth = format.artworkWidth ?? format.width;
+    const studioHeight = format.artworkHeight ?? format.height;
+    setState((current) => current.width === studioWidth && current.height === studioHeight
       ? current
-      : { ...current, width: format.width, height: format.height, printPreset: `${product.id}:${format.size}` });
-  }, [format.width, format.height, format.size, product.id, setState]);
+      : { ...current, width: studioWidth, height: studioHeight, printPreset: undefined });
+  }, [format.artworkHeight, format.artworkWidth, format.height, format.width, setState]);
 
   const updateSeries = (seriesId) => {
     setState((current) => ({ ...current, seriesId }));
@@ -308,21 +313,40 @@ function StudioPage({ state, setState, onAdd, onSeriesChange }) {
       setShareStatus(error.message || "That recipe could not be opened");
     }
   };
-  const add = () => onAdd({
-    lineId: crypto.randomUUID(),
-    seriesId: state.seriesId,
-    seriesName: definition.name,
-    seed: state.seed,
-    designHash: encodePatternShare(createPatternSnapshot(state)),
-    productId: product.id,
-    productName: product.name,
-    size,
-    price: productPrice(product.id, size),
-    quantity: 1,
-    image: patternImage,
-    aspectRatio: format.aspectRatio,
-    printSpec: format,
-  });
+  const previewProduct = async () => {
+    if (!engine.current || previewing) return;
+    if (product.id !== "tote") {
+      setPreviewStatus(`${product.name} previews are not connected yet.`);
+      return;
+    }
+    setPreviewing(true);
+    setPreviewStatus("Preparing your product preview…");
+    try {
+      const artwork = await engine.current.createProductArtworkBlob({
+        printPreset: TOTE_AOP_MEDIUM_PRESET,
+        label: "tote-aop-medium",
+      });
+      if (artwork.width !== 2625 || artwork.height !== 5250) {
+        throw new Error("The tote production artwork has the wrong dimensions.");
+      }
+      onPreview({
+        ...artwork,
+        seriesId: state.seriesId,
+        seriesName: definition.name,
+        seed: state.seed,
+        designHash: encodePatternShare(createPatternSnapshot(state)),
+        productId: product.id,
+        productName: product.name,
+        size,
+        price: productPrice(product.id, size),
+        aspectRatio: format.aspectRatio,
+        printSpec: format,
+      });
+    } catch (error) {
+      setPreviewStatus(error.message || "The tote production artwork could not be built.");
+      setPreviewing(false);
+    }
+  };
 
   return (
     <main className="studio-page">
@@ -335,8 +359,8 @@ function StudioPage({ state, setState, onAdd, onSeriesChange }) {
           <div className="control-block parameter-list"><label>04 / Structure</label>{definition.parameters.map((item) => item.options ? <div className="range-control" key={item.key}><span>{item.label}</span><select value={state.parametersBySeriesId[state.seriesId][item.key]} onChange={(event) => updateParameter(item.key, event.target.value)}>{item.options.map((option) => <option key={option}>{option}</option>)}</select></div> : <div className="range-control" key={item.key}><span>{item.label}</span><output>{state.parametersBySeriesId[state.seriesId][item.key]}</output><input type="range" min={item.min} max={item.max} step={item.step} value={state.parametersBySeriesId[state.seriesId][item.key]} onChange={(event) => updateParameter(item.key, Number(event.target.value))} /></div>)}</div>
           <div className="control-block share-design"><label>05 / Share or open recipe</label><code title={shareCode}>{shareCode}</code><div className="share-buttons"><button onClick={() => copyShare(shareCode, "Recipe")}><Copy size={13} /> Copy recipe</button><button onClick={() => copyShare(shareUrl, "Link")}><Link2 size={13} /> Copy link</button></div><textarea value={shareInput} onChange={(event) => setShareInput(event.target.value)} placeholder="Paste a Haptique recipe or shared link…" aria-label="Shared recipe or link" /><button className="open-share-button" onClick={openSharedDesign} disabled={!shareInput.trim()}><FolderOpen size={14} /> Open recipe</button>{shareStatus && <output><Check size={12} /> {shareStatus}</output>}</div>
         </aside>
-        <section className="studio-preview"><PatternCanvas key={state.seriesId} state={state} onEngine={(value) => { engine.current = value; }} onImage={setPatternImage} /><div className="preview-meta"><span>{state.seriesId.toUpperCase()} / RECIPE {String(state.seed).padStart(6, "0")} / {format.widthIn}:{format.heightIn}</span><button onClick={() => engine.current?.exportFlatPattern({ maxEdge: 2400, label: "proof" })}><Download size={15} /> Export proof</button></div></section>
-        <aside className="make-panel"><p className="index-label">MAKE IT PHYSICAL</p><h2>{definition.name}<br /><span>Recipe {String(state.seed).padStart(6, "0")}</span></h2><div className="option-group"><label>Object</label><div className="stacked-options">{PRODUCT_TYPES.map((item) => <button key={item.id} className={product.id === item.id ? "is-active" : ""} onClick={() => setProduct(item)}><span>{item.name}</span><small>{item.description}</small></button>)}</div></div><div className="option-group"><label>Size</label><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></div><div className="print-spec"><span>Print target</span><strong>{format.width} × {format.height} px</strong><small>RGB / {format.dpi} DPI · browser preview capped at 1600 px</small></div><button className="add-button" onClick={add}><span>Add to cart</span><strong>{money.format(productPrice(product.id, size))}</strong></button><p className="fine-print">The cart stores the complete deterministic recipe and print target so production artwork can be regenerated server-side at full resolution.</p></aside>
+        <section className="studio-preview"><PatternCanvas key={state.seriesId} state={state} onEngine={(value) => { engine.current = value; }} /><div className="preview-meta"><span>{state.seriesId.toUpperCase()} / RECIPE {String(state.seed).padStart(6, "0")} / {format.widthIn}:{format.heightIn}</span><button onClick={() => engine.current?.exportFlatPattern({ maxEdge: 2400, label: "proof" })}><Download size={15} /> Export proof</button></div></section>
+        <aside className="make-panel"><p className="index-label">MAKE IT PHYSICAL</p><h2>{definition.name}<br /><span>Recipe {String(state.seed).padStart(6, "0")}</span></h2><div className="option-group"><label>Object</label><div className="stacked-options">{PRODUCT_TYPES.map((item) => <button key={item.id} className={product.id === item.id ? "is-active" : ""} onClick={() => { setProduct(item); setPreviewStatus(""); }}><span>{item.name}</span><small>{item.description}</small></button>)}</div></div><div className="option-group"><label>Size</label><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></div><div className="print-spec"><span>Print target</span><strong>{format.width} × {format.height} px</strong><small>RGB / {format.dpi} DPI · prepared after you leave Studio</small></div><button className="add-button" onClick={previewProduct} disabled={previewing || product.id !== "tote"}><span>{previewing ? "Preparing preview…" : "Preview product"}</span><strong>{money.format(productPrice(product.id, size))}</strong></button>{previewStatus && <output className="preview-status">{previewStatus}</output>}<p className="fine-print">The production file stays behind the scenes. The next screen shows only Printify’s rendered product mockups.</p></aside>
         <div className="mobile-studio-controls">
           <div className="mobile-control-row">
             <label><span>Series</span><select value={state.seriesId} onChange={(event) => updateSeries(event.target.value)}>{SERIES.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
@@ -347,14 +371,160 @@ function StudioPage({ state, setState, onAdd, onSeriesChange }) {
           <div className={advancedOpen ? "mobile-advanced-panel is-open" : "mobile-advanced-panel"} id="mobile-advanced-controls" aria-hidden={!advancedOpen}>
             {definition.parameters.filter((item) => !item.options).map((item) => <div className="range-control" key={item.key}><span>{item.label}</span><output>{state.parametersBySeriesId[state.seriesId][item.key]}</output><input type="range" min={item.min} max={item.max} step={item.step} value={state.parametersBySeriesId[state.seriesId][item.key]} onChange={(event) => updateParameter(item.key, Number(event.target.value))} /></div>)}
           </div>
-          <div className="mobile-product-row">
-            <label><span>Object</span><select value={product.id} onChange={(event) => setProduct(PRODUCT_TYPES.find((item) => item.id === event.target.value) ?? PRODUCT_TYPES[0])}>{PRODUCT_TYPES.map((item) => <option value={item.id} key={item.id}>{item.short}</option>)}</select></label>
-            <label><span>Size</span><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></label>
-          </div>
-          <button className="add-button mobile-add-button" onClick={add}><span>Add {product.short} to cart</span><strong>{money.format(productPrice(product.id, size))}</strong></button>
+          <div className="mobile-product-row"><label><span>Object</span><select value={product.id} onChange={(event) => setProduct(PRODUCT_TYPES.find((item) => item.id === event.target.value) ?? PRODUCT_TYPES[0])}>{PRODUCT_TYPES.map((item) => <option value={item.id} key={item.id}>{item.short}</option>)}</select></label><label><span>Size</span><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></label></div>
+          <button className="add-button mobile-add-button" onClick={previewProduct} disabled={previewing || product.id !== "tote"}><span>{previewing ? "Preparing preview…" : "Preview product"}</span><strong>{money.format(productPrice(product.id, size))}</strong></button>
         </div>
       </div>
       <section className="curated-section"><div><p className="index-label">{copy.curatedEyebrow}</p><h2>{copy.curatedTitle}</h2></div><div className="curated-row">{curated.slice(0, 12).map((item) => <button key={item.id} onClick={() => selectCurated(item)} className={decodeSafeSeed(item.hash) === state.seed ? "is-active" : ""}><CuratedRecipePreview item={item} /><span>{item.name.replace("Edition ", "")}</span><strong>{String(decodeSafeSeed(item.hash)).padStart(6, "0")}</strong></button>)}</div></section>
+    </main>
+  );
+}
+
+function PreviewPage({ draft, onBack, onAdd }) {
+  const [result, setResult] = React.useState({ phase: draft ? "uploading" : "missing", message: "", preview: null });
+  const [activeMockup, setActiveMockup] = React.useState(0);
+  const [adding, setAdding] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!draft?.blob) return undefined;
+    const controller = new AbortController();
+    let timer;
+    let attempts = 0;
+
+    const poll = async (preview) => {
+      attempts += 1;
+      const query = new URLSearchParams({ task_id: preview.taskId });
+      const response = await fetch(`/api/printify/product-preview/status?${query}`, {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Printify preview status is unavailable");
+      if (payload.status === "completed") {
+        setResult({ phase: "completed", message: "", preview: { ...preview, ...payload } });
+        return;
+      }
+      if (payload.status === "failed" || payload.status === "corrupt") {
+        throw new Error("Printify could not render this product preview");
+      }
+      if (attempts >= 45) throw new Error("Printify is taking longer than expected. Try the preview again.");
+      setResult({ phase: "rendering", message: "Printify is rendering your product mockups…", preview });
+      timer = window.setTimeout(() => poll(preview).catch(fail), 1800);
+    };
+
+    const fail = (error) => {
+      if (error?.name === "AbortError") return;
+      setResult({ phase: "error", message: "We couldn’t generate this product preview. Please try again.", preview: null });
+    };
+
+    const start = async () => {
+      try {
+        const response = await fetch("/api/printify/product-preview", {
+          method: "POST",
+          headers: {
+            "Content-Type": "image/png",
+            "X-Haptique-Filename": draft.filename,
+            "X-Haptique-Preview-Id": `haptique-${crypto.randomUUID()}`,
+            "X-Haptique-Product": draft.productId,
+            "X-Haptique-Size": draft.size,
+          },
+          body: draft.blob,
+          signal: controller.signal,
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.taskId) {
+          throw new Error("Printify could not start the product preview");
+        }
+        setResult({ phase: "rendering", message: "Printify is rendering your product mockups…", preview: payload });
+        await poll(payload);
+      } catch (error) {
+        fail(error);
+      }
+    };
+
+    start();
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [draft]);
+
+  const mockups = (result.preview?.mockups ?? [])
+    .filter((item) => item?.src)
+    .slice(0, MAX_PRODUCT_MOCKUPS);
+  const mockup = mockups[activeMockup] ?? mockups[0];
+  const ready = result.phase === "completed" && Boolean(mockup?.src);
+  const add = async () => {
+    if (!ready) return;
+    setAdding(true);
+    try {
+      const response = await fetch("/api/printify/product-preview/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: result.preview.taskId }),
+      });
+      const personalization = await response.json();
+      if (
+        !response.ok
+        || (
+          personalization.fulfillmentStrategy !== "custom_product"
+          && !personalization.personalisationInstructions
+        )
+      ) {
+        throw new Error("Personalization could not be saved");
+      }
+      onAdd({
+        lineId: crypto.randomUUID(),
+        seriesId: draft.seriesId,
+        seriesName: draft.seriesName,
+        seed: draft.seed,
+        designHash: draft.designHash,
+        productId: draft.productId,
+        productName: draft.productName,
+        size: draft.size,
+        price: draft.price,
+        quantity: 1,
+        mockupUrl: mockup.src,
+        aspectRatio: 1,
+        printSpec: draft.printSpec,
+        printifyProductId: result.preview.productId,
+        printifyUploadId: result.preview.uploadId,
+        printifyFulfillmentStrategy: personalization.fulfillmentStrategy ?? "personalization",
+        personalizationStrategy: personalization.personalisationStrategy,
+        personalizationInstructions: personalization.personalisationInstructions,
+      });
+    } catch {
+      setResult((current) => ({ ...current, phase: "error", message: "Your preview is ready, but it could not be added to cart. Please try again." }));
+      setAdding(false);
+    }
+  };
+
+  if (!draft) {
+    return <main className="product-preview-page is-missing"><p className="index-label">PREVIEW / EXPIRED</p><h1>Return to the studio<br />to build your product.</h1><button className="primary-text-link" onClick={onBack}>Back to studio <ArrowUpRight size={18} /></button></main>;
+  }
+
+  return (
+    <main className="product-preview-page">
+      <header className="product-preview-header"><div><p className="index-label">STUDIO / PREVIEW / CART</p><h1>Check the object.</h1></div><button onClick={onBack}>Back to studio</button></header>
+      <div className="product-preview-layout">
+        <section className="product-mockup-stage">
+          {ready
+            ? <div className="product-mockup-gallery"><img src={mockup.src} alt={`${draft.seriesName} pattern on ${draft.productName}`} />{mockups.length > 1 && <div className="product-mockup-thumbnails" aria-label="Product views">{mockups.map((item, index) => <button key={`${item.mockup_id}-${index}`} className={index === activeMockup ? "is-active" : ""} onClick={() => setActiveMockup(index)} aria-label={`Show ${item.mockup_id || `view ${index + 1}`}`}><img src={item.src} alt="" /></button>)}</div>}</div>
+            : result.phase === "error"
+              ? <div className="product-mockup-fallback"><p>We couldn’t generate the product mockups.<br />Return to Studio and try again.</p></div>
+              : <div className="product-mockup-loading"><div className="preview-spinner" aria-hidden="true" /><p>{result.phase === "uploading" ? "Preparing your product preview…" : result.message || "Preparing preview…"}</p></div>}
+          <div className="product-mockup-caption"><span>PRINTIFY PERSONALIZATION PREVIEW</span><span>{ready ? mockup.mockup_id || "PRODUCT VIEW" : result.phase.toUpperCase()}</span></div>
+        </section>
+        <aside className="product-preview-summary">
+          <p className="index-label">{draft.productName.toUpperCase()} / {draft.size}</p>
+          <h2>{draft.seriesName}<br /><span>Recipe {String(draft.seed).padStart(6, "0")}</span></h2>
+          <div className="product-preview-details"><span>Object</span><strong>{draft.productName}</strong><span>Size</span><strong>{draft.size}</strong><span>Price</span><strong>{money.format(draft.price)}</strong></div>
+          {result.phase === "error" && <div className="preview-error" role="alert"><strong>Mockups couldn’t be generated</strong><p>{result.message || "We couldn’t generate this product preview."}</p><button onClick={onBack}>Return to studio</button></div>}
+          {ready && <div className="preview-approved"><Check size={17} /><span>Personalization rendered by Printify</span></div>}
+          <button className="add-button preview-add-button" onClick={add} disabled={!ready || adding}><span>{adding ? "Adding…" : ready ? "Add to cart" : "Waiting for preview"}</span><strong>{money.format(draft.price)}</strong></button>
+          <p className="fine-print">This page displays Printify’s rendered mockups. Production artwork remains hidden and is attached to the cart item for fulfillment.</p>
+        </aside>
+      </div>
     </main>
   );
 }
@@ -388,8 +558,9 @@ function CartArtwork({ item, active }) {
     } catch {
       return null;
     }
-  }, [active, item.aspectRatio, item.designHash, item.image]);
+  }, [active, item.aspectRatio, item.designHash, item.image, item.mockupUrl]);
 
+  if (item.mockupUrl) return <img src={item.mockupUrl} alt={`${item.seriesName} tote preview`} />;
   if (item.image) return <img src={item.image} alt={`${item.seriesName} recipe ${item.seed}`} />;
   if (restoredState) return <PatternCanvas state={restoredState} className="cart-pattern-preview" />;
   return null;
@@ -408,7 +579,7 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           checkoutId: crypto.randomUUID(),
-          items: items.map(({ productId, size, quantity, designHash, seed, seriesId, seriesName }) => ({
+          items: items.map(({ productId, size, quantity, designHash, seed, seriesId, seriesName, printifyProductId, printifyUploadId, printifyFulfillmentStrategy, personalizationStrategy, personalizationInstructions }) => ({
             productId,
             size,
             quantity,
@@ -416,6 +587,11 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
             seed,
             seriesId,
             seriesName,
+            printifyProductId,
+            printifyUploadId,
+            printifyFulfillmentStrategy,
+            personalizationStrategy,
+            personalizationInstructions,
           })),
         }),
       });
@@ -573,6 +749,7 @@ export function HaptiqueApp() {
     }
   });
   const [cart, setCart] = React.useState(loadStoredCart);
+  const [previewDraft, setPreviewDraft] = React.useState(null);
   const [cartOpen, setCartOpen] = React.useState(
     initialCheckoutResult === "canceled" && cart.length > 0,
   );
@@ -664,11 +841,15 @@ export function HaptiqueApp() {
   const openSeries = (seriesId) => {
     navigate("series", seriesId);
   };
+  const openPreview = (draft) => {
+    setPreviewDraft(draft);
+    navigate("preview");
+  };
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const dismissCheckoutResult = () => {
     window.history.replaceState({}, "", window.location.pathname);
     setCheckoutResult(null);
     setConfirmationOpen(false);
   };
-  return <div className={`haptique-site is-${pageTransition}`} aria-busy={pageTransition !== "idle"}>{checkoutResult === "canceled" && <div className="checkout-notice is-canceled" role="status"><span>Stripe checkout canceled. No payment was confirmed.</span><button onClick={dismissCheckoutResult} aria-label="Dismiss checkout message"><X size={15} /></button></div>}<Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onAdd={add} onSeriesChange={(seriesId) => navigate("studio", seriesId, { scroll: false })} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} />{confirmationOpen && checkoutSessionId && <CheckoutConfirmationModal sessionId={checkoutSessionId} onClose={dismissCheckoutResult} />}</div>;
+  return <div className={`haptique-site is-${pageTransition}`} aria-busy={pageTransition !== "idle"}>{checkoutResult === "canceled" && <div className="checkout-notice is-canceled" role="status"><span>Stripe checkout canceled. No payment was confirmed.</span><button onClick={dismissCheckoutResult} aria-label="Dismiss checkout message"><X size={15} /></button></div>}<Header page={page} onNavigate={navigate} cartCount={count} onCart={() => setCartOpen(true)} />{page === "shop" && <ShopPage onOpenStudio={openStudio} onOpenSeries={openSeries} />}{page === "series" && <SeriesPage series={selectedSeries} onOpenStudio={openStudio} />}{page === "studio" && <StudioPage state={patternState} setState={setPatternState} onPreview={openPreview} onSeriesChange={(seriesId) => navigate("studio", seriesId, { scroll: false })} />}{page === "preview" && <PreviewPage draft={previewDraft} onBack={() => navigate("studio", patternState.seriesId)} onAdd={add} />}{page === "about" && <AboutPage patternState={patternState} />}<Footer /><CartDrawer items={cart} open={cartOpen} onClose={() => setCartOpen(false)} onChange={quantity} onRemove={(lineId) => setCart((items) => items.filter((item) => item.lineId !== lineId))} />{confirmationOpen && checkoutSessionId && <CheckoutConfirmationModal sessionId={checkoutSessionId} onClose={dismissCheckoutResult} />}</div>;
 }

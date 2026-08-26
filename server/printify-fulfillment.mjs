@@ -55,18 +55,27 @@ export async function createPrintifyMockOrderForPaidCheckout({
   const lineItems = order.items.map((item, index) => {
     const product = catalog.products[item.productId];
     const variantId = product?.variants?.[item.size];
-    if (!product?.productId || !variantId || variantId !== item.printifyVariantId) {
+    const previewProductId = item.productId === "tote" ? item.printifyProductId : null;
+    const resolvedProductId = previewProductId || product?.productId;
+    if (!resolvedProductId || !variantId || variantId !== item.printifyVariantId) {
       throw new PrintifyFulfillmentError(
         `Printify catalog is out of date for ${item.productId} ${item.size}`,
         503,
       );
     }
-    return {
-      product_id: product.productId,
+    const lineItem = {
+      product_id: resolvedProductId,
       variant_id: variantId,
       quantity: item.quantity,
       external_id: `${order.checkoutId}-${index + 1}`,
     };
+    if (previewProductId && item.printifyFulfillmentStrategy !== "custom_product") {
+      lineItem.personalisation = {
+        personalisation_strategy: item.personalizationStrategy,
+        personalisation_instructions: item.personalizationInstructions,
+      };
+    }
+    return lineItem;
   });
 
   return printify.createOrder(

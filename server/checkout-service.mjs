@@ -12,7 +12,7 @@ export class CheckoutValidationError extends Error {
   }
 }
 
-export function validateCheckoutItems(items, { stripeCatalog } = {}) {
+export function validateCheckoutItems(items, { stripeCatalog, printifyTotePersonalizationProductId } = {}) {
   if (!Array.isArray(items) || items.length === 0 || items.length > MAX_LINES) {
     throw new CheckoutValidationError(`Checkout requires 1–${MAX_LINES} line items`);
   }
@@ -46,6 +46,40 @@ export function validateCheckoutItems(items, { stripeCatalog } = {}) {
       throw new CheckoutValidationError(`Printify variant is not configured for ${product.name}`);
     }
 
+    let personalization = null;
+    if (product.id === "tote") {
+      const printifyProductId = String(item.printifyProductId ?? "").trim();
+      const printifyUploadId = String(item.printifyUploadId ?? "").trim();
+      const fulfillmentStrategy = String(item.printifyFulfillmentStrategy ?? "personalization").trim();
+      const strategy = String(item.personalizationStrategy ?? "").trim();
+      const instructions = String(item.personalizationInstructions ?? "").trim();
+      if (!printifyProductId || !printifyUploadId) {
+        throw new CheckoutValidationError("The tote needs an approved Printify product preview");
+      }
+      if (fulfillmentStrategy !== "custom_product") {
+        if (strategy !== "pstudio_pre_order_headless" || !/^[0-9a-f-]{36}$/i.test(instructions)) {
+          throw new CheckoutValidationError("The tote needs an approved Printify personalization preview");
+        }
+        if (
+          printifyTotePersonalizationProductId
+          && printifyProductId !== String(printifyTotePersonalizationProductId)
+        ) {
+          throw new CheckoutValidationError("The Printify tote preview is out of date");
+        }
+      }
+      personalization = {
+        printifyProductId: printifyProductId.slice(0, 100),
+        printifyUploadId: printifyUploadId.slice(0, 100),
+        printifyFulfillmentStrategy: fulfillmentStrategy === "custom_product"
+          ? "custom_product"
+          : "personalization",
+        ...(fulfillmentStrategy === "custom_product" ? {} : {
+          personalizationStrategy: strategy,
+          personalizationInstructions: instructions,
+        }),
+      };
+    }
+
     const unitAmount = Math.round(productPrice(product.id, size) * 100);
     const stripePrice = stripeCatalog ? findStripePrice(stripeCatalog, product.id, size) : null;
     if (stripePrice && stripePrice.unitAmount !== unitAmount) {
@@ -66,6 +100,7 @@ export function validateCheckoutItems(items, { stripeCatalog } = {}) {
       designHash,
       seed,
       printifyVariantId,
+      ...personalization,
     };
   });
 }
@@ -78,6 +113,7 @@ export async function createCheckoutForCart({
   stripeCatalog,
   orderStore,
   shippingRateId,
+  printifyTotePersonalizationProductId,
 }) {
   const id = String(checkoutId ?? "").trim();
   if (!/^[0-9a-f-]{36}$/i.test(id)) {
@@ -89,7 +125,10 @@ export async function createCheckoutForCart({
     throw new CheckoutValidationError("Checkout origin must use HTTPS");
   }
 
-  const lineItems = validateCheckoutItems(items, { stripeCatalog });
+  const lineItems = validateCheckoutItems(items, {
+    stripeCatalog,
+    printifyTotePersonalizationProductId,
+  });
   if (orderStore) {
     await orderStore.createPending({
       checkoutId: id,

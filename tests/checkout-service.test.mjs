@@ -67,3 +67,31 @@ test("checkout rejects invalid quantities and missing design hashes", () => {
   assert.throws(() => validateCheckoutItems([{ ...validItem, quantity: 11 }]), CheckoutValidationError);
   assert.throws(() => validateCheckoutItems([{ ...validItem, designHash: "" }]), CheckoutValidationError);
 });
+
+test("tote checkout requires Printify personalization instructions from preview", () => {
+  const tote = {
+    ...validItem,
+    productId: "tote",
+    size: "16 × 16 in",
+  };
+  assert.throws(() => validateCheckoutItems([tote]), CheckoutValidationError);
+
+  const [line] = validateCheckoutItems([{
+    ...tote,
+    printifyProductId: "personalized-tote",
+    printifyUploadId: "upload-id",
+    personalizationStrategy: "pstudio_pre_order_headless",
+    personalizationInstructions: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  }], { printifyTotePersonalizationProductId: "personalized-tote" });
+  assert.equal(line.printifyProductId, "personalized-tote");
+  assert.equal(line.printifyVariantId, 103600);
+
+  const [customProductLine] = validateCheckoutItems([{
+    ...tote,
+    printifyProductId: "custom-tote",
+    printifyUploadId: "upload-id",
+    printifyFulfillmentStrategy: "custom_product",
+  }]);
+  assert.equal(customProductLine.printifyFulfillmentStrategy, "custom_product");
+  assert.equal(customProductLine.personalizationInstructions, undefined);
+});

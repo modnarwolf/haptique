@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
         printifyApiToken: env.PRINTIFY_API_TOKEN,
         printifyShopId: env.PRINTIFY_SHOP_ID,
         printifyProductsFile: env.PRINTIFY_PRODUCTS_FILE,
+        printifyTotePersonalizationProductId: env.PRINTIFY_TOTE_PERSONALIZATION_PRODUCT_ID,
         printifyFulfillmentMode: env.PRINTIFY_FULFILLMENT_MODE,
         printifyOrderApprovalConfirmed: env.PRINTIFY_ORDER_APPROVAL_CONFIRMED === "true",
       }),

@@ -5,6 +5,12 @@ import { createJsonOrderStore, OrderStoreError } from "./order-store.mjs";
 import { loadPrintifyCatalog, PrintifyCatalogError } from "./printify-catalog.mjs";
 import { createPrintifyClient, PrintifyApiError } from "./printify-client.mjs";
 import {
+  finalizePersonalization,
+  productMockups,
+  PrintifyPersonalizationError,
+  startTotePersonalizationPreview,
+} from "./printify-personalization.mjs";
+import {
   createPrintifyMockOrderForPaidCheckout,
   PrintifyFulfillmentError,
 } from "./printify-fulfillment.mjs";
@@ -53,6 +59,7 @@ function sendError(response, error) {
     PrintifyApiError,
     PrintifyCatalogError,
     PrintifyFulfillmentError,
+    PrintifyPersonalizationError,
   ].some((ErrorType) => error instanceof ErrorType);
   sendJson(response, error.status ?? 500, {
     error: expected ? error.message : "Stripe request could not be processed",
@@ -69,12 +76,14 @@ export function haptiqueCheckoutPlugin({
   printifyApiToken,
   printifyShopId,
   printifyProductsFile = "server/data/printify-products.json",
+  printifyTotePersonalizationProductId,
   printifyFulfillmentMode = "disabled",
   printifyOrderApprovalConfirmed = false,
 }) {
   const catalogPath = resolve(stripeProductsFile);
   const orderStore = createJsonOrderStore(resolve(orderStoreFile));
   const printifyCatalogPath = resolve(printifyProductsFile);
+  const previewSessions = new Map();
 
   const onPaid = printifyFulfillmentMode === "mock_draft"
     ? async (order) => {
@@ -93,6 +102,103 @@ export function haptiqueCheckoutPlugin({
   return {
     name: "haptique-checkout-api",
     configureServer(server) {
+      server.middlewares.use("/api/printify/product-preview/status", async (request, response) => {
+        if (request.method !== "GET") {
+          sendJson(response, 405, { error: "Method not allowed" });
+          return;
+        }
+        try {
+          const query = new URL(request.url, "http://localhost").searchParams;
+          const taskId = query.get("task_id");
+          const session = previewSessions.get(taskId);
+          if (!taskId || !session) {
+            throw new PrintifyPersonalizationError("A valid Printify preview task is required");
+          }
+          const printify = createPrintifyClient({ token: printifyApiToken, shopId: printifyShopId });
+          if (session.previewMode === "custom_product") {
+            const product = await printify.retrieveProduct(session.productId);
+            const mockups = productMockups(product, session.variantId);
+            session.status = mockups.length ? "completed" : "processing";
+            sendJson(response, 200, {
+              task_id: taskId,
+              status: session.status,
+              preview_count: mockups.length,
+              mockups,
+            });
+            return;
+          }
+          const task = await printify.retrievePersonalizationPreview(session.productId, taskId);
+          session.status = task.status;
+          sendJson(response, 200, task);
+        } catch (error) {
+          sendError(response, error);
+        }
+      });
+
+      server.middlewares.use("/api/printify/product-preview/finalize", async (request, response) => {
+        if (request.method !== "POST") {
+          sendJson(response, 405, { error: "Method not allowed" });
+          return;
+        }
+        try {
+          const body = await readJson(request);
+          const session = previewSessions.get(String(body.taskId ?? ""));
+          if (!session || session.status !== "completed") {
+            throw new PrintifyPersonalizationError("A completed product preview is required");
+          }
+          if (session.previewMode === "custom_product") {
+            sendJson(response, 200, { fulfillmentStrategy: "custom_product" });
+            return;
+          }
+          const printify = createPrintifyClient({ token: printifyApiToken, shopId: printifyShopId });
+          const personalization = await finalizePersonalization({ printify, ...session });
+          sendJson(response, 200, personalization);
+        } catch (error) {
+          sendError(response, error);
+        }
+      });
+
+      server.middlewares.use("/api/printify/product-preview", async (request, response) => {
+        if (request.method !== "POST") {
+          sendJson(response, 405, { error: "Method not allowed" });
+          return;
+        }
+        try {
+          const product = String(request.headers["x-haptique-product"] ?? "").trim();
+          const size = String(request.headers["x-haptique-size"] ?? "").trim();
+          if (product !== "tote" || size !== "16 × 16 in") {
+            throw new PrintifyPersonalizationError("Product preview is not available for this selection");
+          }
+          if (!String(request.headers["content-type"] ?? "").startsWith("image/png")) {
+            throw new PrintifyPersonalizationError("Product preview artwork must be sent as image/png");
+          }
+          const artwork = await readBody(request, 30_000_000);
+          const fileName = String(request.headers["x-haptique-filename"] ?? "haptique-tote.png")
+            .replace(/[^a-z0-9._-]/gi, "-")
+            .slice(0, 120);
+          const externalId = String(request.headers["x-haptique-preview-id"] ?? "").trim();
+          const printify = createPrintifyClient({ token: printifyApiToken, shopId: printifyShopId });
+          const preview = await startTotePersonalizationPreview({
+            printify,
+            configuredProductId: printifyTotePersonalizationProductId,
+            artwork,
+            fileName,
+            externalId: externalId || undefined,
+          });
+          previewSessions.set(preview.taskId, {
+            productId: preview.productId,
+            variantId: preview.variantId,
+            fieldId: preview.fieldId,
+            uploadId: preview.uploadId,
+            previewMode: preview.previewMode,
+            status: preview.status,
+          });
+          sendJson(response, 202, preview);
+        } catch (error) {
+          sendError(response, error);
+        }
+      });
+
       server.middlewares.use("/api/stripe/checkout/status", async (request, response) => {
         if (request.method !== "GET") {
           sendJson(response, 405, { error: "Method not allowed" });
@@ -173,6 +279,7 @@ export function haptiqueCheckoutPlugin({
             stripeCatalog,
             orderStore,
             shippingRateId,
+            printifyTotePersonalizationProductId,
           });
           sendJson(response, 200, { id: session.id, url: session.url });
         } catch (error) {

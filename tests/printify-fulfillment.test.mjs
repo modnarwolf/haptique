@@ -98,3 +98,67 @@ test("a retried paid webhook reuses the matching recent Printify order", async (
   assert.equal(result.reused, true);
   assert.equal(creates, 0);
 });
+
+test("personalized totes carry Printify instructions into fulfillment", async () => {
+  let submitted;
+  await createPrintifyMockOrderForPaidCheckout({
+    order: {
+      ...paidOrder,
+      items: [{
+        productId: "tote",
+        size: "16 × 16 in",
+        quantity: 1,
+        printifyVariantId: 103600,
+        printifyProductId: "personalized-tote",
+        personalizationStrategy: "pstudio_pre_order_headless",
+        personalizationInstructions: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      }],
+    },
+    printify: {
+      async listOrders() { return { data: [] }; },
+      async createOrder(body) { submitted = body; return { id: "printify-order" }; },
+    },
+    catalog: {
+      products: {
+        tote: { productId: "old-tote", variants: { "16 × 16 in": 103600 } },
+      },
+    },
+    fulfillmentMode: "mock_draft",
+    approvalConfirmed: true,
+  });
+
+  assert.equal(submitted.line_items[0].product_id, "personalized-tote");
+  assert.equal(submitted.line_items[0].personalisation.personalisation_strategy, "pstudio_pre_order_headless");
+  assert.equal(
+    submitted.line_items[0].personalisation.personalisation_instructions,
+    "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  );
+});
+
+test("custom preview products fulfill directly without personalization metadata", async () => {
+  let submitted;
+  await createPrintifyMockOrderForPaidCheckout({
+    order: {
+      ...paidOrder,
+      items: [{
+        productId: "tote",
+        size: "16 × 16 in",
+        quantity: 1,
+        printifyVariantId: 103600,
+        printifyProductId: "custom-tote",
+        printifyFulfillmentStrategy: "custom_product",
+      }],
+    },
+    printify: {
+      async listOrders() { return { data: [] }; },
+      async createOrder(body) { submitted = body; return { id: "printify-order" }; },
+    },
+    catalog: {
+      products: { tote: { productId: "template-tote", variants: { "16 × 16 in": 103600 } } },
+    },
+    fulfillmentMode: "mock_draft",
+    approvalConfirmed: true,
+  });
+  assert.equal(submitted.line_items[0].product_id, "custom-tote");
+  assert.equal(submitted.line_items[0].personalisation, undefined);
+});

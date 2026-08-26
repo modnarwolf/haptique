@@ -8,6 +8,7 @@ import {
 export const PAGE_PATHS = Object.freeze({
   shop: "/",
   studio: "/studio",
+  preview: "/preview",
   about: "/about",
 });
 
@@ -35,6 +36,7 @@ export function routeFromLocation(location = {}) {
   if (pathname === "/" || pathname === "/shop") return { page: "shop", seriesId: null };
   if (pathname === "/about") return { page: "about", seriesId: null };
   if (pathname === "/studio") return { page: "studio", seriesId: null };
+  if (pathname === "/preview") return { page: "preview", seriesId: null };
 
   const studioMatch = pathname.match(/^\/studio\/([^/]+)$/);
   if (studioMatch) {
@@ -75,6 +77,7 @@ export function titleForRoute(route) {
     return series ? `${series.name} Series — Haptique` : "Haptique — Creative software for real things";
   }
   if (route.page === "studio") return "Pattern Studio — Haptique";
+  if (route.page === "preview") return "Tote Preview — Haptique";
   if (route.page === "about") return "About — Haptique";
   return "Haptique — Creative software for real things";
 }

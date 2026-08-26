@@ -107,6 +107,28 @@ test("product creation and image upload stay scoped to the configured account", 
   );
 });
 
+test("personalization methods stay scoped to the configured product", async () => {
+  const requests = [];
+  const client = createPrintifyClient({
+    token: "test-token",
+    shopId: "22838500",
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options });
+      return jsonResponse({ task_id: "task-id" });
+    },
+  });
+
+  await client.retrievePersonalizationOptions("tote-product");
+  await client.createPersonalization("tote-product", { variant_id: 103600, items: [] });
+  await client.requestPersonalizationPreview("tote-product", { variant_ids: [103600] });
+  await client.retrievePersonalizationPreview("tote-product", "task-id");
+
+  assert.match(requests[0].url, /tote-product\/personalization_options\.json$/);
+  assert.equal(requests[1].options.method, "POST");
+  assert.match(requests[2].url, /personalization_previews\.json$/);
+  assert.match(requests[3].url, /personalization_previews\/tasks\/task-id\.json$/);
+});
+
 test("order creation is locked until manual approval is explicitly confirmed", async () => {
   let calls = 0;
   const client = createPrintifyClient({

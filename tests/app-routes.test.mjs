@@ -12,6 +12,7 @@ import {
 test("maps public paths to app routes", () => {
   assert.deepEqual(routeFromLocation({ pathname: "/" }), { page: "shop", seriesId: null });
   assert.deepEqual(routeFromLocation({ pathname: "/studio" }), { page: "studio", seriesId: null });
+  assert.deepEqual(routeFromLocation({ pathname: "/preview" }), { page: "preview", seriesId: null });
   assert.deepEqual(routeFromLocation({ pathname: "/about/" }), { page: "about", seriesId: null });
   assert.deepEqual(routeFromLocation({ pathname: "/series/moire" }), { page: "series", seriesId: "sr0070" });
   assert.deepEqual(routeFromLocation({ pathname: "/studio/cut-ribbons" }), { page: "studio", seriesId: "sr0030" });
@@ -20,6 +21,7 @@ test("maps public paths to app routes", () => {
 test("creates canonical, shareable paths", () => {
   assert.equal(pathForRoute(routeForPage("shop")), "/");
   assert.equal(pathForRoute(routeForPage("about")), "/about");
+  assert.equal(pathForRoute(routeForPage("preview")), "/preview");
   assert.equal(pathForRoute(routeForPage("series", "sr0040")), "/series/loom");
   assert.equal(pathForRoute(routeForPage("studio", "sr0020")), "/studio/swatch");
 });
@@ -44,5 +46,6 @@ test("falls back safely for unknown and malformed paths", () => {
 test("provides route-specific document titles", () => {
   assert.equal(titleForRoute({ page: "series", seriesId: "sr0070" }), "Moiré Series — Haptique");
   assert.equal(titleForRoute({ page: "studio", seriesId: "sr0070" }), "Pattern Studio — Haptique");
+  assert.equal(titleForRoute({ page: "preview" }), "Tote Preview — Haptique");
 });
 

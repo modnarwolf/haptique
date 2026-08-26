@@ -14,6 +14,12 @@ const PERSISTED_FIELDS = Object.freeze([
   "quantity",
   "aspectRatio",
   "printSpec",
+  "mockupUrl",
+  "printifyProductId",
+  "printifyUploadId",
+  "printifyFulfillmentStrategy",
+  "personalizationStrategy",
+  "personalizationInstructions",
 ]);
 
 function isNonEmptyString(value) {
@@ -50,6 +56,12 @@ function sanitizeCartItem(item) {
     quantity: Math.max(1, Math.min(99, Math.round(Number(item.quantity) || 1))),
     aspectRatio: Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : 1,
     printSpec: item.printSpec && typeof item.printSpec === "object" ? { ...item.printSpec } : null,
+    mockupUrl: isNonEmptyString(item.mockupUrl) ? item.mockupUrl : undefined,
+    printifyProductId: isNonEmptyString(item.printifyProductId) ? item.printifyProductId : undefined,
+    printifyUploadId: isNonEmptyString(item.printifyUploadId) ? item.printifyUploadId : undefined,
+    printifyFulfillmentStrategy: isNonEmptyString(item.printifyFulfillmentStrategy) ? item.printifyFulfillmentStrategy : undefined,
+    personalizationStrategy: isNonEmptyString(item.personalizationStrategy) ? item.personalizationStrategy : undefined,
+    personalizationInstructions: isNonEmptyString(item.personalizationInstructions) ? item.personalizationInstructions : undefined,
   };
 }
 
