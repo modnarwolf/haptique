@@ -14,13 +14,13 @@ export const SITE_CONTENT = Object.freeze({
   ],
   shop: {
     heroEyebrow: "HAPTIQUE / SERIES",
-    heroTitle: ["One number.", "One pattern.", "A real thing."],
+    heroTitle: ["One shuffle.", "One pattern.", "A real thing."],
     heroSuffix: "Every piece begins in the browser, then gets made for you.",
     makeCta: "Make your own",
     seriesCta: "View the series",
     collectionEyebrow: "AVAILABLE NOW",
     collectionTitle: "Patterns with a physical life.",
-    collectionBody: "Each recipe is deterministic: return to the same number and the same composition returns with it.",
+    collectionBody: "Each recipe is deterministic: return to the same recipe and the same composition returns with it.",
     studioEyebrow: "THE PATTERN STUDIO / LIVE",
     studioTitle: ["Don’t just", "choose one.", "Find yours."],
     studioBody: (seriesName) => `Use ${seriesName} as your starting point, then change the recipe, palette, and structure. The Studio remembers every coordinate.`,
@@ -45,7 +45,7 @@ export const SITE_CONTENT = Object.freeze({
   studio: {
     eyebrow: "PATTERN STUDIO / LIVE",
     title: ["Find a pattern", "only you could find."],
-    intro: "Every recipe is a coordinate in the series. Change the number, palette, or structure. The same inputs always lead back to the same work.",
+    intro: "Every recipe is a coordinate in the series. Shuffle the composition, then shape its palette and structure. The same inputs always lead back to the same work.",
     curatedEyebrow: "CURATED RECIPES",
     curatedTitle: "Recipes worth returning to.",
   },
@@ -54,7 +54,7 @@ export const SITE_CONTENT = Object.freeze({
     title: ["Digital patterns", "want to be touched."],
     lede: "Haptique is a generative design studio and made-to-order shop. We build visual systems in code, give you the controls, then translate your chosen result into an object for everyday life.",
     manifesto: [
-      "Each series is a small world with its own rules. A recipe is not a limited edition number or a random label—it is the precise combination that lets the artwork exist again.",
+      "Each series is a small world with its own rules. A recipe is the precise combination of choices that lets the artwork exist again.",
       "Making only after an order means fewer speculative objects and more personal ones. Posters, stretched canvases, totes, and woven blankets are our first material vocabulary.",
     ],
     clothEyebrow: "A SMALL EASTER EGG",
