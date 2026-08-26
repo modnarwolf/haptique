@@ -32,8 +32,8 @@ function createPatternConfig(state) {
     seed: [state.seed, 0, 999999, 1],
     printSize: {
       preset: { type: "select", options: Object.keys(PRINT_PRESETS), default: state.printPreset },
-      width: [state.width, 100, 20000, 10],
-      height: [state.height, 100, 20000, 10],
+      width: [state.width, 100, 20000, 1],
+      height: [state.height, 100, 20000, 1],
       applyPrintSize: { type: "action", label: "Set print size" },
     },
     [paletteFolder]: {

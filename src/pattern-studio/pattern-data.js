@@ -1,3 +1,5 @@
+import { TOTE_AOP_MEDIUM_PRESET } from "./print-layouts.js";
+
 export const SERIES = {
   A: {
     name: "Block Grid",
@@ -145,6 +147,7 @@ export const PARAMS = {
 
 export const PRINT_PRESETS = {
   "Screen — 900 × 1200": [900, 1200],
+  [TOTE_AOP_MEDIUM_PRESET]: [2625, 5250],
   "Square @ 300 dpi — 3600 × 3600": [3600, 3600],
   "A4 @ 300 dpi — 2480 × 3508": [2480, 3508],
   "A3 @ 300 dpi — 3508 × 4961": [3508, 4961],

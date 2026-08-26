@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "verify:environments": "node scripts/verify-environments.mjs"
+    "verify:environments": "node scripts/verify-environments.mjs",
+    "verify:tote-layout": "node scripts/verify-tote-layout.mjs"
   },
   "dependencies": {
     "dialkit": "^1.4.3",

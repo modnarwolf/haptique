@@ -26,6 +26,10 @@ the two control panels.
 - Upload images, SVGs, bump maps, and HDR/EXR environment maps locally.
 - Export the rendered cloth as a PNG with or without a background, or export a
   flat pattern at its configured print dimensions.
+- The Medium Tote AOP print preset exports a 2625 × 5250 PNG. It expands a
+  2400 × 2280 face across the sheet width, mirrors it onto the second side, and
+  mirror-bleeds both faces through the center gusset so the fold has no blank
+  strip.
 
 ## Development
 

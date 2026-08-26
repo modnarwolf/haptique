@@ -1,4 +1,5 @@
 import { PatternPainter } from "./pattern-renderer.js";
+import { getMirroredToteGeometry, getPrintLayout } from "./print-layouts.js";
 
 const LIVE_TEXTURE_MAX_EDGE = 1600;
 
@@ -14,6 +15,70 @@ function canvasToBlob(canvas) {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Canvas export failed."))), "image/png");
   });
+}
+
+function drawImageVerticallyFlipped(context, image, source, destination) {
+  context.save();
+  context.translate(0, destination.y * 2 + destination.height);
+  context.scale(1, -1);
+  context.drawImage(
+    image,
+    source.x,
+    source.y,
+    source.width,
+    source.height,
+    destination.x,
+    destination.y,
+    destination.width,
+    destination.height,
+  );
+  context.restore();
+}
+
+export function composeMirroredTote(canvas, faceCanvas, geometry) {
+  const context = canvas.getContext("2d");
+  const { width, height, halfHeight, faceHeight, bleedHeight, bottomFaceY } = geometry;
+  context.save();
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(0, 0, width, height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+
+  context.drawImage(faceCanvas, 0, 0, faceCanvas.width, faceCanvas.height, 0, 0, width, faceHeight);
+  drawImageVerticallyFlipped(
+    context,
+    faceCanvas,
+    { x: 0, y: 0, width: faceCanvas.width, height: faceCanvas.height },
+    { x: 0, y: bottomFaceY, width, height: faceHeight },
+  );
+
+  if (bleedHeight > 0) {
+    const sourceBleedHeight = Math.min(faceCanvas.height, bleedHeight);
+    const sourceBleed = {
+      x: 0,
+      y: faceCanvas.height - sourceBleedHeight,
+      width: faceCanvas.width,
+      height: sourceBleedHeight,
+    };
+    drawImageVerticallyFlipped(
+      context,
+      faceCanvas,
+      sourceBleed,
+      { x: 0, y: faceHeight, width, height: bleedHeight },
+    );
+    context.drawImage(
+      faceCanvas,
+      sourceBleed.x,
+      sourceBleed.y,
+      sourceBleed.width,
+      sourceBleed.height,
+      0,
+      halfHeight,
+      width,
+      bleedHeight,
+    );
+  }
+  context.restore();
 }
 
 export class P5PatternEngine {
@@ -55,8 +120,27 @@ export class P5PatternEngine {
     const height = Math.max(1, Math.round(state.height * scale));
     if (this.p5.width !== width || this.p5.height !== height) this.p5.resizeCanvas(width, height, true);
     this.p5.clear();
-    this.painter.paint(this.p5, state, state.width, state.height, scale);
+    this.paintPrintLayout(this.p5, state, width, height, scale);
     this.onTextureUpdate?.(this.canvas, state.width, state.height, state);
+  }
+
+  paintPrintLayout(target, state, outputWidth, outputHeight, scale) {
+    const layout = getPrintLayout(state);
+    if (!layout || layout.type !== "mirrored-tote") {
+      this.painter.paint(target, state, state.width, state.height, scale);
+      return;
+    }
+
+    const geometry = getMirroredToteGeometry(layout, outputWidth, outputHeight);
+    const face = this.p5.createGraphics(geometry.width, geometry.faceHeight);
+    face.pixelDensity(1);
+    try {
+      const faceScale = geometry.width / layout.artworkWidth;
+      this.painter.paint(face, state, layout.artworkWidth, layout.artworkHeight, faceScale);
+      composeMirroredTote(target.canvas, face.canvas, geometry);
+    } finally {
+      face.remove();
+    }
   }
 
   async exportFlatPattern() {
@@ -66,11 +150,12 @@ export class P5PatternEngine {
     const graphics = this.p5.createGraphics(state.width, state.height);
     graphics.pixelDensity(1);
     try {
-      this.painter.paint(graphics, state, state.width, state.height, 1);
+      this.paintPrintLayout(graphics, state, state.width, state.height, 1);
       const blob = await canvasToBlob(graphics.canvas);
+      const layout = getPrintLayout(state);
       downloadBlob(
         blob,
-        `haptique-pattern-${state.series}-${String(state.seed).padStart(6, "0")}-${state.width}x${state.height}.png`,
+        `haptique-pattern-${state.series}-${String(state.seed).padStart(6, "0")}-${layout?.filenameLabel ? `${layout.filenameLabel}-` : ""}${state.width}x${state.height}.png`,
       );
     } finally {
       graphics.remove();
