@@ -135,9 +135,10 @@ exposes an image field before testing the browser flow.
 At preview time Haptique:
 
 1. validates the PNG signature and the selected provider's exact dimensions;
-2. uploads the artwork to Printify's Media Library;
-3. requests an asynchronous tote personalization preview when available, or
-   creates a customer-specific draft product for any configured product;
+2. derives a stable key from the design hash, product type, blueprint, provider,
+   and variant and reuses a matching custom draft product when one exists;
+3. otherwise uploads the artwork and requests an asynchronous tote
+   personalization preview or creates the customer-specific draft product;
 4. polls until Printify returns product mockups and displays every returned
    rendered view; and
 5. when Add to cart is selected, either creates the per-variant personalization
@@ -149,6 +150,32 @@ Personalization API preview they also retain `personalisation_strategy` and
 `personalisation_instructions`, which are submitted in the line item's nested
 `personalisation` object. Custom preview products fulfill directly by their
 customer-specific product ID.
+
+Custom preview products use a short product-type title, while their description
+is the exact `hq1_...` Haptique recipe. Before uploading artwork, the backend
+matches both fields plus the blueprint, provider, and variant, then reuses the
+existing product and upload IDs. Different objects, sizes, and tote handle
+colors cannot collide. Concurrent requests are coalesced using the internal
+stable SHA-256 key, and products created by the previous long-title format are
+still recognized.
+
+### Hosted preview API
+
+Production deployments expose the preview flow through three server functions:
+`POST /api/printify/product-preview`, `GET
+/api/printify/product-preview/status`, and `POST
+/api/printify/product-preview/finalize`. Preview state is carried in a signed,
+two-hour task token so polling and finalization work across separate serverless
+instances. The token is signed using a key derived from the server-only
+`PRINTIFY_API_TOKEN`; it never exposes that token to the browser.
+
+The production environment must define `PRINTIFY_API_TOKEN` and
+`PRINTIFY_SHOP_ID`. A least-privilege token for previews needs
+`products.read`, `products.write`, and `uploads.write`; order and webhook scopes
+are not required unless fulfillment features are also enabled. Vercel limits
+function request bodies to 4.5 MB, so production artwork exceeding that size
+will require direct temporary object-storage upload rather than another
+Printify credential.
 
 Pre-create products and variants whenever possible. Printify documents that
 on-the-fly product creation inside an order is slower and planned for

@@ -202,6 +202,10 @@ export function haptiqueCheckoutPlugin({
             .replace(/[^a-z0-9._-]/gi, "-")
             .slice(0, 120);
           const externalId = String(request.headers["x-haptique-preview-id"] ?? "").trim();
+          const designHash = String(request.headers["x-haptique-design-hash"] ?? "").trim();
+          if (!designHash || designHash.length > 500) {
+            throw new PrintifyPersonalizationError("A valid Haptique design hash is required");
+          }
           const printify = createPrintifyClient({ token: printifyApiToken, shopId: printifyShopId });
           const preview = await startProductPreview({
             printify,
@@ -215,6 +219,8 @@ export function haptiqueCheckoutPlugin({
             expectedWidth: format.width,
             expectedHeight: format.height,
             productName: product.name,
+            productId: product.id,
+            designHash,
             allowPersonalization: product.id === "tote",
             externalId: externalId || undefined,
           });

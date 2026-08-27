@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   PrintifyPersonalizationError,
   createImagePersonalizationItem,
+  createPreviewProductKey,
+  createPreviewProductTitle,
   finalizePersonalization,
   findPersonalizableProduct,
   productMockups,
@@ -102,6 +104,7 @@ test("falls back to a custom product mockup when the shop has no personalization
       },
     },
     artwork: pngHeader(),
+    designHash: "hq1_tote-design",
     externalId: "preview-2",
   });
   assert.equal(result.previewMode, "custom_product");
@@ -115,6 +118,7 @@ test("creates a custom Printify preview for a configured non-tote product", asyn
   let created;
   const result = await startProductPreview({
     printify: {
+      async listProducts() { return { data: [], last_page: 1 }; },
       async uploadImage() { return { id: "poster-upload" }; },
       async createProduct(body) {
         created = body;
@@ -132,6 +136,8 @@ test("creates a custom Printify preview for a configured non-tote product", asyn
     expectedWidth: 3600,
     expectedHeight: 4800,
     productName: "Art poster",
+    productId: "poster",
+    designHash: "hq1_poster-design",
     externalId: "preview-poster",
   });
 
@@ -140,6 +146,199 @@ test("creates a custom Printify preview for a configured non-tote product", asyn
   assert.equal(created.blueprint_id, 852);
   assert.equal(created.variants[0].id, 100780);
   assert.equal(created.print_areas[0].placeholders[0].images[0].id, "poster-upload");
+});
+
+test("stable preview keys distinguish product types and variants", () => {
+  const common = {
+    designHash: "hq1_same-design",
+    blueprintId: 852,
+    printProviderId: 73,
+    variantId: 100780,
+  };
+  const poster = createPreviewProductKey({ ...common, productId: "poster" });
+  const canvas = createPreviewProductKey({ ...common, productId: "canvas" });
+  const largerPoster = createPreviewProductKey({ ...common, productId: "poster", variantId: 76784 });
+
+  assert.equal(poster.length, 64);
+  assert.notEqual(poster, canvas);
+  assert.notEqual(poster, largerPoster);
+  assert.equal(createPreviewProductTitle({ ...common, productId: "poster" }), "Haptique preview — poster");
+});
+
+test("reuses the matching custom Printify product without another upload", async () => {
+  const products = [];
+  let uploads = 0;
+  let creations = 0;
+  const printify = {
+    shopId: "shop-1",
+    async listProducts() { return { data: products, last_page: 1 }; },
+    async retrieveProduct(productId) { return products.find((product) => product.id === productId); },
+    async uploadImage() {
+      uploads += 1;
+      return { id: "stable-upload" };
+    },
+    async createProduct(body) {
+      creations += 1;
+      const product = {
+        ...body,
+        id: "stable-product",
+        images: [{ src: "https://mockups.example/stable.jpg", variant_ids: [100780], position: "front" }],
+      };
+      products.push(product);
+      return product;
+    },
+  };
+  const options = {
+    printify,
+    artwork: pngHeader(3600, 4800),
+    blueprintId: 852,
+    printProviderId: 73,
+    variantId: 100780,
+    retailPrice: 3200,
+    expectedWidth: 3600,
+    expectedHeight: 4800,
+    productName: "Art poster",
+    productId: "poster",
+    designHash: "hq1_revisited-design",
+  };
+
+  const first = await startProductPreview(options);
+  const second = await startProductPreview(options);
+
+  assert.equal(first.reused, false);
+  assert.equal(second.reused, true);
+  assert.equal(products[0].title, "Haptique preview — poster");
+  assert.equal(products[0].description, options.designHash);
+  assert.equal(second.productId, first.productId);
+  assert.equal(second.uploadId, first.uploadId);
+  assert.equal(uploads, 1);
+  assert.equal(creations, 1);
+});
+
+test("the recipe description distinguishes designs that share a short title", async () => {
+  const products = [];
+  let creations = 0;
+  const printify = {
+    shopId: "shop-descriptions",
+    async listProducts() { return { data: products, last_page: 1 }; },
+    async retrieveProduct(productId) { return products.find((product) => product.id === productId); },
+    async uploadImage() { return { id: `upload-${creations + 1}` }; },
+    async createProduct(body) {
+      creations += 1;
+      const product = { ...body, id: `product-${creations}`, images: [] };
+      products.push(product);
+      return product;
+    },
+  };
+  const options = {
+    printify,
+    artwork: pngHeader(3600, 4800),
+    blueprintId: 852,
+    printProviderId: 73,
+    variantId: 100780,
+    retailPrice: 3200,
+    expectedWidth: 3600,
+    expectedHeight: 4800,
+    productName: "Art poster",
+    productId: "poster",
+  };
+
+  await startProductPreview({ ...options, designHash: "hq1_first-recipe" });
+  await startProductPreview({ ...options, designHash: "hq1_second-recipe" });
+
+  assert.equal(creations, 2);
+  assert.deepEqual(products.map(({ title, description }) => ({ title, description })), [
+    { title: "Haptique preview — poster", description: "hq1_first-recipe" },
+    { title: "Haptique preview — poster", description: "hq1_second-recipe" },
+  ]);
+});
+
+test("reuses products created with the previous long hash title", async () => {
+  const identity = {
+    designHash: "hq1_legacy-title-recipe",
+    productId: "poster",
+    blueprintId: 852,
+    printProviderId: 73,
+    variantId: 100780,
+  };
+  const legacyProduct = {
+    id: "legacy-product",
+    title: `Haptique preview v1 — poster — ${createPreviewProductKey(identity)}`,
+    description: "Customer-approved Haptique art poster artwork created through the product preview flow.",
+    blueprint_id: 852,
+    print_provider_id: 73,
+    variants: [{ id: 100780, is_enabled: true }],
+    print_areas: [{
+      variant_ids: [100780],
+      placeholders: [{ position: "front", images: [{ id: "legacy-upload" }] }],
+    }],
+    images: [],
+  };
+  let creations = 0;
+  const result = await startProductPreview({
+    printify: {
+      shopId: "shop-legacy",
+      async listProducts() { return { data: [legacyProduct], last_page: 1 }; },
+      async retrieveProduct() { return legacyProduct; },
+      async uploadImage() { throw new Error("legacy reuse should not upload"); },
+      async createProduct() { creations += 1; },
+    },
+    artwork: pngHeader(3600, 4800),
+    ...identity,
+    retailPrice: 3200,
+    expectedWidth: 3600,
+    expectedHeight: 4800,
+    productName: "Art poster",
+  });
+
+  assert.equal(result.reused, true);
+  assert.equal(result.productId, "legacy-product");
+  assert.equal(result.uploadId, "legacy-upload");
+  assert.equal(creations, 0);
+});
+
+test("coalesces simultaneous custom preview creation for the same stable key", async () => {
+  let uploads = 0;
+  let creations = 0;
+  const printify = {
+    shopId: "shop-concurrent",
+    async listProducts() { return { data: [], last_page: 1 }; },
+    async uploadImage() {
+      uploads += 1;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      return { id: "concurrent-upload" };
+    },
+    async createProduct(body) {
+      creations += 1;
+      return {
+        ...body,
+        id: "concurrent-product",
+        images: [{ src: "https://mockups.example/concurrent.jpg", variant_ids: [100780], position: "front" }],
+      };
+    },
+  };
+  const options = {
+    printify,
+    artwork: pngHeader(3600, 4800),
+    blueprintId: 852,
+    printProviderId: 73,
+    variantId: 100780,
+    retailPrice: 3200,
+    expectedWidth: 3600,
+    expectedHeight: 4800,
+    productName: "Art poster",
+    productId: "poster",
+    designHash: "hq1_concurrent-design",
+  };
+
+  const [first, second] = await Promise.all([
+    startProductPreview(options),
+    startProductPreview(options),
+  ]);
+
+  assert.equal(first.productId, second.productId);
+  assert.equal(uploads, 1);
+  assert.equal(creations, 1);
 });
 
 test("maps only mockups for the requested product variant", () => {

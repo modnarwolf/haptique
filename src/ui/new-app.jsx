@@ -17,6 +17,24 @@ const HERO_DURATION = 6500;
 const PAGE_TRANSITION_MS = 600;
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
+async function readApiPayload(response, fallbackMessage) {
+  const text = await response.text();
+  if (text) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      // Hosting error pages are HTML or plain text, not API responses.
+    }
+  }
+  if (response.status === 404) {
+    return { error: "Product preview is unavailable on this deployment." };
+  }
+  if (response.status === 413) {
+    return { error: "This production artwork is too large for the hosted preview service." };
+  }
+  return { error: fallbackMessage };
+}
+
 function FluidLogo({ onNavigate }) {
   const [index, setIndex] = React.useState(() => Math.floor(Math.random() * SITE_CONTENT.brand.logos.length));
   const timer = React.useRef(null);
@@ -480,7 +498,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
         headers: { Accept: "application/json" },
         signal: controller.signal,
       });
-      const payload = await response.json();
+      const payload = await readApiPayload(response, "Printify preview status is unavailable");
       if (!response.ok) throw new Error(payload.error || "Printify preview status is unavailable");
       if (payload.status === "completed") {
         setResult({ phase: "completed", message: "", preview: { ...preview, ...payload } });
@@ -507,6 +525,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
             "Content-Type": "image/png",
             "X-Haptique-Filename": draft.filename,
             "X-Haptique-Preview-Id": `haptique-${crypto.randomUUID()}`,
+            "X-Haptique-Design-Hash": draft.designHash,
             "X-Haptique-Product": draft.productId,
             "X-Haptique-Size": draft.size,
             ...(draft.handleColor ? { "X-Haptique-Handle-Color": draft.handleColor } : {}),
@@ -514,9 +533,9 @@ function PreviewPage({ draft, onBack, onAdd }) {
           body: draft.blob,
           signal: controller.signal,
         });
-        const payload = await response.json();
+        const payload = await readApiPayload(response, "Printify could not start the product preview");
         if (!response.ok || !payload.taskId) {
-          throw new Error("Printify could not start the product preview");
+          throw new Error(payload.error || "Printify could not start the product preview");
         }
         setResult({ phase: "rendering", message: "Printify is rendering your product mockups…", preview: payload });
         await poll(payload);
@@ -545,7 +564,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ taskId: result.preview.taskId }),
       });
-      const personalization = await response.json();
+      const personalization = await readApiPayload(response, "Personalization could not be saved");
       if (
         !response.ok
         || (
@@ -553,7 +572,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
           && !personalization.personalisationInstructions
         )
       ) {
-        throw new Error("Personalization could not be saved");
+        throw new Error(personalization.error || "Personalization could not be saved");
       }
       onAdd({
         lineId: crypto.randomUUID(),

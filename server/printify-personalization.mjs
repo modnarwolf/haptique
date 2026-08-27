@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 export const TOTE_ARTWORK_WIDTH = 2625;
 export const TOTE_ARTWORK_HEIGHT = 5250;
@@ -6,6 +6,9 @@ export const TOTE_BLUEPRINT_ID = 1389;
 export const TOTE_PRINT_PROVIDER_ID = 10;
 export const TOTE_VARIANT_ID = 103600;
 export const TOTE_RETAIL_PRICE = 3800;
+
+const PREVIEW_PRODUCT_KEY_VERSION = 1;
+const pendingCustomProducts = new Map();
 
 export class PrintifyPersonalizationError extends Error {
   constructor(message, status = 400) {
@@ -30,6 +33,41 @@ function requiredId(value, label) {
   const normalized = String(value ?? "").trim();
   if (!normalized) throw new PrintifyPersonalizationError(`${label} is missing`, 400);
   return normalized;
+}
+
+export function createPreviewProductKey({
+  designHash,
+  productId,
+  blueprintId,
+  printProviderId,
+  variantId,
+}) {
+  const recipe = requiredId(designHash, "Haptique design hash");
+  const type = requiredId(productId, "Haptique product type");
+  return createHash("sha256")
+    .update(JSON.stringify({
+      version: PREVIEW_PRODUCT_KEY_VERSION,
+      designHash: recipe,
+      productId: type,
+      blueprintId: Number(blueprintId),
+      printProviderId: Number(printProviderId),
+      variantId: Number(variantId),
+    }))
+    .digest("hex");
+}
+
+export function createPreviewProductTitle(options) {
+  const productId = requiredId(options?.productId, "Haptique product type")
+    .replace(/[^a-z0-9_-]/gi, "-")
+    .slice(0, 24);
+  return `Haptique preview — ${productId}`;
+}
+
+function createLegacyPreviewProductTitle(options) {
+  const productId = requiredId(options?.productId, "Haptique product type")
+    .replace(/[^a-z0-9_-]/gi, "-")
+    .slice(0, 24);
+  return `Haptique preview v${PREVIEW_PRODUCT_KEY_VERSION} — ${productId} — ${createPreviewProductKey(options)}`;
 }
 
 export function createImagePersonalizationItem(fieldId, imageId) {
@@ -60,12 +98,121 @@ function supportsVariant(product, variantId) {
 
 async function listAllProducts(printify) {
   const products = [];
-  for (let page = 1; page <= 10; page += 1) {
+  for (let page = 1; page <= 100; page += 1) {
     const response = await printify.listProducts({ page, limit: 50 });
     products.push(...(response.data ?? []));
     if (!response.next_page_url && page >= Number(response.last_page ?? 1)) break;
   }
   return products;
+}
+
+function productUploadId(product, variantId) {
+  for (const area of product?.print_areas ?? []) {
+    const areaVariants = area?.variant_ids ?? [];
+    if (areaVariants.length && !areaVariants.includes(Number(variantId))) continue;
+    for (const placeholder of area?.placeholders ?? []) {
+      const upload = (placeholder?.images ?? []).find((image) => image?.id);
+      if (upload) return String(upload.id);
+    }
+  }
+  return "";
+}
+
+async function findReusableCustomProduct({
+  printify,
+  title,
+  legacyTitle,
+  designHash,
+  blueprintId,
+  printProviderId,
+  variantId,
+}) {
+  const products = await listAllProducts(printify);
+  const candidates = products.filter((product) => (
+    (
+      (product?.title === title && String(product?.description ?? "").trim() === designHash)
+      || product?.title === legacyTitle
+    )
+    && Number(product.blueprint_id) === Number(blueprintId)
+    && Number(product.print_provider_id) === Number(printProviderId)
+    && supportsVariant(product, variantId)
+  ));
+
+  for (const candidate of candidates) {
+    const product = await printify.retrieveProduct(candidate.id);
+    if (
+      !(
+        (product?.title === title && String(product?.description ?? "").trim() === designHash)
+        || product?.title === legacyTitle
+      )
+      || Number(product.blueprint_id) !== Number(blueprintId)
+      || Number(product.print_provider_id) !== Number(printProviderId)
+      || !supportsVariant(product, variantId)
+    ) continue;
+    const uploadId = productUploadId(product, variantId);
+    if (uploadId) return { product, uploadId };
+  }
+  return null;
+}
+
+async function reuseOrCreateCustomProduct({
+  printify,
+  title,
+  legacyTitle,
+  identityKey,
+  description,
+  artwork,
+  fileName,
+  blueprintId,
+  printProviderId,
+  variantId,
+  retailPrice,
+}) {
+  const operationKey = `${printify.shopId ?? "shop"}:${identityKey}`;
+  const pending = pendingCustomProducts.get(operationKey);
+  if (pending) return pending;
+
+  const operation = (async () => {
+    const reusable = await findReusableCustomProduct({
+      printify,
+      title,
+      legacyTitle,
+      designHash: description,
+      blueprintId,
+      printProviderId,
+      variantId,
+    });
+    if (reusable) return { ...reusable, reused: true };
+
+    const upload = await printify.uploadImage({
+      fileName,
+      contents: artwork.toString("base64"),
+    });
+    const product = await printify.createProduct({
+      title,
+      description,
+      blueprint_id: Number(blueprintId),
+      print_provider_id: Number(printProviderId),
+      variants: [{ id: Number(variantId), price: Number(retailPrice), is_enabled: true, is_default: true }],
+      print_areas: [{
+        variant_ids: [Number(variantId)],
+        placeholders: [{
+          position: "front",
+          images: [{ id: upload.id, x: 0.5, y: 0.5, scale: 1, angle: 0 }],
+        }],
+      }],
+    });
+    return { product, uploadId: upload.id, reused: false };
+  })();
+
+  pendingCustomProducts.set(operationKey, operation);
+  try {
+    return await operation;
+  } finally {
+    if (pendingCustomProducts.get(operationKey) === operation) {
+      pendingCustomProducts.delete(operationKey);
+    }
+  }
 }
 
 export async function findPersonalizableProduct({
@@ -108,6 +255,8 @@ export async function startProductPreview({
   expectedWidth,
   expectedHeight,
   productName = "product",
+  productId,
+  designHash,
   allowPersonalization = false,
   externalId = `haptique-${randomUUID()}`,
 }) {
@@ -132,25 +281,28 @@ export async function startProductPreview({
       if (!(error instanceof PrintifyPersonalizationError) || error.status !== 503) throw error;
     }
   }
-  const upload = await printify.uploadImage({
-    fileName,
-    contents: artwork.toString("base64"),
-  });
-
   if (!template) {
-    const product = await printify.createProduct({
-      title: `Haptique preview — ${externalId}`.slice(0, 120),
-      description: `Customer-approved Haptique ${productName.toLowerCase()} artwork created through the product preview flow.`,
-      blueprint_id: Number(blueprintId),
-      print_provider_id: Number(printProviderId),
-      variants: [{ id: Number(variantId), price: Number(retailPrice), is_enabled: true, is_default: true }],
-      print_areas: [{
-        variant_ids: [Number(variantId)],
-        placeholders: [{
-          position: "front",
-          images: [{ id: upload.id, x: 0.5, y: 0.5, scale: 1, angle: 0 }],
-        }],
-      }],
+    const identity = {
+      designHash,
+      productId,
+      blueprintId,
+      printProviderId,
+      variantId,
+    };
+    const identityKey = createPreviewProductKey(identity);
+    const title = createPreviewProductTitle(identity);
+    const { product, uploadId, reused } = await reuseOrCreateCustomProduct({
+      printify,
+      title,
+      legacyTitle: createLegacyPreviewProductTitle(identity),
+      identityKey,
+      description: requiredId(designHash, "Haptique design hash"),
+      artwork,
+      fileName,
+      blueprintId,
+      printProviderId,
+      variantId,
+      retailPrice,
     });
     const mockups = productMockups(product, variantId);
     return {
@@ -160,12 +312,17 @@ export async function startProductPreview({
       previewMode: "custom_product",
       productId: product.id,
       variantId,
-      uploadId: upload.id,
+      uploadId,
+      reused,
       mockups,
       preview_count: mockups.length,
     };
   }
 
+  const upload = await printify.uploadImage({
+    fileName,
+    contents: artwork.toString("base64"),
+  });
   const item = createImagePersonalizationItem(template.imageField.field_id, upload.id);
   const preview = await printify.requestPersonalizationPreview(template.product.id, {
     external_id: externalId,
@@ -191,6 +348,7 @@ export function startTotePersonalizationPreview({
   artwork,
   fileName = "haptique-tote.png",
   variantId = TOTE_VARIANT_ID,
+  designHash,
   externalId,
 }) {
   return startProductPreview({
@@ -205,6 +363,8 @@ export function startTotePersonalizationPreview({
     expectedWidth: TOTE_ARTWORK_WIDTH,
     expectedHeight: TOTE_ARTWORK_HEIGHT,
     productName: "Everyday tote",
+    productId: "tote",
+    designHash,
     allowPersonalization: true,
     externalId,
   });
