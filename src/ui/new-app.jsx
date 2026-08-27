@@ -82,6 +82,52 @@ function CuratedRecipePreview({ item }) {
   return <PatternCanvas state={previewState} className="curated-thumbnail" />;
 }
 
+function useCuratedRecipes(seriesId) {
+  const [curated, setCurated] = React.useState([]);
+
+  React.useEffect(() => {
+    let canceled = false;
+    setCurated([]);
+    fetch("/textures/curated/curated_list.json")
+      .then((response) => {
+        if (!response.ok) throw new Error("Curated recipes are unavailable");
+        return response.json();
+      })
+      .then((data) => {
+        if (!canceled) setCurated(data.series?.[seriesId] ?? []);
+      })
+      .catch(() => {
+        if (!canceled) setCurated([]);
+      });
+    return () => { canceled = true; };
+  }, [seriesId]);
+
+  return curated;
+}
+
+function CuratedRecipesSection({ items, onSelect, activeSeed, className = "" }) {
+  if (!items.length) return null;
+  const copy = SITE_CONTENT.studio;
+  return (
+    <section className={`curated-section ${className}`.trim()}>
+      <div><p className="index-label">{copy.curatedEyebrow}</p><h2>{copy.curatedTitle}</h2></div>
+      <div className="curated-row">
+        {items.slice(0, 12).map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onSelect(item)}
+            className={activeSeed !== undefined && decodeSafeSeed(item.hash) === activeSeed ? "is-active" : ""}
+            aria-label={`Open ${item.name} in the Pattern Studio`}
+          >
+            <CuratedRecipePreview item={item} />
+            <span>{item.name.replace("Edition ", "")}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ShopPage({ onOpenStudio, onOpenSeries }) {
   const copy = SITE_CONTENT.shop;
   const [seriesIndex, setSeriesIndex] = React.useState(() => Math.floor(Math.random() * CAMPAIGN_SERIES.length));
@@ -169,6 +215,7 @@ function ShopPage({ onOpenStudio, onOpenSeries }) {
 
 function SeriesPage({ series, onOpenStudio }) {
   const copy = SITE_CONTENT.seriesPage;
+  const curated = useCuratedRecipes(series.id);
   const colors = series.productColors ?? ["#aaa", "#bbb", "#999", "#ccc"];
   const suggestedSeries = React.useMemo(() => {
     const choices = SERIES.filter((item) => item.id !== series.id);
@@ -209,6 +256,11 @@ function SeriesPage({ series, onOpenStudio }) {
           ))}
         </div>
       </section>
+      <CuratedRecipesSection
+        items={curated}
+        onSelect={(item) => onOpenStudio(series.id, item.hash)}
+        className="series-curated-section"
+      />
       <section className="next-series" aria-label="Suggested series">
         <div className="next-series-copy">
           <p className="index-label">{copy.nextEyebrow} {suggestedNumber}</p>
@@ -234,7 +286,7 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
   const [product, setProduct] = React.useState(() => PRODUCT_TYPES.find((item) => item.id === "tote") ?? PRODUCT_TYPES[0]);
   const [size, setSize] = React.useState(() => (PRODUCT_TYPES.find((item) => item.id === "tote") ?? PRODUCT_TYPES[0]).sizes[0]);
   const [handleColor, setHandleColor] = React.useState("Black");
-  const [curated, setCurated] = React.useState([]);
+  const curated = useCuratedRecipes(state.seriesId);
   const [shareInput, setShareInput] = React.useState("");
   const [shareStatus, setShareStatus] = React.useState("");
   const [advancedOpen, setAdvancedOpen] = React.useState(false);
@@ -245,10 +297,6 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
   const isTote = product.id === "tote";
   const shareCode = encodePatternShare(createPatternSnapshot(state));
   const shareUrl = typeof window === "undefined" ? "" : createPatternShareUrl(shareCode);
-
-  React.useEffect(() => {
-    fetch("/textures/curated/curated_list.json").then((response) => response.json()).then((data) => setCurated(data.series?.[state.seriesId] ?? [])).catch(() => setCurated([]));
-  }, [state.seriesId]);
 
   React.useEffect(() => setSize(product.sizes[Math.min(1, product.sizes.length - 1)]), [product]);
 
@@ -409,7 +457,7 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
           <button className="add-button mobile-add-button" onClick={previewProduct} disabled={previewing}><span>{previewing ? "Preparing preview…" : "Preview product"}</span><strong>{money.format(productPrice(product.id, size))}</strong></button>
         </div>
       </div>
-      <section className="curated-section"><div><p className="index-label">{copy.curatedEyebrow}</p><h2>{copy.curatedTitle}</h2></div><div className="curated-row">{curated.slice(0, 12).map((item) => <button key={item.id} onClick={() => selectCurated(item)} className={decodeSafeSeed(item.hash) === state.seed ? "is-active" : ""}><CuratedRecipePreview item={item} /><span>{item.name.replace("Edition ", "")}</span></button>)}</div></section>
+      <CuratedRecipesSection items={curated} onSelect={selectCurated} activeSeed={state.seed} />
     </main>
   );
 }
@@ -872,8 +920,15 @@ export function HaptiqueApp() {
       window.requestAnimationFrame(() => window.requestAnimationFrame(() => setPageTransition("idle")));
     }, PAGE_TRANSITION_MS);
   };
-  const openStudio = (seriesId) => {
-    setPatternState((current) => ({ ...current, seriesId }));
+  const openStudio = (seriesId, recipeHash) => {
+    setPatternState((current) => {
+      if (!recipeHash) return { ...current, seriesId };
+      try {
+        return applyPatternSnapshot(current, decodePatternShare(recipeHash));
+      } catch {
+        return { ...current, seriesId };
+      }
+    });
     navigate("studio", seriesId);
   };
   const openSeries = (seriesId) => {
