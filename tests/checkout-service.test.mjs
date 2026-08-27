@@ -10,6 +10,9 @@ const validItem = {
   designHash: "hptq_test_design_hash",
   seed: 42,
   seriesName: "Loom",
+  printifyProductId: "custom-poster",
+  printifyUploadId: "upload-id",
+  printifyFulfillmentStrategy: "custom_product",
 };
 
 test("checkout derives authoritative price and Printify variant server-side", () => {
@@ -69,8 +72,14 @@ test("checkout rejects invalid quantities and missing design hashes", () => {
 });
 
 test("tote checkout requires Printify personalization instructions from preview", () => {
+  const {
+    printifyProductId,
+    printifyUploadId,
+    printifyFulfillmentStrategy,
+    ...unapprovedItem
+  } = validItem;
   const tote = {
-    ...validItem,
+    ...unapprovedItem,
     productId: "tote",
     size: "16 × 16 in",
   };
@@ -94,4 +103,21 @@ test("tote checkout requires Printify personalization instructions from preview"
   }]);
   assert.equal(customProductLine.printifyFulfillmentStrategy, "custom_product");
   assert.equal(customProductLine.personalizationInstructions, undefined);
+});
+
+test("tote checkout resolves the selected handle color variant", () => {
+  const [line] = validateCheckoutItems([{
+    ...validItem,
+    productId: "tote",
+    productName: "Everyday tote",
+    size: "16 × 16 in",
+    handleColor: "Red",
+    printifyProductId: "custom-red-tote",
+  }]);
+  assert.equal(line.handleColor, "Red");
+  assert.equal(line.printifyVariantId, 103603);
+  assert.throws(
+    () => validateCheckoutItems([{ ...validItem, productId: "tote", size: "16 × 16 in", handleColor: "Green" }]),
+    CheckoutValidationError,
+  );
 });

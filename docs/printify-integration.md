@@ -101,14 +101,23 @@ token in Vite variables, browser storage, client JavaScript, or source control.
 6. Signed Printify webhooks update production, shipment, tracking, and delivery
    state in Haptique. Webhook handlers must be idempotent.
 
-## Tote personalization preview
+## Product previews and tote personalization
 
-The tote now follows a strict `studio → preview → add to cart` path. Studio
+Every product now follows a strict `studio → preview → add to cart` path. Studio
 continues to render the editable, single-face Haptique series. Only after
-`Preview product` is selected does Haptique privately create the Medium Tote
+`Preview product` is selected does Haptique privately create the selected
+provider's exact production artwork. Posters and canvases use their configured
+300 DPI print areas. Woven blankets stay vertical in the Pattern Studio, then
+their hidden production sheets rotate 90 degrees clockwise into the provider's
+landscape weaving area,
+and the Medium Tote uses an
 AOP production sheet at exactly 2625 × 5250 px: a 2400 × 2280 pattern face is
 scaled to the sheet width, mirrored onto the second face, and reflected through
 the 131 px center-gusset bleed. That PNG is never displayed to the customer.
+
+The 16 × 16 in tote supports Black, Beige, White, Red, and Navy handles. Each
+selection resolves to its own Printify variant so mockup generation and
+fulfillment use the same handle color.
 
 When the shop contains a Tote Bag AOP product with a personalizable image
 layer, Haptique discovers the matching blueprint/provider/variant and uses the
@@ -116,7 +125,7 @@ Personalization Preview API. Because Printify custom-integration shops may not
 expose automated personalization fields, Haptique automatically falls back to
 the documented Uploads + Products flow: it creates a customer-specific draft
 product with the print-ready image and polls that product for generated mockup
-images. In either mode,
+images. In either tote mode,
 `PRINTIFY_TOTE_PERSONALIZATION_PRODUCT_ID` is only an optional override when a
 shop has more than one matching template. Automated personalization layers must
 be configured when the product is created. Run
@@ -125,16 +134,17 @@ exposes an image field before testing the browser flow.
 
 At preview time Haptique:
 
-1. validates the PNG signature and exact 2625 × 5250 dimensions;
+1. validates the PNG signature and the selected provider's exact dimensions;
 2. uploads the artwork to Printify's Media Library;
-3. requests an asynchronous personalization preview, or creates a draft custom
-   product when no personalization field exists;
-4. polls until Printify returns product mockups and displays at most three
-   rendered views; and
+3. requests an asynchronous tote personalization preview when available, or
+   creates a customer-specific draft product for any configured product;
+4. polls until Printify returns product mockups and displays every returned
+   rendered view; and
 5. when Add to cart is selected, either creates the per-variant personalization
    configuration or retains the customer-specific product ID for fulfillment.
 
-The cart and paid-order record retain Printify's product and upload IDs. For a
+The cart and paid-order record retain Printify's product and upload IDs for
+every product. For a
 Personalization API preview they also retain `personalisation_strategy` and
 `personalisation_instructions`, which are submitted in the line item's nested
 `personalisation` object. Custom preview products fulfill directly by their

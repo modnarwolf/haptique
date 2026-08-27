@@ -5,6 +5,7 @@ import {
   CART_STORAGE_KEY,
   createStoredCart,
   loadStoredCart,
+  primaryMockupUrl,
   storeCart,
 } from "../src/cart/cart-storage.js";
 
@@ -44,6 +45,19 @@ test("restores cart items after a page round-trip", () => {
   const storage = memoryStorage();
   assert.equal(storeCart([item], storage), true);
   assert.deepEqual(loadStoredCart(storage), [createStoredCart([item]).items[0]]);
+});
+
+test("persists the selected tote handle color", () => {
+  const payload = createStoredCart([{ ...item, productId: "tote", handleColor: "Navy" }]);
+  assert.equal(payload.items[0].handleColor, "Navy");
+});
+
+test("uses the first generated mockup as the cart thumbnail", () => {
+  const mockups = [
+    { src: "https://mockups.example/first.jpg" },
+    { src: "https://mockups.example/currently-selected.jpg" },
+  ];
+  assert.equal(primaryMockupUrl(mockups), mockups[0].src);
 });
 
 test("rejects malformed payloads and clamps unsafe quantities", () => {

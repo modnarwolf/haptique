@@ -8,6 +8,7 @@ import {
   findPersonalizableProduct,
   productMockups,
   readPngDimensions,
+  startProductPreview,
   startTotePersonalizationPreview,
 } from "../server/printify-personalization.mjs";
 
@@ -108,6 +109,37 @@ test("falls back to a custom product mockup when the shop has no personalization
   assert.equal(result.mockups[0].src, "https://mockups.example/tote.jpg");
   assert.equal(created.print_areas[0].placeholders[0].images[0].id, "upload-id");
   assert.equal(created.variants[0].id, 103600);
+});
+
+test("creates a custom Printify preview for a configured non-tote product", async () => {
+  let created;
+  const result = await startProductPreview({
+    printify: {
+      async uploadImage() { return { id: "poster-upload" }; },
+      async createProduct(body) {
+        created = body;
+        return {
+          id: "custom-poster",
+          images: [{ src: "https://mockups.example/poster.jpg", variant_ids: [100780], position: "front" }],
+        };
+      },
+    },
+    artwork: pngHeader(3600, 4800),
+    blueprintId: 852,
+    printProviderId: 73,
+    variantId: 100780,
+    retailPrice: 3200,
+    expectedWidth: 3600,
+    expectedHeight: 4800,
+    productName: "Art poster",
+    externalId: "preview-poster",
+  });
+
+  assert.equal(result.productId, "custom-poster");
+  assert.equal(result.previewMode, "custom_product");
+  assert.equal(created.blueprint_id, 852);
+  assert.equal(created.variants[0].id, 100780);
+  assert.equal(created.print_areas[0].placeholders[0].images[0].id, "poster-upload");
 });
 
 test("maps only mockups for the requested product variant", () => {

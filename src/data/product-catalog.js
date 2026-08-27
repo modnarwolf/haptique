@@ -15,6 +15,11 @@ export const PRODUCT_TYPES = [
         "18 × 24 in": 76784,
         "24 × 36 in": 76787,
       },
+      printDimensions: {
+        "12 × 16 in": { width: 3600, height: 4800 },
+        "18 × 24 in": { width: 5400, height: 7200 },
+        "24 × 36 in": { width: 7200, height: 10800 },
+      },
     },
   },
   {
@@ -33,6 +38,11 @@ export const PRODUCT_TYPES = [
         "18 × 24 in": 82232,
         "24 × 32 in": 82234,
       },
+      printDimensions: {
+        "12 × 16 in": { width: 3600, height: 4800 },
+        "18 × 24 in": { width: 5400, height: 7200 },
+        "24 × 32 in": { width: 7200, height: 9600 },
+      },
     },
   },
   {
@@ -43,11 +53,23 @@ export const PRODUCT_TYPES = [
     sizes: ["16 × 16 in"],
     prices: [38],
     dpi: 150,
+    handleColors: ["Black", "Beige", "White", "Red", "Navy"],
+    defaultHandleColor: "Black",
     printify: {
       blueprintId: 1389,
       printProviderId: 10,
       variantIds: {
         "16 × 16 in": 103600,
+      },
+      variantIdsByHandleColor: {
+        Black: { "16 × 16 in": 103600 },
+        Beige: { "16 × 16 in": 103609 },
+        White: { "16 × 16 in": 103606 },
+        Red: { "16 × 16 in": 103603 },
+        Navy: { "16 × 16 in": 103612 },
+      },
+      printDimensions: {
+        "16 × 16 in": { width: 2625, height: 5250 },
       },
     },
   },
@@ -67,6 +89,11 @@ export const PRODUCT_TYPES = [
         "50 × 60 in": 112795,
         "60 × 80 in": 112796,
       },
+      printDimensions: {
+        "37 × 52 in": { width: 4992, height: 3552 },
+        "50 × 60 in": { width: 5760, height: 4800 },
+        "60 × 80 in": { width: 7680, height: 5760 },
+      },
     },
   },
 ];
@@ -77,6 +104,16 @@ export function productPrice(productId, size) {
   return product.prices[index] ?? product.prices[0];
 }
 
+export function getProductVariantId(productId, size, { handleColor } = {}) {
+  const product = PRODUCT_TYPES.find((item) => item.id === productId);
+  if (!product || !product.sizes.includes(size)) return undefined;
+  if (product.id !== "tote") return product.printify.variantIds[size];
+  const color = product.handleColors.includes(handleColor)
+    ? handleColor
+    : product.defaultHandleColor;
+  return product.printify.variantIdsByHandleColor[color]?.[size];
+}
+
 export function getProductFormat(productId, size) {
   const product = PRODUCT_TYPES.find((item) => item.id === productId) ?? PRODUCT_TYPES[0];
   const selectedSize = product.sizes.includes(size) ? size : product.sizes[0];
@@ -84,8 +121,12 @@ export function getProductFormat(productId, size) {
   const widthIn = Number(match?.[1] ?? 12);
   const heightIn = Number(match?.[2] ?? 16);
   const isTote = product.id === "tote";
-  const width = isTote ? 2625 : Math.round(widthIn * product.dpi);
-  const height = isTote ? 5250 : Math.round(heightIn * product.dpi);
+  const printDimensions = product.printify.printDimensions?.[selectedSize];
+  const width = printDimensions?.width ?? Math.round(widthIn * product.dpi);
+  const height = printDimensions?.height ?? Math.round(heightIn * product.dpi);
+  const rotatesForPrint = product.id === "blanket";
+  const artworkWidth = isTote ? 2400 : rotatesForPrint ? height : width;
+  const artworkHeight = isTote ? 2280 : rotatesForPrint ? width : height;
   return {
     productId: product.id,
     size: selectedSize,
@@ -94,8 +135,8 @@ export function getProductFormat(productId, size) {
     width,
     height,
     dpi: product.dpi,
-    aspectRatio: isTote ? 1 : widthIn / heightIn,
-    artworkWidth: isTote ? 2400 : width,
-    artworkHeight: isTote ? 2280 : height,
+    aspectRatio: isTote ? 1 : artworkWidth / artworkHeight,
+    artworkWidth,
+    artworkHeight,
   };
 }

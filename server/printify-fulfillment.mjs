@@ -54,10 +54,15 @@ export async function createPrintifyMockOrderForPaidCheckout({
   const { firstName, lastName } = splitName(shipping?.name ?? customer?.name);
   const lineItems = order.items.map((item, index) => {
     const product = catalog.products[item.productId];
-    const variantId = product?.variants?.[item.size];
-    const previewProductId = item.productId === "tote" ? item.printifyProductId : null;
+    const catalogVariantId = product?.variants?.[item.size];
+    const previewProductId = item.printifyProductId || null;
     const resolvedProductId = previewProductId || product?.productId;
-    if (!resolvedProductId || !variantId || variantId !== item.printifyVariantId) {
+    const resolvedVariantId = previewProductId ? item.printifyVariantId : catalogVariantId;
+    if (
+      !resolvedProductId
+      || !resolvedVariantId
+      || (!previewProductId && catalogVariantId !== item.printifyVariantId)
+    ) {
       throw new PrintifyFulfillmentError(
         `Printify catalog is out of date for ${item.productId} ${item.size}`,
         503,
@@ -65,7 +70,7 @@ export async function createPrintifyMockOrderForPaidCheckout({
     }
     const lineItem = {
       product_id: resolvedProductId,
-      variant_id: variantId,
+      variant_id: resolvedVariantId,
       quantity: item.quantity,
       external_id: `${order.checkoutId}-${index + 1}`,
     };

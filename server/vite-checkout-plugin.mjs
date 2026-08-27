@@ -1,5 +1,11 @@
 import { resolve } from "node:path";
 
+import {
+  PRODUCT_TYPES,
+  getProductFormat,
+  getProductVariantId,
+  productPrice,
+} from "../src/data/product-catalog.js";
 import { createCheckoutForCart, CheckoutValidationError } from "./checkout-service.mjs";
 import { createJsonOrderStore, OrderStoreError } from "./order-store.mjs";
 import { loadPrintifyCatalog, PrintifyCatalogError } from "./printify-catalog.mjs";
@@ -8,7 +14,7 @@ import {
   finalizePersonalization,
   productMockups,
   PrintifyPersonalizationError,
-  startTotePersonalizationPreview,
+  startProductPreview,
 } from "./printify-personalization.mjs";
 import {
   createPrintifyMockOrderForPaidCheckout,
@@ -164,27 +170,55 @@ export function haptiqueCheckoutPlugin({
           return;
         }
         try {
-          const product = String(request.headers["x-haptique-product"] ?? "").trim();
+          const productId = String(request.headers["x-haptique-product"] ?? "").trim();
           const size = String(request.headers["x-haptique-size"] ?? "").trim();
-          if (product !== "tote" || size !== "16 × 16 in") {
+          const product = PRODUCT_TYPES.find((candidate) => candidate.id === productId);
+          if (!product || !product.sizes.includes(size)) {
             throw new PrintifyPersonalizationError("Product preview is not available for this selection");
+          }
+          const requestedHandleColor = String(request.headers["x-haptique-handle-color"] ?? "").trim();
+          if (
+            product.id === "tote"
+            && requestedHandleColor
+            && !product.handleColors.includes(requestedHandleColor)
+          ) {
+            throw new PrintifyPersonalizationError("The selected tote handle color is not available");
+          }
+          const handleColor = product.id === "tote"
+            ? (product.handleColors.includes(requestedHandleColor)
+                ? requestedHandleColor
+                : product.defaultHandleColor)
+            : undefined;
+          const variantId = getProductVariantId(product.id, size, { handleColor });
+          const format = getProductFormat(product.id, size);
+          if (!variantId) {
+            throw new PrintifyPersonalizationError("A Printify variant is not configured for this selection");
           }
           if (!String(request.headers["content-type"] ?? "").startsWith("image/png")) {
             throw new PrintifyPersonalizationError("Product preview artwork must be sent as image/png");
           }
-          const artwork = await readBody(request, 30_000_000);
-          const fileName = String(request.headers["x-haptique-filename"] ?? "haptique-tote.png")
+          const artwork = await readBody(request, 100_000_000);
+          const fileName = String(request.headers["x-haptique-filename"] ?? `haptique-${product.id}.png`)
             .replace(/[^a-z0-9._-]/gi, "-")
             .slice(0, 120);
           const externalId = String(request.headers["x-haptique-preview-id"] ?? "").trim();
           const printify = createPrintifyClient({ token: printifyApiToken, shopId: printifyShopId });
-          const preview = await startTotePersonalizationPreview({
+          const preview = await startProductPreview({
             printify,
-            configuredProductId: printifyTotePersonalizationProductId,
+            configuredProductId: product.id === "tote" ? printifyTotePersonalizationProductId : undefined,
             artwork,
             fileName,
+            blueprintId: product.printify.blueprintId,
+            printProviderId: product.printify.printProviderId,
+            variantId,
+            retailPrice: Math.round(productPrice(product.id, size) * 100),
+            expectedWidth: format.width,
+            expectedHeight: format.height,
+            productName: product.name,
+            allowPersonalization: product.id === "tote",
             externalId: externalId || undefined,
           });
+          preview.handleColor = handleColor;
           previewSessions.set(preview.taskId, {
             productId: preview.productId,
             variantId: preview.variantId,

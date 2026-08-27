@@ -1,11 +1,11 @@
 import * as React from "react";
 import { ArrowUpRight, Check, Copy, Dices, Download, FolderOpen, Link2, Menu, Minus, Plus, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
-import { loadStoredCart, storeCart } from "../cart/cart-storage.js";
+import { loadStoredCart, primaryMockupUrl, storeCart } from "../cart/cart-storage.js";
 import { PRODUCT_TYPES, getProductFormat, productPrice } from "../data/product-catalog.js";
 import { CAMPAIGN_SERIES, CAMPAIGN_SERIES_BY_ID, SITE_CONTENT } from "../data/site-content.js";
 import { createDefaultPatternState, getPalette, SERIES } from "../pattern-studio/pattern-data.js";
 import { P5PatternEngine } from "../pattern-studio/p5-pattern-engine.js";
-import { TOTE_AOP_MEDIUM_PRESET } from "../pattern-studio/print-layouts.js";
+import { getProductPrintPreset } from "../pattern-studio/print-layouts.js";
 import { applyPatternSnapshot, createPatternShareUrl, createPatternSnapshot, decodePatternShare, encodePatternShare } from "../pattern-studio/pattern-share.js";
 import { hasDesignHash, pathForRoute, routeForPage, routeFromLocation, titleForRoute } from "../routing/app-routes.js";
 
@@ -15,7 +15,6 @@ const LazyClothExperience = React.lazy(() =>
 
 const HERO_DURATION = 6500;
 const PAGE_TRANSITION_MS = 600;
-const MAX_PRODUCT_MOCKUPS = 3;
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 function FluidLogo({ onNavigate }) {
@@ -234,6 +233,7 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
   const [previewStatus, setPreviewStatus] = React.useState("");
   const [product, setProduct] = React.useState(() => PRODUCT_TYPES.find((item) => item.id === "tote") ?? PRODUCT_TYPES[0]);
   const [size, setSize] = React.useState(() => (PRODUCT_TYPES.find((item) => item.id === "tote") ?? PRODUCT_TYPES[0]).sizes[0]);
+  const [handleColor, setHandleColor] = React.useState("Black");
   const [curated, setCurated] = React.useState([]);
   const [shareInput, setShareInput] = React.useState("");
   const [shareStatus, setShareStatus] = React.useState("");
@@ -251,6 +251,12 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
   }, [state.seriesId]);
 
   React.useEffect(() => setSize(product.sizes[Math.min(1, product.sizes.length - 1)]), [product]);
+
+  React.useEffect(() => {
+    if (product.id === "tote" && !product.handleColors.includes(handleColor)) {
+      setHandleColor(product.defaultHandleColor);
+    }
+  }, [handleColor, product]);
 
   React.useEffect(() => {
     const studioWidth = format.artworkWidth ?? format.width;
@@ -332,19 +338,20 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
   };
   const previewProduct = async () => {
     if (!engine.current || previewing) return;
-    if (product.id !== "tote") {
-      setPreviewStatus(`${product.name} previews are not connected yet.`);
-      return;
-    }
     setPreviewing(true);
     setPreviewStatus("Preparing your product preview…");
     try {
-      const artwork = await engine.current.createProductArtworkBlob({
-        printPreset: TOTE_AOP_MEDIUM_PRESET,
-        label: "tote-aop-medium",
-      });
-      if (artwork.width !== 2625 || artwork.height !== 5250) {
-        throw new Error("The tote production artwork has the wrong dimensions.");
+      const printPreset = getProductPrintPreset(product.id, size);
+      const artwork = printPreset
+        ? await engine.current.createProductArtworkBlob({
+            printPreset,
+            label: `${product.id}-${size.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
+          })
+        : await engine.current.createFlatPatternBlob({
+            label: `${product.id}-${size.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
+          });
+      if (artwork.width !== format.width || artwork.height !== format.height) {
+        throw new Error(`${product.name} artwork has the wrong dimensions.`);
       }
       onPreview({
         ...artwork,
@@ -355,12 +362,13 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
         productId: product.id,
         productName: product.name,
         size,
+        handleColor: isTote ? handleColor : undefined,
         price: productPrice(product.id, size),
         aspectRatio: format.aspectRatio,
         printSpec: format,
       });
     } catch (error) {
-      setPreviewStatus(error.message || "The tote production artwork could not be built.");
+      setPreviewStatus(error.message || "The production artwork could not be built.");
       setPreviewing(false);
     }
   };
@@ -382,7 +390,7 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
           })}</div>
         </aside>
         <section className="studio-preview"><PatternCanvas key={state.seriesId} state={state} onEngine={(value) => { engine.current = value; }} /><div className="preview-meta"><span>{state.seriesId.toUpperCase()} / {format.widthIn}:{format.heightIn}</span><button onClick={() => engine.current?.exportFlatPattern({ maxEdge: 2400, label: "proof" })}><Download size={15} /> Export proof</button></div></section>
-        <aside className="make-panel"><p className="index-label">MAKE IT PHYSICAL</p><h2>{definition.name}</h2><div className="option-group"><label>Object</label><div className="stacked-options">{PRODUCT_TYPES.map((item) => <button key={item.id} className={product.id === item.id ? "is-active" : ""} onClick={() => { setProduct(item); setPreviewStatus(""); }}><span>{item.name}</span><small>{item.description}</small></button>)}</div></div><div className="option-group"><label>Size</label><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></div><div className="print-spec"><span>Print target</span><strong>{format.width} × {format.height} px</strong><small>RGB / {format.dpi} DPI · prepared after you leave Studio</small></div><button className="add-button" onClick={previewProduct} disabled={previewing || product.id !== "tote"}><span>{previewing ? "Preparing preview…" : "Preview product"}</span><strong>{money.format(productPrice(product.id, size))}</strong></button>{previewStatus && <output className="preview-status">{previewStatus}</output>}<p className="fine-print">The production file stays behind the scenes. The next screen shows only Printify’s rendered product mockups.</p></aside>
+        <aside className="make-panel"><p className="index-label">MAKE IT PHYSICAL</p><h2>{definition.name}</h2><div className="option-group"><label>Object</label><div className="stacked-options">{PRODUCT_TYPES.map((item) => <button key={item.id} className={product.id === item.id ? "is-active" : ""} onClick={() => { setProduct(item); setPreviewStatus(""); }}><span>{item.name}</span><small>{item.description}</small></button>)}</div></div><div className="option-group"><label>Size</label><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></div>{isTote && <div className="option-group"><label>Handle color</label><select value={handleColor} onChange={(event) => setHandleColor(event.target.value)}>{product.handleColors.map((color) => <option key={color}>{color}</option>)}</select></div>}<div className="print-spec"><span>Print target</span><strong>{format.width} × {format.height} px</strong><small>RGB / {format.dpi} DPI · prepared after you leave Studio</small></div><button className="add-button" onClick={previewProduct} disabled={previewing}><span>{previewing ? "Preparing preview…" : "Preview product"}</span><strong>{money.format(productPrice(product.id, size))}</strong></button>{previewStatus && <output className="preview-status">{previewStatus}</output>}<p className="fine-print">The production file stays behind the scenes. The next screen shows only Printify’s rendered product mockups.</p></aside>
         <div className="mobile-studio-controls">
           <div className="mobile-control-row">
             <label><span>Series</span><select value={state.seriesId} onChange={(event) => updateSeries(event.target.value)}>{SERIES.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
@@ -397,8 +405,8 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
               return <div className={frameLocked ? "range-control is-disabled" : "range-control"} key={item.key}><span>{item.label}</span><output>{value}</output><input type="range" min={item.min} max={item.max} step={item.step} value={value} disabled={frameLocked} aria-label={frameLocked ? "Frame is disabled for tote bags" : item.label} onChange={(event) => updateParameter(item.key, Number(event.target.value))} /></div>;
             })}
           </div>
-          <div className="mobile-product-row"><label><span>Object</span><select value={product.id} onChange={(event) => setProduct(PRODUCT_TYPES.find((item) => item.id === event.target.value) ?? PRODUCT_TYPES[0])}>{PRODUCT_TYPES.map((item) => <option value={item.id} key={item.id}>{item.short}</option>)}</select></label><label><span>Size</span><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></label></div>
-          <button className="add-button mobile-add-button" onClick={previewProduct} disabled={previewing || product.id !== "tote"}><span>{previewing ? "Preparing preview…" : "Preview product"}</span><strong>{money.format(productPrice(product.id, size))}</strong></button>
+          <div className={isTote ? "mobile-product-row has-handle-color" : "mobile-product-row"}><label><span>Object</span><select value={product.id} onChange={(event) => setProduct(PRODUCT_TYPES.find((item) => item.id === event.target.value) ?? PRODUCT_TYPES[0])}>{PRODUCT_TYPES.map((item) => <option value={item.id} key={item.id}>{item.short}</option>)}</select></label><label><span>Size</span><select value={size} onChange={(event) => setSize(event.target.value)}>{product.sizes.map((item) => <option key={item}>{item}</option>)}</select></label>{isTote && <label><span>Handles</span><select value={handleColor} onChange={(event) => setHandleColor(event.target.value)}>{product.handleColors.map((color) => <option key={color}>{color}</option>)}</select></label>}</div>
+          <button className="add-button mobile-add-button" onClick={previewProduct} disabled={previewing}><span>{previewing ? "Preparing preview…" : "Preview product"}</span><strong>{money.format(productPrice(product.id, size))}</strong></button>
         </div>
       </div>
       <section className="curated-section"><div><p className="index-label">{copy.curatedEyebrow}</p><h2>{copy.curatedTitle}</h2></div><div className="curated-row">{curated.slice(0, 12).map((item) => <button key={item.id} onClick={() => selectCurated(item)} className={decodeSafeSeed(item.hash) === state.seed ? "is-active" : ""}><CuratedRecipePreview item={item} /><span>{item.name.replace("Edition ", "")}</span></button>)}</div></section>
@@ -440,7 +448,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
 
     const fail = (error) => {
       if (error?.name === "AbortError") return;
-      setResult({ phase: "error", message: "We couldn’t generate this product preview. Please try again.", preview: null });
+      setResult({ phase: "error", message: error?.message || "We couldn’t generate this product preview. Please try again.", preview: null });
     };
 
     const start = async () => {
@@ -453,6 +461,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
             "X-Haptique-Preview-Id": `haptique-${crypto.randomUUID()}`,
             "X-Haptique-Product": draft.productId,
             "X-Haptique-Size": draft.size,
+            ...(draft.handleColor ? { "X-Haptique-Handle-Color": draft.handleColor } : {}),
           },
           body: draft.blob,
           signal: controller.signal,
@@ -476,8 +485,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
   }, [draft]);
 
   const mockups = (result.preview?.mockups ?? [])
-    .filter((item) => item?.src)
-    .slice(0, MAX_PRODUCT_MOCKUPS);
+    .filter((item) => item?.src);
   const mockup = mockups[activeMockup] ?? mockups[0];
   const ready = result.phase === "completed" && Boolean(mockup?.src);
   const add = async () => {
@@ -508,10 +516,11 @@ function PreviewPage({ draft, onBack, onAdd }) {
         productId: draft.productId,
         productName: draft.productName,
         size: draft.size,
+        handleColor: draft.handleColor,
         price: draft.price,
         quantity: 1,
-        mockupUrl: mockup.src,
-        aspectRatio: 1,
+        mockupUrl: primaryMockupUrl(mockups),
+        aspectRatio: draft.aspectRatio,
         printSpec: draft.printSpec,
         printifyProductId: result.preview.productId,
         printifyUploadId: result.preview.uploadId,
@@ -521,6 +530,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
       });
     } catch {
       setResult((current) => ({ ...current, phase: "error", message: "Your preview is ready, but it could not be added to cart. Please try again." }));
+    } finally {
       setAdding(false);
     }
   };
@@ -531,7 +541,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
 
   return (
     <main className="product-preview-page">
-      <header className="product-preview-header"><div><p className="index-label">STUDIO / PREVIEW / CART</p><h1>Check the object.</h1></div><button onClick={onBack}>Back to studio</button></header>
+      <header className="product-preview-header"><div><p className="index-label">STUDIO / PREVIEW / CART</p><h1>Check the object.</h1></div></header>
       <div className="product-preview-layout">
         <section className="product-mockup-stage">
           {ready
@@ -544,10 +554,11 @@ function PreviewPage({ draft, onBack, onAdd }) {
         <aside className="product-preview-summary">
           <p className="index-label">{draft.productName.toUpperCase()} / {draft.size}</p>
           <h2>{draft.seriesName}</h2>
-          <div className="product-preview-details"><span>Object</span><strong>{draft.productName}</strong><span>Size</span><strong>{draft.size}</strong><span>Price</span><strong>{money.format(draft.price)}</strong></div>
+          <div className="product-preview-details"><span>Object</span><strong>{draft.productName}</strong><span>Size</span><strong>{draft.size}</strong>{draft.handleColor && <><span>Handles</span><strong>{draft.handleColor}</strong></>}<span>Price</span><strong>{money.format(draft.price)}</strong></div>
           {result.phase === "error" && <div className="preview-error" role="alert"><strong>Mockups couldn’t be generated</strong><p>{result.message || "We couldn’t generate this product preview."}</p><button onClick={onBack}>Return to studio</button></div>}
           {ready && <div className="preview-approved"><Check size={17} /><span>Personalization rendered by Printify</span></div>}
           <button className="add-button preview-add-button" onClick={add} disabled={!ready || adding}><span>{adding ? "Adding…" : ready ? "Add to cart" : "Waiting for preview"}</span><strong>{money.format(draft.price)}</strong></button>
+          <button className="preview-back-button" onClick={onBack}>Back to Studio</button>
           <p className="fine-print">This page displays Printify’s rendered mockups. Production artwork remains hidden and is attached to the cart item for fulfillment.</p>
         </aside>
       </div>
@@ -605,9 +616,10 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           checkoutId: crypto.randomUUID(),
-          items: items.map(({ productId, size, quantity, designHash, seed, seriesId, seriesName, printifyProductId, printifyUploadId, printifyFulfillmentStrategy, personalizationStrategy, personalizationInstructions }) => ({
+          items: items.map(({ productId, size, handleColor, quantity, designHash, seed, seriesId, seriesName, printifyProductId, printifyUploadId, printifyFulfillmentStrategy, personalizationStrategy, personalizationInstructions }) => ({
             productId,
             size,
+            handleColor,
             quantity,
             designHash,
             seed,
@@ -631,7 +643,7 @@ function CartDrawer({ items, open, onClose, onChange, onRemove }) {
       setCheckingOut(false);
     }
   };
-  return <><button className={open ? "cart-scrim is-open" : "cart-scrim"} onClick={onClose} aria-label="Close cart" /><aside className={open ? "cart-drawer is-open" : "cart-drawer"} aria-hidden={!open}><header><p>YOUR CART / {String(items.length).padStart(2, "0")}</p><button onClick={onClose} aria-label="Close cart"><X /></button></header>{items.length ? <><div className="cart-items">{items.map((item) => <article className="cart-line" key={item.lineId}><div className="cart-thumb" style={{ aspectRatio: item.aspectRatio || 1 }}><CartArtwork item={item} active={open} /></div><div><h3>{item.seriesName}</h3><p>{item.productName}<br />{item.size}<br />{item.printSpec?.width} × {item.printSpec?.height} px</p><div className="quantity"><button onClick={() => onChange(item.lineId, -1)}><Minus size={13} /></button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)}><Plus size={13} /></button></div><button className="remove" onClick={() => onRemove(item.lineId)}>Remove</button></div><strong>{money.format(item.price * item.quantity)}</strong></article>)}</div><footer><div><span>Subtotal</span><strong>{money.format(total)}</strong></div><p>US delivery details are collected in secure checkout.</p><button className="checkout-button" onClick={checkout} disabled={checkingOut}>{checkingOut ? "Opening Stripe…" : "Checkout"} <ArrowUpRight size={17} /></button>{message && <output>{message}</output>}</footer></> : <div className="empty-cart"><ShoppingBag size={30} strokeWidth={1.2} /><p>Your future object<br />is still a recipe.</p><button onClick={onClose}>Keep looking</button></div>}</aside></>;
+  return <><button className={open ? "cart-scrim is-open" : "cart-scrim"} onClick={onClose} aria-label="Close cart" /><aside className={open ? "cart-drawer is-open" : "cart-drawer"} aria-hidden={!open}><header><p>YOUR CART / {String(items.length).padStart(2, "0")}</p><button onClick={onClose} aria-label="Close cart"><X /></button></header>{items.length ? <><div className="cart-items">{items.map((item) => <article className="cart-line" key={item.lineId}><div className="cart-thumb" style={{ aspectRatio: item.aspectRatio || 1 }}><CartArtwork item={item} active={open} /></div><div><h3>{item.seriesName}</h3><p>{item.productName}<br />{item.size}{item.handleColor ? <><br />{item.handleColor} handles</> : null}<br />{item.printSpec?.width} × {item.printSpec?.height} px</p><div className="quantity"><button onClick={() => onChange(item.lineId, -1)}><Minus size={13} /></button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)}><Plus size={13} /></button></div><button className="remove" onClick={() => onRemove(item.lineId)}>Remove</button></div><strong>{money.format(item.price * item.quantity)}</strong></article>)}</div><footer><div><span>Subtotal</span><strong>{money.format(total)}</strong></div><p>US delivery details are collected in secure checkout.</p><button className="checkout-button" onClick={checkout} disabled={checkingOut}>{checkingOut ? "Opening Stripe…" : "Checkout"} <ArrowUpRight size={17} /></button>{message && <output>{message}</output>}</footer></> : <div className="empty-cart"><ShoppingBag size={30} strokeWidth={1.2} /><p>Your future object<br />is still a recipe.</p><button onClick={onClose}>Keep looking</button></div>}</aside></>;
 }
 
 function Footer() {

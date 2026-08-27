@@ -81,6 +81,31 @@ export function composeMirroredTote(canvas, faceCanvas, geometry) {
   context.restore();
 }
 
+export function composeRotatedClockwise(canvas, artworkCanvas) {
+  const context = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  context.save();
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(0, 0, width, height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.translate(width, 0);
+  context.rotate(Math.PI / 2);
+  context.drawImage(
+    artworkCanvas,
+    0,
+    0,
+    artworkCanvas.width,
+    artworkCanvas.height,
+    0,
+    0,
+    height,
+    width,
+  );
+  context.restore();
+}
+
 export class P5PatternEngine {
   constructor(onTextureUpdate) {
     if (!window.p5) throw new Error("p5.js did not load before the pattern engine.");
@@ -128,21 +153,38 @@ export class P5PatternEngine {
 
   paintPrintLayout(target, state, outputWidth, outputHeight, scale) {
     const layout = getPrintLayout(state);
-    if (!layout || layout.type !== "mirrored-tote") {
+    if (!layout) {
       this.painter.paint(target, state, state.width, state.height, scale);
       return;
     }
 
-    const geometry = getMirroredToteGeometry(layout, outputWidth, outputHeight);
-    const face = this.p5.createGraphics(geometry.width, geometry.faceHeight);
-    face.pixelDensity(1);
-    try {
-      const faceScale = geometry.width / layout.artworkWidth;
-      this.painter.paint(face, state, layout.artworkWidth, layout.artworkHeight, faceScale);
-      composeMirroredTote(target.canvas, face.canvas, geometry);
-    } finally {
-      face.remove();
+    if (layout.type === "mirrored-tote") {
+      const geometry = getMirroredToteGeometry(layout, outputWidth, outputHeight);
+      const face = this.p5.createGraphics(geometry.width, geometry.faceHeight);
+      face.pixelDensity(1);
+      try {
+        const faceScale = geometry.width / layout.artworkWidth;
+        this.painter.paint(face, state, layout.artworkWidth, layout.artworkHeight, faceScale);
+        composeMirroredTote(target.canvas, face.canvas, geometry);
+      } finally {
+        face.remove();
+      }
+      return;
     }
+
+    if (layout.type === "rotate-clockwise") {
+      const artwork = this.p5.createGraphics(layout.artworkWidth, layout.artworkHeight);
+      artwork.pixelDensity(1);
+      try {
+        this.painter.paint(artwork, state, layout.artworkWidth, layout.artworkHeight, 1);
+        composeRotatedClockwise(target.canvas, artwork.canvas);
+      } finally {
+        artwork.remove();
+      }
+      return;
+    }
+
+    this.painter.paint(target, state, state.width, state.height, scale);
   }
 
   async createFlatPatternBlob({ maxEdge = Infinity, label = "pattern" } = {}) {

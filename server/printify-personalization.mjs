@@ -96,32 +96,41 @@ export async function findPersonalizableProduct({
   );
 }
 
-export async function startTotePersonalizationPreview({
+export async function startProductPreview({
   printify,
   configuredProductId,
   artwork,
-  fileName = "haptique-tote.png",
-  variantId = TOTE_VARIANT_ID,
+  fileName = "haptique-product.png",
+  blueprintId,
+  printProviderId,
+  variantId,
+  retailPrice,
+  expectedWidth,
+  expectedHeight,
+  productName = "product",
+  allowPersonalization = false,
   externalId = `haptique-${randomUUID()}`,
 }) {
   const dimensions = readPngDimensions(artwork);
-  if (dimensions.width !== TOTE_ARTWORK_WIDTH || dimensions.height !== TOTE_ARTWORK_HEIGHT) {
+  if (dimensions.width !== Number(expectedWidth) || dimensions.height !== Number(expectedHeight)) {
     throw new PrintifyPersonalizationError(
-      `Tote artwork must be exactly ${TOTE_ARTWORK_WIDTH} × ${TOTE_ARTWORK_HEIGHT} px`,
+      `${productName} artwork must be exactly ${expectedWidth} × ${expectedHeight} px`,
     );
   }
 
   let template = null;
-  try {
-    template = await findPersonalizableProduct({
-      printify,
-      configuredProductId,
-      blueprintId: TOTE_BLUEPRINT_ID,
-      printProviderId: TOTE_PRINT_PROVIDER_ID,
-      variantId,
-    });
-  } catch (error) {
-    if (!(error instanceof PrintifyPersonalizationError) || error.status !== 503) throw error;
+  if (allowPersonalization) {
+    try {
+      template = await findPersonalizableProduct({
+        printify,
+        configuredProductId,
+        blueprintId,
+        printProviderId,
+        variantId,
+      });
+    } catch (error) {
+      if (!(error instanceof PrintifyPersonalizationError) || error.status !== 503) throw error;
+    }
   }
   const upload = await printify.uploadImage({
     fileName,
@@ -131,12 +140,12 @@ export async function startTotePersonalizationPreview({
   if (!template) {
     const product = await printify.createProduct({
       title: `Haptique preview — ${externalId}`.slice(0, 120),
-      description: "Customer-approved Haptique artwork created through the product preview flow.",
-      blueprint_id: TOTE_BLUEPRINT_ID,
-      print_provider_id: TOTE_PRINT_PROVIDER_ID,
-      variants: [{ id: variantId, price: TOTE_RETAIL_PRICE, is_enabled: true, is_default: true }],
+      description: `Customer-approved Haptique ${productName.toLowerCase()} artwork created through the product preview flow.`,
+      blueprint_id: Number(blueprintId),
+      print_provider_id: Number(printProviderId),
+      variants: [{ id: Number(variantId), price: Number(retailPrice), is_enabled: true, is_default: true }],
       print_areas: [{
-        variant_ids: [variantId],
+        variant_ids: [Number(variantId)],
         placeholders: [{
           position: "front",
           images: [{ id: upload.id, x: 0.5, y: 0.5, scale: 1, angle: 0 }],
@@ -174,6 +183,31 @@ export async function startTotePersonalizationPreview({
     uploadId: upload.id,
     fieldId: template.imageField.field_id,
   };
+}
+
+export function startTotePersonalizationPreview({
+  printify,
+  configuredProductId,
+  artwork,
+  fileName = "haptique-tote.png",
+  variantId = TOTE_VARIANT_ID,
+  externalId,
+}) {
+  return startProductPreview({
+    printify,
+    configuredProductId,
+    artwork,
+    fileName,
+    blueprintId: TOTE_BLUEPRINT_ID,
+    printProviderId: TOTE_PRINT_PROVIDER_ID,
+    variantId,
+    retailPrice: TOTE_RETAIL_PRICE,
+    expectedWidth: TOTE_ARTWORK_WIDTH,
+    expectedHeight: TOTE_ARTWORK_HEIGHT,
+    productName: "Everyday tote",
+    allowPersonalization: true,
+    externalId,
+  });
 }
 
 export async function finalizePersonalization({ printify, productId, variantId, fieldId, uploadId }) {

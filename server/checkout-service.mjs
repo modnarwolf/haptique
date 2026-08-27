@@ -1,4 +1,4 @@
-import { PRODUCT_TYPES, productPrice } from "../src/data/product-catalog.js";
+import { PRODUCT_TYPES, getProductVariantId, productPrice } from "../src/data/product-catalog.js";
 import { findStripePrice } from "./stripe-catalog.mjs";
 
 const MAX_LINES = 20;
@@ -41,44 +41,58 @@ export function validateCheckoutItems(items, { stripeCatalog, printifyTotePerson
       throw new CheckoutValidationError("A valid Haptique design is required");
     }
 
-    const printifyVariantId = product.printify.variantIds[size];
+    const requestedHandleColor = String(item.handleColor ?? "").trim();
+    if (
+      product.id === "tote"
+      && requestedHandleColor
+      && !product.handleColors.includes(requestedHandleColor)
+    ) {
+      throw new CheckoutValidationError("The selected tote handle color is not available");
+    }
+    const handleColor = product.id === "tote"
+      ? (product.handleColors.includes(requestedHandleColor)
+          ? requestedHandleColor
+          : product.defaultHandleColor)
+      : undefined;
+    const printifyVariantId = getProductVariantId(product.id, size, { handleColor });
     if (!printifyVariantId) {
       throw new CheckoutValidationError(`Printify variant is not configured for ${product.name}`);
     }
 
-    let personalization = null;
-    if (product.id === "tote") {
-      const printifyProductId = String(item.printifyProductId ?? "").trim();
-      const printifyUploadId = String(item.printifyUploadId ?? "").trim();
-      const fulfillmentStrategy = String(item.printifyFulfillmentStrategy ?? "personalization").trim();
-      const strategy = String(item.personalizationStrategy ?? "").trim();
-      const instructions = String(item.personalizationInstructions ?? "").trim();
-      if (!printifyProductId || !printifyUploadId) {
-        throw new CheckoutValidationError("The tote needs an approved Printify product preview");
-      }
-      if (fulfillmentStrategy !== "custom_product") {
-        if (strategy !== "pstudio_pre_order_headless" || !/^[0-9a-f-]{36}$/i.test(instructions)) {
-          throw new CheckoutValidationError("The tote needs an approved Printify personalization preview");
-        }
-        if (
-          printifyTotePersonalizationProductId
-          && printifyProductId !== String(printifyTotePersonalizationProductId)
-        ) {
-          throw new CheckoutValidationError("The Printify tote preview is out of date");
-        }
-      }
-      personalization = {
-        printifyProductId: printifyProductId.slice(0, 100),
-        printifyUploadId: printifyUploadId.slice(0, 100),
-        printifyFulfillmentStrategy: fulfillmentStrategy === "custom_product"
-          ? "custom_product"
-          : "personalization",
-        ...(fulfillmentStrategy === "custom_product" ? {} : {
-          personalizationStrategy: strategy,
-          personalizationInstructions: instructions,
-        }),
-      };
+    const printifyProductId = String(item.printifyProductId ?? "").trim();
+    const printifyUploadId = String(item.printifyUploadId ?? "").trim();
+    const fulfillmentStrategy = String(item.printifyFulfillmentStrategy ?? "personalization").trim();
+    const strategy = String(item.personalizationStrategy ?? "").trim();
+    const instructions = String(item.personalizationInstructions ?? "").trim();
+    if (!printifyProductId || !printifyUploadId) {
+      throw new CheckoutValidationError(`${product.name} needs an approved Printify product preview`);
     }
+    if (fulfillmentStrategy !== "custom_product") {
+      if (
+        product.id !== "tote"
+        || strategy !== "pstudio_pre_order_headless"
+        || !/^[0-9a-f-]{36}$/i.test(instructions)
+      ) {
+        throw new CheckoutValidationError(`${product.name} needs an approved Printify personalization preview`);
+      }
+      if (
+        printifyTotePersonalizationProductId
+        && printifyProductId !== String(printifyTotePersonalizationProductId)
+      ) {
+        throw new CheckoutValidationError("The Printify tote preview is out of date");
+      }
+    }
+    const personalization = {
+      printifyProductId: printifyProductId.slice(0, 100),
+      printifyUploadId: printifyUploadId.slice(0, 100),
+      printifyFulfillmentStrategy: fulfillmentStrategy === "custom_product"
+        ? "custom_product"
+        : "personalization",
+      ...(fulfillmentStrategy === "custom_product" ? {} : {
+        personalizationStrategy: strategy,
+        personalizationInstructions: instructions,
+      }),
+    };
 
     const unitAmount = Math.round(productPrice(product.id, size) * 100);
     const stripePrice = stripeCatalog ? findStripePrice(stripeCatalog, product.id, size) : null;
@@ -92,13 +106,14 @@ export function validateCheckoutItems(items, { stripeCatalog, printifyTotePerson
       productId: product.id,
       size,
       name: `${product.name} — ${size}`,
-      description: `${String(item.seriesName ?? item.seriesId ?? "Haptique").slice(0, 80)} / Custom pattern`,
+      description: `${String(item.seriesName ?? item.seriesId ?? "Haptique").slice(0, 80)} / Custom pattern${handleColor ? ` / ${handleColor} handles` : ""}`,
       quantity,
       unitAmount,
       priceId: stripePrice?.priceId,
       stripeProductId: stripePrice?.productId,
       designHash,
       seed,
+      ...(handleColor ? { handleColor } : {}),
       printifyVariantId,
       ...personalization,
     };

@@ -10,6 +10,7 @@ const PERSISTED_FIELDS = Object.freeze([
   "productId",
   "productName",
   "size",
+  "handleColor",
   "price",
   "quantity",
   "aspectRatio",
@@ -24,6 +25,11 @@ const PERSISTED_FIELDS = Object.freeze([
 
 function isNonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+export function primaryMockupUrl(mockups) {
+  if (!Array.isArray(mockups)) return undefined;
+  return mockups.find((mockup) => isNonEmptyString(mockup?.src))?.src;
 }
 
 function sanitizeCartItem(item) {
@@ -52,6 +58,7 @@ function sanitizeCartItem(item) {
     productId: item.productId,
     productName: item.productName,
     size: item.size,
+    handleColor: isNonEmptyString(item.handleColor) ? item.handleColor : undefined,
     price,
     quantity: Math.max(1, Math.min(99, Math.round(Number(item.quantity) || 1))),
     aspectRatio: Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : 1,
