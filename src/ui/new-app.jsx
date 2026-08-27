@@ -527,7 +527,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
             "X-Haptique-Preview-Id": `haptique-${crypto.randomUUID()}`,
             "X-Haptique-Design-Hash": draft.designHash,
             "X-Haptique-Product": draft.productId,
-            "X-Haptique-Size": draft.size,
+            "X-Haptique-Size": encodeURIComponent(draft.size),
             ...(draft.handleColor ? { "X-Haptique-Handle-Color": draft.handleColor } : {}),
           },
           body: draft.blob,

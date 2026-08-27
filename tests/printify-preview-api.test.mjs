@@ -93,7 +93,7 @@ test("hosted preview works across stateless start, status, and finalize requests
   const headers = new Headers({
     "content-type": "image/png",
     "x-haptique-product": "poster",
-    "x-haptique-size": "12 × 16 in",
+    "x-haptique-size": encodeURIComponent("12 × 16 in"),
     "x-haptique-design-hash": "hq1_hosted-recipe",
     "x-haptique-filename": "poster.png",
   });
@@ -113,4 +113,47 @@ test("hosted preview works across stateless start, status, and finalize requests
 
   const finalized = await finalizeHostedProductPreview(preview.taskId, env, fetchImpl);
   assert.deepEqual(finalized, { fulfillmentStrategy: "custom_product" });
+});
+
+test("hosted tote preview decodes the transport-safe multiplication sign", async () => {
+  const env = { PRINTIFY_API_TOKEN: "test-token", PRINTIFY_SHOP_ID: "22838500" };
+  const fetchImpl = async (url, options = {}) => {
+    if (url.includes("/products.json?")) {
+      return jsonResponse({
+        data: [{
+          id: "tote-template",
+          blueprint_id: 1389,
+          print_provider_id: 10,
+          variants: [{ id: 103600, is_enabled: true }],
+        }],
+        last_page: 1,
+      });
+    }
+    if (url.endsWith("/personalization_options.json")) {
+      return jsonResponse([{ field_id: "tote-art", type: "image" }]);
+    }
+    if (url.endsWith("/uploads/images.json")) return jsonResponse({ id: "tote-upload" });
+    if (url.endsWith("/personalization_previews.json") && options.method === "POST") {
+      return jsonResponse({ task_id: "tote-task", status: "pending" });
+    }
+    throw new Error(`Unexpected Printify request: ${url}`);
+  };
+
+  const preview = await startHostedProductPreview({
+    headers: new Headers({
+      "content-type": "image/png",
+      "x-haptique-product": "tote",
+      "x-haptique-size": encodeURIComponent("16 × 16 in"),
+      "x-haptique-handle-color": "Black",
+      "x-haptique-design-hash": "hq1_hosted-tote",
+    }),
+    artwork: pngHeader(2625, 5250),
+    env,
+    fetchImpl,
+  });
+
+  assert.equal(preview.productId, "tote-template");
+  assert.equal(preview.variantId, 103600);
+  assert.equal(preview.handleColor, "Black");
+  assert.match(preview.taskId, /^hps1\./);
 });

@@ -169,6 +169,10 @@ two-hour task token so polling and finalization work across separate serverless
 instances. The token is signed using a key derived from the server-only
 `PRINTIFY_API_TOKEN`; it never exposes that token to the browser.
 
+Product sizes are percent-encoded in request headers so dimension labels such
+as `16 × 16 in` remain identical across browsers, proxies, and hosted runtimes.
+The backend decodes these values and continues to accept legacy raw headers.
+
 The production environment must define `PRINTIFY_API_TOKEN` and
 `PRINTIFY_SHOP_ID`. A least-privilege token for previews needs
 `products.read`, `products.write`, and `uploads.write`; order and webhook scopes
