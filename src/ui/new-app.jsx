@@ -441,11 +441,11 @@ function StudioPage({ state, setState, onPreview, onSeriesChange }) {
 
   return (
     <main className="studio-page">
-      <div className="studio-title"><p className="index-label">{copy.eyebrow}</p><h1>{copy.title[0]}<br />{copy.title[1]}</h1><p>{copy.intro}</p></div>
+      <div className="studio-title"><p className="index-label">{copy.eyebrow}</p></div>
       <div className="studio-workspace">
         <aside className="studio-controls">
           <div className="control-block"><label>01 / Series</label><select value={state.seriesId} onChange={(event) => updateSeries(event.target.value)}>{SERIES.map((item) => <option value={item.id} key={item.id}>{item.id.toUpperCase()} — {item.name}</option>)}</select><p>{definition.note}</p></div>
-          <div className="control-block share-design"><label>02 / Shuffle or open recipe</label><button className="shuffle-button" onClick={randomizeAll} aria-label="Shuffle recipe, palette, and structure"><Dices size={17} /> Shuffle</button><code title={shareCode}>{shareCode}</code><div className="share-buttons"><button onClick={() => copyShare(shareCode, "Recipe")}><Copy size={13} /> Copy recipe</button><button onClick={() => copyShare(shareUrl, "Link")}><Link2 size={13} /> Copy link</button></div><textarea value={shareInput} onChange={(event) => setShareInput(event.target.value)} placeholder="Paste a Haptique recipe or shared link…" aria-label="Shared recipe or link" /><button className="open-share-button" onClick={openSharedDesign} disabled={!shareInput.trim()}><FolderOpen size={14} /> Open recipe</button>{shareStatus && <output><Check size={12} /> {shareStatus}</output>}</div>
+          <div className="control-block share-design"><label>02 / Recipe</label><button className="shuffle-button" onClick={randomizeAll} aria-label="Shuffle recipe, palette, and structure"><Dices size={17} /> Shuffle</button><code title={shareCode}>{shareCode}</code><div className="share-buttons"><button onClick={() => copyShare(shareCode, "Recipe")}><Copy size={13} /> Copy recipe</button><button onClick={() => copyShare(shareUrl, "Link")}><Link2 size={13} /> Copy link</button></div><textarea value={shareInput} onChange={(event) => setShareInput(event.target.value)} placeholder="Paste a Haptique recipe or shared link…" aria-label="Shared recipe or link" /><button className="open-share-button" onClick={openSharedDesign} disabled={!shareInput.trim()}><FolderOpen size={14} /> Open recipe</button>{shareStatus && <output><Check size={12} /> {shareStatus}</output>}</div>
           <div className="control-block"><label>03 / Palette</label><div className="palette-list">{definition.palettes.map((item, index) => <button key={item.name} className={paletteIndex === index ? "is-active" : ""} onClick={() => updatePalette(index)}><i style={{ background: item.bg }} />{item.colors.slice(0, 5).map((color) => <i key={color} style={{ background: color }} />)}<span>{item.name}</span></button>)}</div><div className="color-editor"><label title="Background color"><input type="color" value={palette.bg} onInput={(event) => updatePaletteColor("bg", 0, event.currentTarget.value)} /><span>BG</span></label>{palette.colors.map((color, index) => <label key={`color-${index}`} title={`Custom color ${index + 1}`}><input type="color" value={color} onInput={(event) => updatePaletteColor("color", index, event.currentTarget.value)} /><span>{String(index + 1).padStart(2, "0")}</span></label>)}</div></div>
           <div className="control-block parameter-list"><label>04 / Structure</label>{definition.parameters.map((item) => {
             const frameLocked = isTote && item.key === "frame";
@@ -527,7 +527,7 @@ function PreviewPage({ draft, onBack, onAdd }) {
             "X-Haptique-Preview-Id": `haptique-${crypto.randomUUID()}`,
             "X-Haptique-Design-Hash": draft.designHash,
             "X-Haptique-Product": draft.productId,
-            "X-Haptique-Size": encodeURIComponent(draft.size),
+            "X-Haptique-Size": draft.size,
             ...(draft.handleColor ? { "X-Haptique-Handle-Color": draft.handleColor } : {}),
           },
           body: draft.blob,

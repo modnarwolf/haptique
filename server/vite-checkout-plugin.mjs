@@ -171,19 +171,10 @@ export function haptiqueCheckoutPlugin({
         }
         try {
           const productId = String(request.headers["x-haptique-product"] ?? "").trim();
-          const encodedSize = String(request.headers["x-haptique-size"] ?? "").trim();
-          let size = encodedSize;
-          try {
-            size = decodeURIComponent(encodedSize);
-          } catch {
-            // Raw legacy header values remain supported.
-          }
+          const size = String(request.headers["x-haptique-size"] ?? "").trim();
           const product = PRODUCT_TYPES.find((candidate) => candidate.id === productId);
-          if (!product) {
-            throw new PrintifyPersonalizationError("Product preview is not available for this product type");
-          }
-          if (!product.sizes.includes(size)) {
-            throw new PrintifyPersonalizationError("Product preview is not available for this product size");
+          if (!product || !product.sizes.includes(size)) {
+            throw new PrintifyPersonalizationError("Product preview is not available for this selection");
           }
           const requestedHandleColor = String(request.headers["x-haptique-handle-color"] ?? "").trim();
           if (

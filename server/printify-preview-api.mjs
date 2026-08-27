@@ -90,24 +90,12 @@ function header(headers, name) {
   return String(headers?.[name.toLowerCase()] ?? headers?.[name] ?? "").trim();
 }
 
-function decodedHeader(headers, name) {
-  const value = header(headers, name);
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
-}
-
 function selectionFromHeaders(headers) {
   const productId = header(headers, "x-haptique-product");
-  const size = decodedHeader(headers, "x-haptique-size");
+  const size = header(headers, "x-haptique-size");
   const product = PRODUCT_TYPES.find((candidate) => candidate.id === productId);
-  if (!product) {
-    throw new PrintifyPersonalizationError("Product preview is not available for this product type");
-  }
-  if (!product.sizes.includes(size)) {
-    throw new PrintifyPersonalizationError("Product preview is not available for this product size");
+  if (!product || !product.sizes.includes(size)) {
+    throw new PrintifyPersonalizationError("Product preview is not available for this selection");
   }
 
   const requestedHandleColor = header(headers, "x-haptique-handle-color");
